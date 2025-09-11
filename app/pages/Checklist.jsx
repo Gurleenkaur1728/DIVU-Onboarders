@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Sidebar from "../components/Sidebar";
+import Sidebar, {ROLES}  from "../components/Sidebar";
 import { CheckCircle, Circle } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -30,7 +30,7 @@ export default function Checklist() {
       <div className="absolute bottom-24 right-12 w-96 h-96 bg-green-400/20 blur-3xl rounded-full animate-ping"></div>
 
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar role={ROLES.USER} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col p-6 z-10">

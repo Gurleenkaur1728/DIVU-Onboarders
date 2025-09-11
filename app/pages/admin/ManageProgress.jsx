@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import {
   BarChart,
@@ -13,6 +14,16 @@ import {
 } from "recharts";
 
 export default function ManageProgress() {
+  // Dynamically detect role from localStorage (fallback to ADMIN)
+  const [role, setRole] = useState(() => {
+    const stored = localStorage.getItem("role_id");
+    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
+  });
+  useEffect(() => {
+    const stored = localStorage.getItem("role_id");
+    if (stored !== null) setRole(parseInt(stored, 10));
+  }, []);
+
   const summary = {
     totalModules: 6,
     completed: 4,
@@ -36,9 +47,9 @@ export default function ManageProgress() {
   const COLORS = ["#34d399", "#fbbf24", "#f87171"];
 
   return (
-    <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
-      {/* Sidebar */}
-      <Sidebar active="manage-progress" role={ROLES.ADMIN} />
+    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+      {/* Sidebar now uses detected role */}
+      <Sidebar active="manage-progress" role={role} />
 
       {/* Main */}
       <div className="flex-1 flex flex-col p-6 space-y-6">
@@ -50,7 +61,7 @@ export default function ManageProgress() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-950/90 rounded-md px-4 py-2 text-white font-bold shadow">
+        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
           EMPLOYEE PROGRESS
         </div>
 
@@ -65,7 +76,7 @@ export default function ManageProgress() {
         {/* Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Bar Chart */}
-          <div className="bg-emerald-800/60 rounded-lg p-4 shadow text-emerald-100">
+          <div className="bg-emerald-900/90 p-4 rounded-lg shadow-lg text-emerald-100 border border-emerald-400/60">
             <h3 className="font-bold mb-4">Progress by Employee</h3>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={barData}>
@@ -79,7 +90,7 @@ export default function ManageProgress() {
           </div>
 
           {/* Pie Chart */}
-          <div className="bg-emerald-800/60 rounded-lg p-4 shadow text-emerald-100">
+          <div className="bg-emerald-900/90 p-4 rounded-lg shadow-lg text-emerald-100 border border-emerald-400/60">
             <h3 className="font-bold mb-4">Module Completion Status</h3>
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
@@ -109,7 +120,7 @@ export default function ManageProgress() {
 /* ---------- Subcomponents ---------- */
 function Card({ label, value }) {
   return (
-    <div className="bg-emerald-800/60 rounded-lg p-4 shadow text-center text-emerald-100">
+    <div className="bg-emerald-900/90 p-4 rounded-lg shadow-lg text-center text-emerald-100 border border-emerald-400/60">
       <p className="text-sm font-semibold text-emerald-200">{label}</p>
       <h2 className="text-2xl font-bold">{value}</h2>
     </div>

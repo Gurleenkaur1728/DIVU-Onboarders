@@ -1,8 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import { Trash2, Star } from "lucide-react";
 
 export default function ManageFeedback() {
+  // Dynamically detect role from localStorage (fallback to ADMIN)
+  const [role, setRole] = useState(() => {
+    const stored = localStorage.getItem("role_id");
+    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
+  });
+
+  useEffect(() => {
+    const stored = localStorage.getItem("role_id");
+    if (stored !== null) setRole(parseInt(stored, 10));
+  }, []);
+
   const [feedbacks, setFeedbacks] = useState([
     {
       id: 1,
@@ -35,9 +46,9 @@ export default function ManageFeedback() {
   };
 
   return (
-    <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 relative">
-      {/* Sidebar */}
-      <Sidebar active="manage-feedback" role={ROLES.ADMIN} />
+    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+      {/* Sidebar now uses detected role */}
+      <Sidebar active="manage-feedback" role={role} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col p-6 z-10">
@@ -49,15 +60,15 @@ export default function ManageFeedback() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-950/90 text-emerald-100 font-bold px-4 py-2 rounded-md shadow mb-4">
+        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
           FEEDBACK LIST
         </div>
 
         {/* Feedback Table */}
-        <div className="overflow-x-auto rounded-lg border border-emerald-800/50 shadow-lg">
+        <div className="overflow-x-auto rounded-lg border border-emerald-400/70 shadow-lg bg-white">
           <table className="min-w-[980px] w-full border-collapse">
             <thead>
-              <tr className="bg-emerald-700/70 text-left">
+              <tr className="bg-emerald-900/95 text-left text-emerald-100">
                 <Th>Employee</Th>
                 <Th>Module</Th>
                 <Th>Rating</Th>

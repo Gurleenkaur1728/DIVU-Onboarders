@@ -1,8 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar, {ROLES} from "../../components/Sidebar.jsx";
 import { Pencil, Trash2, User, PlusCircle, X, MessageSquare } from "lucide-react";
 
 export default function ManageQuestions() {
+  // Dynamically detect role from localStorage (fallback to ADMIN)
+  const [role, setRole] = useState(() => {
+    const stored = localStorage.getItem("role_id");
+    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
+  });
+  useEffect(() => {
+    const stored = localStorage.getItem("role_id");
+    if (stored !== null) setRole(parseInt(stored, 10));
+  }, []);
+
   const [tab, setTab] = useState("faqs");
   const [faqs, setFaqs] = useState([
     { id: 1, question: "How do I reset my password?", answer: "Go to your account settings and click reset password." },
@@ -53,9 +63,9 @@ export default function ManageQuestions() {
   };
 
   return (
-    <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
-      {/* Sidebar */}
-      <Sidebar role={ROLES.ADMIN} active="manage-questions" />
+    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+      {/* Sidebar now uses detected role */}
+      <Sidebar role={role} active="manage-questions" />
 
       {/* Main */}
       <div className="flex-1 flex flex-col p-6">
@@ -67,7 +77,7 @@ export default function ManageQuestions() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-950/90 rounded-md px-4 py-2 mb-6 text-white font-bold shadow">
+        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
           MANAGE QUESTIONS
         </div>
 
@@ -138,7 +148,7 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, editin
   return (
     <div className="space-y-6">
       {/* Add new FAQ form */}
-      <div className="bg-emerald-800/60 text-emerald-100 rounded-lg shadow p-4 space-y-3">
+      <div className="bg-emerald-900/90 text-emerald-100 rounded-lg shadow-lg p-4 border border-emerald-400/60 space-y-3">
         <h3 className="font-bold flex items-center gap-2">
           <PlusCircle size={18} className="text-emerald-300" /> Add New FAQ
         </h3>
@@ -167,7 +177,7 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, editin
       {/* Existing FAQs */}
       <div className="space-y-4">
         {faqs.map((faq) => (
-          <div key={faq.id} className="bg-emerald-800/40 text-emerald-100 rounded-lg shadow p-4">
+          <div key={faq.id} className="bg-emerald-900/80 text-emerald-100 rounded-lg shadow-lg p-4 border border-emerald-400/40">
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="font-bold">{faq.question}</h3>
@@ -197,10 +207,10 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, editin
 
 function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-emerald-800/50 shadow">
+    <div className="overflow-x-auto rounded-lg border border-emerald-400/70 shadow-lg bg-white">
       <table className="min-w-[600px] w-full border-collapse">
         <thead>
-          <tr className="bg-emerald-700/70 text-left text-emerald-50">
+          <tr className="bg-emerald-900/95 text-left text-emerald-100">
             <Th>Employee</Th>
             <Th>Question</Th>
             <Th>Answer</Th>
@@ -211,8 +221,8 @@ function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ }) {
           {employeeQuestions.map((q, idx) => (
             <tr
               key={q.id}
-              className={`text-emerald-100 text-sm ${
-                idx % 2 === 0 ? "bg-emerald-800/40" : "bg-emerald-900/40"
+              className={`text-emerald-950 text-sm ${
+                idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"
               }`}
             >
               <td className="px-4 py-3 flex items-center gap-2">
@@ -221,7 +231,7 @@ function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ }) {
               <td className="px-4 py-3">{q.question}</td>
               <td className="px-4 py-3">
                 {q.answer ? (
-                  <span className="text-emerald-300 font-medium">{q.answer}</span>
+                  <span className="text-emerald-700 font-medium">{q.answer}</span>
                 ) : (
                   <span className="text-gray-400 italic">No answer yet</span>
                 )}
@@ -229,7 +239,7 @@ function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ }) {
               <td className="px-4 py-3">
                 <button
                   onClick={() => setAnsweringQ(q)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white"
                 >
                   <MessageSquare size={14} /> Answer
                 </button>

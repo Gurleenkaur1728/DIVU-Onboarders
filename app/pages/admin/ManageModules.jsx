@@ -1,8 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import { Edit, Trash2, Plus, CheckCircle, Lock, PlayCircle, Timer, X } from "lucide-react";
 
 export default function ManageModules() {
+  // Dynamically detect role from localStorage (fallback to ADMIN)
+  const [role, setRole] = useState(() => {
+    const stored = localStorage.getItem("role_id");
+    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
+  });
+  useEffect(() => {
+    const stored = localStorage.getItem("role_id");
+    if (stored !== null) setRole(parseInt(stored, 10));
+  }, []);
+
   const [modules, setModules] = useState([
     { id: 1, title: "Orientation Module", description: "Short intro to our culture and ways of working.", duration: "10 min", status: "completed", progress: 100 },
     { id: 2, title: "HR Policies", description: "Security basics and acceptable use policy.", duration: "15 min", status: "available", progress: 0 },
@@ -39,9 +49,9 @@ export default function ManageModules() {
   };
 
   return (
-    <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
-      {/* Sidebar */}
-      <Sidebar active="manage-modules" role={ROLES.ADMIN} />
+    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+      {/* Sidebar now uses detected role */}
+      <Sidebar active="manage-modules" role={role} />
 
       {/* Main */}
       <div className="flex-1 flex flex-col p-6 z-10">
@@ -59,7 +69,7 @@ export default function ManageModules() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-950/90 text-emerald-100 font-bold px-4 py-2 rounded-md shadow mb-4">
+        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
           MANAGE MODULES
         </div>
 
