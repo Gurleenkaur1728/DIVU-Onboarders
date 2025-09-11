@@ -1,14 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import { Menu, AppWindow } from "lucide-react";
 
 export default function ManageContent() {
+  // Dynamically detect role from localStorage (fallback to ADMIN)
+  const [role, setRole] = useState(() => {
+    const stored = localStorage.getItem("role_id");
+    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
+  });
+  useEffect(() => {
+    const stored = localStorage.getItem("role_id");
+    if (stored !== null) setRole(parseInt(stored, 10));
+  }, []);
   const [activeTab, setActiveTab] = useState("welcome");
 
   return (
-    <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
-      {/* Sidebar */}
-      <Sidebar active="manage-content" role={ROLES.ADMIN} />
+    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+      {/* Sidebar now uses detected role */}
+      <Sidebar active="manage-content" role={role} />
 
       {/* Main */}
       <div className="flex-1 flex flex-col p-6">
@@ -24,7 +33,7 @@ export default function ManageContent() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-950/80 text-white font-bold rounded-md px-4 py-2 shadow">
+        <div className="bg-emerald-900/95 text-white font-extrabold rounded-xl px-6 py-4 shadow-lg border border-emerald-400/70 text-2xl mb-4 tracking-wide drop-shadow-lg">
           MANAGE CONTENT
         </div>
 
@@ -37,9 +46,30 @@ export default function ManageContent() {
 
         {/* Body */}
         <div className="mt-6">
-          {activeTab === "welcome" && <WelcomeEditor />}
-          {activeTab === "culture" && <CultureEditor />}
-          {activeTab === "about" && <AboutEditor />}
+          {activeTab === "welcome" && (
+            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 text-white rounded-2xl shadow-2xl p-10 border border-emerald-400/70 space-y-6 relative overflow-hidden">
+              <div className="absolute right-8 bottom-8 opacity-10 pointer-events-none select-none">
+                <img src="/divu-logo.png" alt="DIVU Logo" className="w-40" />
+              </div>
+              <WelcomeEditor />
+            </div>
+          )}
+          {activeTab === "culture" && (
+            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 text-white rounded-2xl shadow-2xl p-10 border border-emerald-400/70 space-y-6 relative overflow-hidden">
+              <div className="absolute right-8 bottom-8 opacity-10 pointer-events-none select-none">
+                <img src="/divu-logo.png" alt="DIVU Logo" className="w-40" />
+              </div>
+              <CultureEditor />
+            </div>
+          )}
+          {activeTab === "about" && (
+            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 text-white rounded-2xl shadow-2xl p-10 border border-emerald-400/70 space-y-6 relative overflow-hidden">
+              <div className="absolute right-8 bottom-8 opacity-10 pointer-events-none select-none">
+                <img src="/divu-logo.png" alt="DIVU Logo" className="w-40" />
+              </div>
+              <AboutEditor />
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -78,7 +108,7 @@ function WelcomeEditor() {
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <label className="block text-sm font-medium text-emerald-800">Subtitle</label>
@@ -86,7 +116,7 @@ function WelcomeEditor() {
         type="text"
         value={subtitle}
         onChange={(e) => setSubtitle(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <label className="block text-sm font-medium text-emerald-800">Background Image</label>
@@ -94,7 +124,7 @@ function WelcomeEditor() {
         type="text"
         value={backgroundImage}
         onChange={(e) => setBackgroundImage(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <button className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-md shadow hover:bg-emerald-700">
@@ -119,7 +149,7 @@ function CultureEditor() {
         type="text"
         value={heading}
         onChange={(e) => setHeading(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <label className="block text-sm font-medium text-emerald-800">Description</label>
@@ -127,7 +157,7 @@ function CultureEditor() {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         rows="4"
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <label className="block text-sm font-medium text-emerald-800">Video URL</label>
@@ -135,7 +165,7 @@ function CultureEditor() {
         type="text"
         value={videoUrl}
         onChange={(e) => setVideoUrl(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <button className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-md shadow hover:bg-emerald-700">
@@ -160,7 +190,7 @@ function AboutEditor() {
         value={mission}
         onChange={(e) => setMission(e.target.value)}
         rows="2"
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <label className="block text-sm font-medium text-emerald-800">Values</label>
@@ -168,7 +198,7 @@ function AboutEditor() {
         value={values}
         onChange={(e) => setValues(e.target.value)}
         rows="2"
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <label className="block text-sm font-medium text-emerald-800">How We Work</label>
@@ -176,7 +206,7 @@ function AboutEditor() {
         value={howWeWork}
         onChange={(e) => setHowWeWork(e.target.value)}
         rows="3"
-        className="w-full rounded-md border border-emerald-300 px-3 py-2"
+        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
       />
 
       <button className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-md shadow hover:bg-emerald-700">

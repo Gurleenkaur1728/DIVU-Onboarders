@@ -1,8 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import { CheckCircle, Circle, Edit, Trash2, Plus, X } from "lucide-react";
 
 export default function ManageChecklist() {
+  // Dynamically detect role from localStorage (fallback to ADMIN)
+  const [role, setRole] = useState(() => {
+    const stored = localStorage.getItem("role_id");
+    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
+  });
+  useEffect(() => {
+    const stored = localStorage.getItem("role_id");
+    if (stored !== null) setRole(parseInt(stored, 10));
+  }, []);
+
   const [rows, setRows] = useState([
     { id: 1, name: "Orientation Module", assigned: "01-01-2025", completed: "01-05-2025", feedback: "Yes", done: true },
     { id: 2, name: "HR Policies", assigned: "01-10-2025", completed: "-", feedback: "-", done: false },
@@ -56,9 +66,9 @@ export default function ManageChecklist() {
   };
 
   return (
-    <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 relative">
-      {/* Sidebar */}
-      <Sidebar active="manage-checklist" role={ROLES.ADMIN} />
+    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+      {/* Sidebar now uses detected role */}
+      <Sidebar active="manage-checklist" role={role} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col p-6 z-10">
@@ -76,15 +86,15 @@ export default function ManageChecklist() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-950/90 px-4 py-3 rounded-md mb-4 shadow-md text-emerald-100 font-bold tracking-wide">
+        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
           MANAGE CHECKLIST
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto rounded-lg border border-emerald-800/50 shadow-lg">
+        <div className="overflow-x-auto rounded-lg border border-emerald-400/70 shadow-lg bg-white">
           <table className="min-w-[980px] w-full border-collapse">
             <thead>
-              <tr className="bg-emerald-700/70 text-left">
+              <tr className="bg-emerald-900/95 text-left text-emerald-100">
                 <Th>Completed</Th>
                 <Th>Module</Th>
                 <Th>Date Assigned</Th>
@@ -105,7 +115,7 @@ export default function ManageChecklist() {
                   <td className="px-4 py-3 text-center">
                     <button onClick={() => toggle(r.id)}>
                       {r.done ? (
-                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                        <CheckCircle className="w-5 h-5 text-emerald-400" />
                       ) : (
                         <Circle className="w-5 h-5 text-gray-400" />
                       )}
