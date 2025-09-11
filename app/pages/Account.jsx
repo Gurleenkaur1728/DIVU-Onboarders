@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../components/Sidebar.jsx";
+import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { Bell, Menu, ArrowLeft } from "lucide-react";
 
@@ -9,6 +9,8 @@ export default function Account() {
   const [email, setEmail] = useState("");
   const [employeeId, setEmployeeId] = useState("");
   const [userId, setUserId] = useState("");
+  const savedRole = parseInt(localStorage.getItem("role_id"), 10) || ROLES.USER;
+  const [role, setRole] = useState(savedRole);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -22,14 +24,17 @@ export default function Account() {
   const fetchUserData = async () => {
     try {
       setLoading(true);
+      // TODO: In production, filter by logged-in user session instead of .limit(1)
       const { data, error } = await supabase.from("users").select("*").limit(1);
       if (error) throw error;
+
       if (data && data.length > 0) {
         const user = data[0];
         setUserId(user.id);
         setName(user.name || "");
         setEmail(user.email || "");
         setEmployeeId(user.employee_id || "");
+        setRole(user.role_id || ROLES.USER); // 👈 role now comes directly from DB
       }
     } catch (e) {
       alert("Error fetching user data: " + e.message);
@@ -53,8 +58,7 @@ export default function Account() {
   };
 
   const signOut = () => {
-    // Simplified → just go back to login
-    nav("/");
+    nav("/"); // Simplified → just go back to login
   };
 
   if (loading) {
@@ -67,8 +71,8 @@ export default function Account() {
 
   return (
     <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 relative">
-      {/* Sidebar (desktop) */}
-      {!isSmall && <Sidebar active="account" />}
+      {/* Sidebar (role-aware) */}
+      {!isSmall && <Sidebar active="account" role={role} />} 
 
       {/* Main content */}
       <div className="flex-1 flex flex-col p-6 z-10">
@@ -104,11 +108,9 @@ export default function Account() {
         </div>
 
         {/* Content Card */}
-        <div className="bg-white/95 rounded-2xl p-6 shadow-lg max-w-lg">
-          <label className="block mb-3">
-            <span className="block text-sm font-semibold text-emerald-900 mb-1">
-              Full name
-            </span>
+        <div className="bg-white/95 rounded-2xl p-6 shadow-lg max-w-lg space-y-4">
+          <label className="block">
+            <span className="block text-sm font-semibold text-emerald-900 mb-1">Full name</span>
             <input
               type="text"
               value={name}
@@ -118,10 +120,8 @@ export default function Account() {
             />
           </label>
 
-          <label className="block mb-3">
-            <span className="block text-sm font-semibold text-emerald-900 mb-1">
-              Email
-            </span>
+          <label className="block">
+            <span className="block text-sm font-semibold text-emerald-900 mb-1">Email</span>
             <input
               type="email"
               value={email}
@@ -130,13 +130,28 @@ export default function Account() {
             />
           </label>
 
-          <label className="block mb-6">
-            <span className="block text-sm font-semibold text-emerald-900 mb-1">
-              Employee ID
-            </span>
+          <label className="block">
+            <span className="block text-sm font-semibold text-emerald-900 mb-1">Employee ID</span>
             <input
               type="text"
               value={employeeId}
+              disabled
+              className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
+            />
+          </label>
+
+          {/* Role display */}
+          <label className="block">
+            <span className="block text-sm font-semibold text-emerald-900 mb-1">Role</span>
+            <input
+              type="text"
+              value={
+                role === ROLES.ADMIN
+                  ? "Admin"
+                  : role === ROLES.SUPER_ADMIN
+                  ? "Super Admin"
+                  : "User"
+              }
               disabled
               className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
             />
@@ -152,7 +167,7 @@ export default function Account() {
 
           <button
             onClick={signOut}
-            className="w-full py-3 rounded-xl font-semibold border-2 border-red-500 text-red-600 bg-red-50 hover:bg-red-100 transition mt-4"
+            className="w-full py-3 rounded-xl font-semibold border-2 border-red-500 text-red-600 bg-red-50 hover:bg-red-100 transition"
           >
             Sign out
           </button>

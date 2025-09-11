@@ -14,11 +14,22 @@ import ModuleFeedback from "../app/pages/Feedback.jsx";
 import Culture from "../app/pages/Culture.jsx";
 import About from "../app/pages/About.jsx";
 
+// Admin pages
+import AdminDashboard from "../app/pages/admin/AdminDashboard.jsx";
+import ManageContent from "../app/pages/admin/ManageContent.jsx";
+import ManageChecklist from "../app/pages/admin/ManageChecklist.jsx";
+import ManageModules from "../app/pages/admin/ManageModules.jsx";
+import ViewFeedback from "../app/pages/admin/ManageFeedback.jsx";
+import ViewProgress from "../app/pages/admin/ManageProgress.jsx";
+import ManageQuestions from "../app/pages/admin/ManageQuestions.jsx";
+
 export const router = createBrowserRouter([
+  // Auth
   { path: "/", element: <Login /> },
   { path: "/forgot", element: <ForgotPassword /> },
   { path: "/signup", element: <SignUp /> },
 
+  // Main user pages
   { path: "/home", element: <Home /> },
   { path: "/checklist", element: <Checklist /> },
   { path: "/account", element: <Account /> },
@@ -26,4 +37,13 @@ export const router = createBrowserRouter([
   { path: "/feedback", element: <ModuleFeedback /> },
   { path: "/culture", element: <Culture /> },
   { path: "/about", element: <About /> },
+
+  // Admin pages
+  { path: "/admin/dashboard", element: <AdminDashboard /> },
+  { path: "/admin/content", element: <ManageContent /> },
+  { path: "/admin/checklist", element: <ManageChecklist /> },
+  { path: "/admin/modules", element: <ManageModules /> },
+  { path: "/admin/feedback", element: <ViewFeedback /> },
+  { path: "/admin/progress", element: <ViewProgress /> },
+  { path: "/admin/manage-questions", element: <ManageQuestions /> },
 ]);
