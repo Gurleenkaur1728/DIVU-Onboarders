@@ -29,8 +29,8 @@ export default function Checklist() {
       <div className="absolute top-16 left-12 w-72 h-72 bg-emerald-500/20 blur-3xl rounded-full animate-pulse"></div>
       <div className="absolute bottom-24 right-12 w-96 h-96 bg-green-400/20 blur-3xl rounded-full animate-ping"></div>
 
-      {/* Sidebar (desktop) */}
-      <Sidebar active="checklist" />
+      {/* Sidebar */}
+      <Sidebar />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col p-6 z-10">
@@ -47,7 +47,7 @@ export default function Checklist() {
           </h2>
           <div className="flex gap-2">
             <Tab label="Checklist" active />
-            <Tab label="Modules" />
+            <Tab label="Modules" to="/modules" />
           </div>
         </div>
 
@@ -116,8 +116,22 @@ export default function Checklist() {
   );
 }
 
-function Tab({ label, active }) {
-  return (
+function Tab({ label, active, to }) {
+  return to ? (
+    <Link
+      to={to}
+      replace={false}
+      className={`
+        px-4 py-1 rounded-md text-sm font-semibold transition-all duration-300
+        ${active
+          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
+        }
+      `}
+    >
+      {label}
+    </Link>
+  ) : (
     <button
       className={`
         px-4 py-1 rounded-md text-sm font-semibold transition-all duration-300
@@ -126,6 +140,7 @@ function Tab({ label, active }) {
           : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
         }
       `}
+      disabled
     >
       {label}
     </button>
@@ -140,7 +155,6 @@ function Th({ children }) {
   );
 }
 
-/* ---------- helpers ---------- */
 function pad(n) {
   return n < 10 ? `0${n}` : `${n}`;
 }
