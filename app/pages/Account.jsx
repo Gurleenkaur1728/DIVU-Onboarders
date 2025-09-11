@@ -1,161 +1,196 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef } from "react";
 import Sidebar from "../components/Sidebar.jsx";
-import { supabase } from "../../src/lib/supabaseClient.js";
-import { Bell, Menu, ArrowLeft } from "lucide-react";
 
 export default function Account() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
-  const [userId, setUserId] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("employment");
+  const [profileImage, setProfileImage] = useState(null);
+  const fileInputRef = useRef();
 
-  const nav = useNavigate();
-  const isSmall = window.innerWidth < 900;
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase.from("users").select("*").limit(1);
-      if (error) throw error;
-      if (data && data.length > 0) {
-        const user = data[0];
-        setUserId(user.id);
-        setName(user.name || "");
-        setEmail(user.email || "");
-        setEmployeeId(user.employee_id || "");
-      }
-    } catch (e) {
-      alert("Error fetching user data: " + e.message);
-    } finally {
-      setLoading(false);
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setProfileImage(URL.createObjectURL(file));
     }
   };
 
-  const save = async () => {
-    if (!name.trim()) return alert("Name cannot be empty");
-    try {
-      setBusy(true);
-      const { error } = await supabase.from("users").update({ name }).eq("id", userId);
-      if (error) throw error;
-      alert("Your name has been updated successfully.");
-    } catch (e) {
-      alert("Update failed: " + e.message);
-    } finally {
-      setBusy(false);
-    }
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
   };
-
-  const signOut = () => {
-    // Simplified → just go back to login
-    nav("/");
-  };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
-        <p className="text-emerald-100 text-lg">Loading...</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 relative">
-      {/* Sidebar (desktop) */}
-      {!isSmall && <Sidebar active="account" />}
+    <div
+      className="flex min-h-dvh"
+      style={{
+        backgroundImage: "url('/bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <Sidebar />
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between bg-emerald-800/30 rounded-xl px-4 py-3 mb-4 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-white font-bold">
-              {name ? name.charAt(0).toUpperCase() : "?"}
-            </div>
-            <div>
-              <p className="text-emerald-200 text-xs">Welcome back!</p>
-              <p className="text-emerald-50 font-bold">{name}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {isSmall && <Menu className="w-6 h-6 text-emerald-200 cursor-pointer" />}
-            <Bell className="w-6 h-6 text-emerald-200" />
-          </div>
+      <div className="flex-1 p-8">
+        <h1 className="text-3xl font-bold text-white mb-6">Account</h1>
+
+        {/* Tabs */}
+        <div className="flex gap-4 mb-6 flex-wrap">
+          {["employment", "role", "department", "settings"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-5 py-2 rounded font-semibold capitalize ${
+                activeTab === tab
+                  ? "bg-emerald-600 text-white"
+                  : "bg-white text-emerald-700 hover:bg-gray-100"
+              }`}
+            >
+              {tab === "employment"
+                ? "Employment Details"
+                : tab === "role"
+                ? "Role Information"
+                : tab === "department"
+                ? "Department"
+                : "Account Settings"}
+            </button>
+          ))}
         </div>
 
-        {/* Title bar */}
-        <div className="flex items-center justify-between bg-gradient-to-r from-emerald-600 to-green-600 rounded-xl px-6 py-4 shadow-lg mb-6">
-          <h2 className="text-xl font-extrabold text-white tracking-wide">
-            Account Settings
-          </h2>
-          <button
-            onClick={() => nav(-1)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/20 text-white hover:bg-white/30 transition"
-          >
-            <ArrowLeft size={16} />
-            Back
-          </button>
-        </div>
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 flex gap-8">
+          {/* Profile image (not in settings) */}
+          {activeTab !== "settings" && (
+            <div
+              onClick={triggerFileInput}
+              className="w-32 h-32 bg-gray-200 rounded-md flex items-center justify-center text-gray-500 font-semibold cursor-pointer hover:bg-gray-300 transition"
+            >
+              {profileImage ? (
+                <img
+                  src={profileImage}
+                  alt="Profile"
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : (
+                "Upload"
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+          )}
 
-        {/* Content Card */}
-        <div className="bg-white/95 rounded-2xl p-6 shadow-lg max-w-lg">
-          <label className="block mb-3">
-            <span className="block text-sm font-semibold text-emerald-900 mb-1">
-              Full name
-            </span>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
-              className="w-full rounded-lg border border-emerald-200 bg-white/90 px-3 py-2 text-emerald-900 shadow-sm focus:border-emerald-400 focus:ring focus:ring-emerald-300/50"
-            />
-          </label>
+          {/* Tab Content */}
+          <div className="flex-1 space-y-4 text-gray-800">
+            {/* Employment */}
+            {activeTab === "employment" && (
+              <>
+                <p>
+                  <span className="font-semibold">Employee Name:</span> Gurleen
+                </p>
+                <p>
+                  <span className="font-semibold">Employee ID:</span> EMP-001
+                </p>
+                <p>
+                  <span className="font-semibold">Employment Term:</span> Full-Time
+                </p>
+                <p>
+                  <span className="font-semibold">Employment Role:</span> Software Developer
+                </p>
+                <p>
+                  <span className="font-semibold">Pay Type:</span> Salary
+                </p>
+                <p>
+                  <span className="font-semibold">Salary:</span> $70,000/year
+                </p>
+              </>
+            )}
 
-          <label className="block mb-3">
-            <span className="block text-sm font-semibold text-emerald-900 mb-1">
-              Email
-            </span>
-            <input
-              type="email"
-              value={email}
-              disabled
-              className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
-            />
-          </label>
+            {/* Role */}
+            {activeTab === "role" && (
+              <>
+                <p>
+                  <span className="font-semibold">Role Name:</span> Frontend Engineer
+                </p>
+                <p>
+                  <span className="font-semibold">Role Details:</span> Responsible for UI development using React & Tailwind
+                </p>
+                <p>
+                  <span className="font-semibold">Role Specifications:</span> Works closely with UX team and backend developers
+                </p>
+                <p>
+                  <span className="font-semibold">Hire Date:</span> 01-06-2025
+                </p>
+                <p>
+                  <span className="font-semibold">Role Duration:</span> Permanent
+                </p>
+              </>
+            )}
 
-          <label className="block mb-6">
-            <span className="block text-sm font-semibold text-emerald-900 mb-1">
-              Employee ID
-            </span>
-            <input
-              type="text"
-              value={employeeId}
-              disabled
-              className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
-            />
-          </label>
+            {/* Department */}
+            {activeTab === "department" && (
+              <>
+                <p>
+                  <span className="font-semibold">Department:</span> Technology
+                </p>
+                <p>
+                  <span className="font-semibold">Department Team:</span> Web Development
+                </p>
+                <p>
+                  <span className="font-semibold">Manager:</span> John Smith
+                </p>
+                <p>
+                  <span className="font-semibold">Supervisor:</span> Jane Doe
+                </p>
+              </>
+            )}
 
-          <button
-            onClick={save}
-            disabled={busy}
-            className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-md hover:from-emerald-400 hover:to-green-500 transition"
-          >
-            {busy ? "Saving…" : "Save changes"}
-          </button>
+            {/* Settings */}
+            {activeTab === "settings" && (
+              <form className="space-y-6 w-full max-w-lg">
+                <div>
+                  <label className="block font-semibold mb-1">Full name</label>
+                  <input
+                    type="text"
+                    defaultValue="Gurleen"
+                    className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Email</label>
+                  <input
+                    type="email"
+                    defaultValue="gurleenkau07@edu.sait.ca"
+                    className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Employee ID</label>
+                  <input
+                    type="text"
+                    defaultValue="EMP-001"
+                    className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
 
-          <button
-            onClick={signOut}
-            className="w-full py-3 rounded-xl font-semibold border-2 border-red-500 text-red-600 bg-red-50 hover:bg-red-100 transition mt-4"
-          >
-            Sign out
-          </button>
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="submit"
+                    className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700"
+                  >
+                    Save changes
+                  </button>
+                  <button
+                    type="button"
+                    className="px-6 py-3 border border-red-500 text-red-600 font-semibold rounded-lg hover:bg-red-50"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>

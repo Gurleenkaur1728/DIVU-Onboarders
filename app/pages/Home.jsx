@@ -1,21 +1,20 @@
-import { useState } from "react";
 import Sidebar from "../components/Sidebar.jsx";
 import { Link } from "react-router-dom";
-import { Play, Pause, Menu, AppWindow } from "lucide-react";
+import { Menu, AppWindow } from "lucide-react";
 
-export default function Culture() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [playing, setPlaying] = useState(false);
-
+export default function Home() {
   return (
-    <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 relative">
-      {/* Sidebar (desktop) */}
+    <div
+      className="flex min-h-dvh bg-cover bg-center relative"
+      style={{ backgroundImage: "url('/bg.png')" }} // ✅ using your uploaded bg.png
+    >
+      {/* Sidebar */}
       <Sidebar active="home" />
 
-      {/* Main content */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}
-        <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-3 shadow">
+        <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
           <div className="flex items-center gap-2">
             <Menu className="w-5 h-5 text-emerald-900 cursor-pointer md:hidden" />
             <span className="text-emerald-950 font-semibold">
@@ -25,76 +24,41 @@ export default function Culture() {
           <AppWindow className="w-5 h-5 text-emerald-900" />
         </div>
 
-        {/* Title */}
-        <div className="bg-emerald-950/80 rounded-md px-4 py-2 text-white font-bold tracking-wide shadow">
-          HOME PAGE
-        </div>
-
         {/* Tabs */}
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mb-6">
           <Tab label="Welcome" to="/home" active />
           <Tab label="Culture" to="/culture" />
           <Tab label="About" to="/about" />
         </div>
 
-        {/* Body */}
-        <div className="mt-4 space-y-6">
-          {/* Row 1 */}
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 bg-emerald-50/90 rounded-lg p-4 shadow">
-              <p className="text-emerald-950/90 leading-relaxed text-sm">
-                Lorem ipsum dolor sit amet consectetur. Donec nulla at vel
-                lobortis sed fames elit. In pellentesque lacinia enim quisque.
-                Duis velit gravida mauris senectus.
-              </p>
-              <p className="text-emerald-950/90 leading-relaxed text-sm mt-2">
-                Etiam quis ante laoreet congue mi turpis. Elit risus sapien
-                mauris arcu libero volutpat.
-              </p>
-              <p className="mt-3 font-bold text-emerald-900">- DIVU</p>
-            </div>
-            <div className="w-full md:w-80 h-48 rounded-lg overflow-hidden shadow">
-              <img
-                src="/team-meeting.jpg"
-                alt="Team meeting"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </div>
+        {/* Content Card */}
+        <div className="bg-white/95 rounded-2xl shadow-2xl p-16 max-w-5xl mx-auto relative overflow-hidden">
+          {/* Decorative logo watermark */}
+          <img
+            src="/divu-logo.png"
+            alt="DIVU Logo"
+            className="absolute opacity-10 right-10 bottom-10 w-48"
+          />
 
-          {/* Row 2: Video */}
-          <div className="relative w-full aspect-video rounded-lg overflow-hidden shadow">
-            <video
-              src="/culture.mp4"
-              className="w-full h-full object-cover"
-              loop
-              muted
-              controls
-              onPlay={() => setPlaying(true)}
-              onPause={() => setPlaying(false)}
-            />
-            <button
-              onClick={() => setPlaying(!playing)}
-              className="absolute bottom-3 right-3 flex items-center gap-2 px-3 py-1.5 bg-black/60 text-white text-xs font-semibold rounded-full shadow"
-            >
-              {playing ? <Pause size={14} /> : <Play size={14} />}
-              {playing ? "Pause" : "Play"}
-            </button>
-          </div>
+          <h1 className="text-4xl font-extrabold text-emerald-900 mb-6 text-center">
+            Welcome to DIVU
+          </h1>
+          <div className="w-28 h-1 bg-emerald-500 mx-auto mb-8 rounded-full"></div>
 
-          {/* More text blocks */}
-          <div className="bg-emerald-50/90 rounded-lg p-4 shadow">
-            <p className="text-emerald-950/90 text-sm leading-relaxed">
-              Lorem ipsum dolor sit amet consectetur. Accumsan ipsum vitae amet
-              cursus ornare aliquet. Sit faucibus viverra sagittis mattis.
-            </p>
-          </div>
-          <div className="bg-emerald-50/90 rounded-lg p-4 shadow">
-            <p className="text-emerald-950/90 text-sm leading-relaxed">
-              Volutpat donec orci tortor vitae blandit diam porta urna at.
-              Imperdiet cursus urna donec nec in venenatis.
-            </p>
-          </div>
+          <p className="text-xl text-gray-700 leading-relaxed mb-6 text-center">
+            We are excited to have you join our team of curious, driven, and
+            forward-thinking professionals! At DIVU, we believe in precision with
+            purpose, ownership in every role, and innovation that lasts.
+          </p>
+          <p className="text-xl text-gray-700 leading-relaxed mb-6 text-center">
+            Your journey here is more than a job; it is an opportunity to grow,
+            contribute, and shape meaningful solutions for clients across Canada,
+            Austria, and beyond. This onboarding experience is designed to guide
+            you smoothly into our culture, tools, and ways of working.
+          </p>
+          <p className="text-2xl text-emerald-700 font-semibold italic text-center">
+            We look forward to seeing the impact you will create with us!
+          </p>
         </div>
       </div>
     </div>
@@ -102,24 +66,17 @@ export default function Culture() {
 }
 
 function Tab({ label, to, active }) {
-  return to ? (
+  return (
     <Link
       to={to}
-      className={`px-4 py-2 rounded-lg text-sm font-medium transition
-        ${active
-          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950"
-          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700"
+      className={`px-5 py-2 rounded-lg text-sm font-semibold transition shadow
+        ${
+          active
+            ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950"
+            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
         }`}
     >
       {label}
     </Link>
-  ) : (
-    <span className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 font-bold text-sm">
-      {label}
-    </span>
   );
 }
-
-
-
-
