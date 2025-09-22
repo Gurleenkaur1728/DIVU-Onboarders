@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Sidebar, {ROLES}  from "../components/Sidebar.jsx";
-import modulesData from "../../src/lib/modulesData";
+import modulesData from "../../lib/modulesData";
 
 export default function ModuleDetail() {
   const { id } = useParams();

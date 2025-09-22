@@ -6,7 +6,7 @@ export default function Home() {
   return (
     <div
       className="flex min-h-dvh bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }} // ✅ using your uploaded bg.png
+      style={{ backgroundImage: "url('/bg.png')" }} 
     >
       {/* Sidebar */}
       <Sidebar role={ROLES.USER} />
@@ -18,7 +18,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Menu className="w-5 h-5 text-emerald-900 cursor-pointer md:hidden" />
             <span className="text-emerald-950 font-semibold">
-              Welcome &lt;name&gt; to DIVU!
+              Welcome to DIVU!
             </span>
           </div>
           <AppWindow className="w-5 h-5 text-emerald-900" />
