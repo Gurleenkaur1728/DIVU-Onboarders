@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Sidebar, {ROLES}  from "../components/Sidebar.jsx";
 import { AppWindow, CheckCircle2, Circle, Clock } from "lucide-react";
-import modulesData from "../../src/lib/modulesData";
+import modulesData from "../../lib/modulesData";
 
 export default function Modules() {
   // initialize modules with dummy assigned dates etc.

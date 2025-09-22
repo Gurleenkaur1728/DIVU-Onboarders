@@ -15,7 +15,7 @@ import {
 } from "recharts";
 
 export default function AdminDashboard() {
-  // 👇 pull role from localStorage (fallback to USER if missing)
+  // pull role from localStorage (fallback to USER if missing)
   const role = parseInt(localStorage.getItem("role_id")) || ROLES.USER;
 
   // Dummy chart data

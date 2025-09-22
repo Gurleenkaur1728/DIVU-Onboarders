@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Sidebar, {ROLES}  from "../components/Sidebar.jsx";
-import modulesData from "../../src/lib/modulesData";
+import modulesData from "../../lib/modulesData";
 import { Link } from "react-router-dom";
 
 export default function Feedback() {

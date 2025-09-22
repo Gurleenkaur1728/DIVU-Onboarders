@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
-import { supabase } from "../../src/lib/supabaseClient.js";
+import { supabase } from "../../lib/supabaseClient.js";
 
 export default function Account() {
   const [name, setName] = useState("");
@@ -15,7 +15,7 @@ export default function Account() {
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
 
-  const nav = useNavigate();
+  const nav = useNavigate(ROLES.USER);
   const isSmall = typeof window !== "undefined" ? window.innerWidth < 900 : false;
 
   // Dynamically detect role from localStorage (fallback to USER)
