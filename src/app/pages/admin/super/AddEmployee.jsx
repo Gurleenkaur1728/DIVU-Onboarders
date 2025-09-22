@@ -1,4 +1,4 @@
-import Sidebar, { ROLES } from "../../../components/admin/Sidebar";
+import Sidebar, { ROLES } from "../../../components/Sidebar.jsx";
 import { Send } from "lucide-react";
 
 export default function AddEmployee() {

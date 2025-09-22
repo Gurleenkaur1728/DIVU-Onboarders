@@ -26,8 +26,8 @@ export default function Checklist() {
   return (
     <div className="flex min-h-dvh bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 relative">
       {/* glowing bg accents */}
-      <div className="absolute top-16 left-12 w-72 h-72 bg-emerald-500/20 blur-3xl rounded-full animate-pulse"></div>
-      <div className="absolute bottom-24 right-12 w-96 h-96 bg-green-400/20 blur-3xl rounded-full animate-ping"></div>
+      {/* <div className="absolute top-16 left-12 w-72 h-72 bg-emerald-500/20 blur-3xl rounded-full animate-pulse"></div>
+      <div className="absolute bottom-24 right-12 w-96 h-96 bg-green-400/20 blur-3xl rounded-full animate-ping"></div> */}
 
       {/* Sidebar */}
       <Sidebar role={ROLES.USER} />
