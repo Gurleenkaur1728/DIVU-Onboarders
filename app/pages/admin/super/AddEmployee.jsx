@@ -25,7 +25,7 @@ export default function AddEmployee() {
     setMessage("");
 
     try {
-      const res = await fetch("http://localhost:5050/send-email", {
+      const res = await fetch("https://divu-server.vercel.app/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
