@@ -123,7 +123,10 @@ export default function Sidebar({ role }) {
                 <Item icon={UserPlus} label="Add Employee" route="/admin/super/add-employee" isActive={location.pathname === "/admin/super/add-employee"} />
                 <Item icon={Shield} label="Manage Admins" route="/admin/super/manage-admins" isActive={location.pathname === "/admin/super/manage-admins"} />
                 <Item icon={ClipboardCheck} label="Admin Requests" route="/admin/super/admin-requests" isActive={location.pathname === "/admin/super/admin-requests"} />
-                {/* Divider below admin requests */}
+                {/* New Super Admin Pages */}
+                <Item icon={ClipboardCheck} label="Employee Requests" route="/admin/super/employee-requests" isActive={location.pathname === "/admin/super/employee-requests"} />
+                <Item icon={List} label="Records" route="/admin/super/records" isActive={location.pathname === "/admin/super/records"} />
+                {/* Divider below */}
                 <div className="mx-4 my-2 h-[1px] bg-emerald-700/40" />
               </>
             )}
