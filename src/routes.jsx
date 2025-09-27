@@ -34,6 +34,8 @@ import ManageEmployees from "../app/pages/admin/super/ManageEmployees.jsx";
 import AddEmployee from "../app/pages/admin/super/AddEmployee.jsx";
 import ManageAdmins from "../app/pages/admin/super/ManageAdmins.jsx";
 import AdminRequests from "../app/pages/admin/super/AdminRequests.jsx";
+import EmployeeRequests from "../app/pages/admin/super/EmployeeRequests.jsx";
+import Records from "../app/pages/admin/super/Records.jsx";
 
 export const router = createBrowserRouter([
   // Auth
@@ -73,4 +75,6 @@ export const router = createBrowserRouter([
   { path: "/admin/super/add-employee", element: <AddEmployee /> },
   { path: "/admin/super/manage-admins", element: <ManageAdmins /> },
   { path: "/admin/super/admin-requests", element: <AdminRequests /> },
+  { path: "/admin/super/employee-requests", element: <EmployeeRequests /> },
+  { path: "/admin/super/records", element: <Records /> },
 ]);
