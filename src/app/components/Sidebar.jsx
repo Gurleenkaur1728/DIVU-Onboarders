@@ -27,6 +27,7 @@ const ROLES = {
 };
 
 
+// eslint-disable-next-line no-unused-vars
 function Item({ icon: Icon, label, route, isActive, disabled, collapsed }) {
   if (disabled) {
     return (
@@ -116,6 +117,7 @@ export default function Sidebar({ role }) {
           <>
             <Item icon={Home} label="Home Page" route="/home" isActive={location.pathname === "/home"} collapsed={collapsed}/>
             <Item icon={List} label="Checklist" route="/checklist" isActive={location.pathname === "/checklist"} collapsed={collapsed}/>
+            <Item icon={List} label="Modules" route="/modules" isActive={location.pathname === "/modules"} collapsed={collapsed}/>
             <Item icon={MessageSquare} label="Feedback" route="/feedback" isActive={location.pathname === "/feedback"} collapsed={collapsed}/>
             <Item icon={BarChart2} label="Progress" route="/progress" isActive={location.pathname === "/progress"} collapsed={collapsed}/>
             <Item icon={HelpCircle} label="Questions" route="/questions" isActive={location.pathname === "/questions"} collapsed={collapsed}/>
