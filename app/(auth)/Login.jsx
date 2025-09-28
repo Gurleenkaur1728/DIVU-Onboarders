@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
 import { supabase } from "../../src/lib/supabaseClient";
+import bcrypt from "bcryptjs";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -21,34 +22,60 @@ export default function Login() {
 
     try {
       setLoading(true);
+      // Get user info including stored password
       const { data, error } = await supabase
         .from("users")
-        .select("id, email, role_id") // also grab role_id
+        .select("id, email, role_id, password")
         .eq("email", username.trim())
-        .eq("password", password)
         .single();
 
       setLoading(false);
 
-      if (error) {
-        console.error("Login error:", error);
-        setErr(`Database error: ${error.message}`);
+      if (error || !data) {
+        setErr("Invalid email or password. Please try again.");
         return;
       }
 
-      if (data) {
-        // save session info
-        localStorage.setItem("user", JSON.stringify(data));
-        localStorage.setItem("role_id", data.role_id); // 👈 Save role globally
+      let isValid = false;
 
-        // redirect by role
-        if (data.role_id === 1 || data.role_id === 2) {
-          navigate("/admin/dashboard"); // Admin or Super Admin
-        } else {
-          navigate("/home"); // Employee
-        }
+      // Case 1: Stored password looks like a bcrypt hash
+      if (
+        data.password.startsWith("$2a$") ||
+        data.password.startsWith("$2b$") ||
+        data.password.startsWith("$2y$")
+      ) {
+        isValid = await bcrypt.compare(password, data.password);
       } else {
+        // Case 2: Legacy plain text password
+        isValid = password === data.password;
+
+        // If correct, upgrade to bcrypt immediately
+        if (isValid) {
+          const hashed = await bcrypt.hash(password, 10);
+          await supabase
+            .from("users")
+            .update({ password: hashed })
+            .eq("id", data.id);
+        }
+      }
+
+      if (!isValid) {
         setErr("Invalid email or password. Please try again.");
+        return;
+      }
+
+      // Save session info
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ id: data.id, email: data.email })
+      );
+      localStorage.setItem("role_id", data.role_id);
+
+      // Redirect based on role
+      if (data.role_id === 1 || data.role_id === 2) {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/home");
       }
     } catch (e) {
       console.error("Unexpected login error:", e);
@@ -66,7 +93,7 @@ export default function Login() {
       </div>
 
       {/* Background image overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-30"
         style={{ backgroundImage: "url('/bg.png')" }}
       />
@@ -134,17 +161,13 @@ export default function Login() {
 
             {/* Links */}
             <div className="mt-6 text-center">
-              <Link to="/forgot" className="text-sm text-cyan-300 hover:underline">
+              <Link
+                to="/forgot"
+                className="text-sm text-cyan-300 hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
-
-            <button
-              onClick={() => navigate("/signUp")}
-              className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 py-3 px-4 font-semibold text-white hover:from-emerald-500 hover:to-emerald-600"
-            >
-              Create New Account
-            </button>
           </div>
         </div>
       </div>
