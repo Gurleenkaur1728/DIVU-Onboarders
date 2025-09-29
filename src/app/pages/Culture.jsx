@@ -1,8 +1,47 @@
-import Sidebar, {ROLES}  from "../components/Sidebar.jsx";
+import { useEffect, useState } from "react";
+import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
+import { supabase } from "../../supabaseClient"; // <- adjust if your path differs
 
 export default function Culture() {
+  // defaults = your current static copy
+  const defaultHeading = "DIVU Culture";
+  const defaultParagraphs = [
+    "Our culture is built on trust, inclusiveness, and shared responsibility. We embrace diversity across borders and time zones, working as a remote-first company that thrives on collaboration and accountability.",
+    "We believe that curiosity sparks better questions, and better questions lead to smarter solutions.",
+    "At DIVU, everyone has the autonomy to take ownership, challenge ideas, and drive sustainable innovation.",
+    "Together we celebrate achievements, learn from setbacks, and continuously evolve as a team that values integrity and meaningful progress.",
+  ];
+
+  const [heading, setHeading] = useState(defaultHeading);
+  const [paras, setParas] = useState(defaultParagraphs);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      // one row: section='culture', sort_order=0
+      const { data, error } = await supabase
+        .from("home_content")
+        .select("title, description")
+        .eq("section", "culture")
+        .eq("sort_order", 0)
+        .maybeSingle();
+
+      if (!cancel && !error && data) {
+        if (data.title) setHeading(data.title);
+        if (data.description) {
+          // split description into paragraphs on blank lines / newlines
+          const parts = data.description.split(/\n{2,}|\r?\n/g).filter(Boolean);
+          if (parts.length) setParas(parts);
+        }
+      }
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
   return (
     <div
       className="flex min-h-dvh bg-cover bg-center relative"
@@ -31,36 +70,20 @@ export default function Culture() {
           <Tab label="About" to="/about" />
         </div>
 
-        {/* Content Card */}
+        {/* Content Card — same layout + images as before */}
         <div className="bg-white/95 rounded-xl shadow-lg p-10 max-w-5xl mx-auto">
-          {/* Title */}
           <h1 className="text-3xl font-extrabold text-emerald-900 mb-6">
-            DIVU Culture
+            {heading}
           </h1>
 
-          {/* Text + First Image in Grid */}
+          {/* Text + first image */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             <div>
-              <p className="text-lg text-gray-800 leading-relaxed mb-4">
-                Our culture is built on <span className="font-semibold">trust</span>,
-                <span className="font-semibold"> inclusiveness</span>, and{" "}
-                <span className="italic">shared responsibility</span>. We embrace
-                diversity across borders and time zones, working as a remote-first
-                company that thrives on collaboration and accountability.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed mb-4">
-                We believe that curiosity sparks better questions, and better
-                questions lead to smarter solutions.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed mb-4">
-                At DIVU, everyone has the autonomy to take ownership, challenge
-                ideas, and drive sustainable innovation.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed">
-                Together we celebrate achievements, learn from setbacks, and
-                continuously evolve as a team that values integrity and meaningful
-                progress.
-              </p>
+              {paras.map((p, i) => (
+                <p key={i} className="text-lg text-gray-800 leading-relaxed mb-4">
+                  {p}
+                </p>
+              ))}
             </div>
             <div className="flex items-start justify-center">
               <img
@@ -71,7 +94,7 @@ export default function Culture() {
             </div>
           </div>
 
-          {/* Second Image full width */}
+          {/* Second image full width */}
           <div>
             <img
               src="/cultureWorkshop.jpg"
@@ -90,10 +113,9 @@ function Tab({ label, to, active }) {
     <Link
       to={to}
       className={`px-5 py-2 rounded-lg text-sm font-semibold transition shadow
-        ${
-          active
-            ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950"
-            : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700"
+        ${active
+          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950"
+          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700"
         }`}
     >
       {label}
