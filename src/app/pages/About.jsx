@@ -18,7 +18,6 @@ export default function About() {
   useEffect(() => {
     let cancel = false;
     (async () => {
-      // three rows: section='about' ; sort_order: 0 (Mission), 1 (Values), 2 (How we work)
       const { data, error } = await supabase
         .from("home_content")
         .select("sort_order, description")
