@@ -87,4 +87,3 @@ function Tab({ label, to, active }) {
     </Link>
   );
 }
-//Home.jsx
