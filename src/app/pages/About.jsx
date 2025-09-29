@@ -1,8 +1,50 @@
-import Sidebar, {ROLES}  from "../components/Sidebar.jsx";
+import { useEffect, useState } from "react";
+import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
+import { supabase } from "../../supabaseClient"; // <- adjust if needed
 
 export default function About() {
+  // defaults = your current static copy
+  const defaultParas = [
+    "DIVU is a data strategy and analytics company helping organizations transform complexity into clarity. We design and deliver solutions that empower businesses to make informed, confident decisions.",
+    "From data governance and engineering to advanced analytics, our mission is to unlock value through insights that last.",
+    "With teams operating from Calgary, Vienna/Graz, and partner locations across North America and Europe, we are international by design and united by purpose.",
+    "At DIVU, we build sustainable, data-driven futures for our clients and our people.",
+  ];
+
+  const [paras, setParas] = useState(defaultParas);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      // three rows: section='about' ; sort_order: 0 (Mission), 1 (Values), 2 (How we work)
+      const { data, error } = await supabase
+        .from("home_content")
+        .select("sort_order, description")
+        .eq("section", "about")
+        .order("sort_order", { ascending: true });
+
+      if (!cancel && !error && Array.isArray(data) && data.length) {
+        const m = data.find(d => d.sort_order === 0)?.description;
+        const v = data.find(d => d.sort_order === 1)?.description;
+        const h = data.find(d => d.sort_order === 2)?.description;
+
+        const collected = [m, v, h].filter(Boolean);
+        if (collected.length) {
+          // also split on extra newlines if admin saved big blocks
+          const flat = collected
+            .flatMap(txt => txt.split(/\n{2,}|\r?\n/g))
+            .filter(Boolean);
+          setParas(flat);
+        }
+      }
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
   return (
     <div
       className="flex min-h-dvh bg-cover bg-center relative"
@@ -31,14 +73,12 @@ export default function About() {
           <Tab label="About" to="/about" active />
         </div>
 
-        {/* Content Card */}
+        {/* Content Card — same layout + image as before */}
         <div className="bg-white/95 rounded-xl shadow-lg p-10 max-w-5xl mx-auto">
-          {/* Title */}
           <h1 className="text-3xl font-extrabold text-emerald-900 mb-6">
             About DIVU
           </h1>
 
-          {/* Text + Image in Grid */}
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             {/* Image left */}
             <div className="flex items-start justify-center">
@@ -51,24 +91,11 @@ export default function About() {
 
             {/* Text right */}
             <div>
-              <p className="text-lg text-gray-800 leading-relaxed mb-4">
-                DIVU is a data strategy and analytics company helping organizations
-                transform complexity into clarity. We design and deliver solutions
-                that empower businesses to make informed, confident decisions.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed mb-4">
-                From data governance and engineering to advanced analytics, our
-                mission is to unlock value through insights that last.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed">
-                With teams operating from Calgary, Vienna/Graz, and partner
-                locations across North America and Europe, we are international by
-                design and united by purpose.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed mt-4 font-medium">
-                At DIVU, we build sustainable, data-driven futures for our clients
-                and our people.
-              </p>
+              {paras.map((p, i) => (
+                <p key={i} className="text-lg text-gray-800 leading-relaxed mb-4">
+                  {p}
+                </p>
+              ))}
             </div>
           </div>
         </div>
