@@ -118,4 +118,3 @@ function Tab({ label, to, active }) {
     </Link>
   );
 }
-//About.jsx

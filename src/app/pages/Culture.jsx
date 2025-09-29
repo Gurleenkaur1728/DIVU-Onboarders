@@ -122,4 +122,3 @@ function Tab({ label, to, active }) {
     </Link>
   );
 }
-//culture.jsx
