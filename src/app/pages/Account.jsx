@@ -15,7 +15,7 @@ export default function Account() {
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
 
-  const nav = useNavigate(ROLES.USER);
+  const nav = useNavigate();
   const isSmall = typeof window !== "undefined" ? window.innerWidth < 900 : false;
 
   // Dynamically detect role from localStorage (fallback to USER)
@@ -35,23 +35,42 @@ export default function Account() {
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      // TODO: In production, filter by logged-in user session instead of .limit(1)
-      const { data, error } = await supabase.from("users").select("*").limit(1);
-      if (error) throw error;
-      if (data && data.length > 0) {
-        const user = data[0];
-        setUserId(user.id);
-        setName(user.name || "");
-        setEmail(user.email || "");
-        setEmployeeId(user.employee_id || "");
-        setRole(user.role_id || ROLES.USER);
+
+      // who is logged in?
+      const { data: { user: authUser }, error: auErr } = await supabase.auth.getUser();
+      if (auErr || !authUser) throw new Error("Not signed in");
+
+      // profile row for THIS user (join by email since public.users is your legacy table)
+      const { data: profile, error: profErr } = await supabase
+        .from("users")
+        .select("id, name, email, employee_id")
+        .eq("email", authUser.email)
+        .maybeSingle();
+      if (profErr) throw profErr;
+
+      if (profile) {
+        setUserId(profile.id);
+        setName(profile.name || "");
+        setEmail(profile.email || "");
+        setEmployeeId(profile.employee_id || "");
       }
+
+      // get effective role from user_roles (source of truth)
+      const { data: roleRow } = await supabase
+        .from("user_roles")
+        .select("role_id, role")
+        .eq("user_id", authUser.id)
+        .maybeSingle();
+
+      const rid = Number(roleRow?.role_id ?? Number(localStorage.getItem("role_id") ?? 0));
+      setRole(rid === 2 ? ROLES.SUPER_ADMIN : rid === 1 ? ROLES.ADMIN : ROLES.USER);
     } catch (e) {
       alert("Error fetching user data: " + e.message);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
