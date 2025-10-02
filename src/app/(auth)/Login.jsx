@@ -21,39 +21,71 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // 1) Auth sign-in (Auth → Users)
+      const { data: { user }, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: username.trim(),
+          password
+        });
+
+      if (authError || !user) {
+        setLoading(false);
+        setErr(authError?.message || "Invalid email or password.");
+        return;
+      }
+      
+
+      // 2) Get profile from  table by email (case-insensitive)
+      const { data: profile, error: profErr } = await supabase
         .from("users")
-        .select("id, email, role_id") // also grab role_id
-        .eq("email", username.trim())
-        .eq("password", password)
-        .single();
+        .select("id, name, email, role_id")
+        .ilike("email", username.trim())
+        .maybeSingle();
+
+      if (profErr) {
+        console.warn("Profile fetch error:", profErr.message);
+      }
+
+      const profileId = profile?.id ?? null;
+
+      // 3) Role from user_roles by *profile id*, fallback to users.role_id, default 0
+      let rid = 0;
+      let rtxt = "";
+      if (profileId) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role_id, role")
+          .eq("user_id", profileId)
+          .maybeSingle();
+        rid = Number(roleRow?.role_id ?? profile?.role_id ?? 0);
+        rtxt = (roleRow?.role ?? "").toLowerCase();
+      } else {
+        rid = Number(profile?.role_id ?? 0);
+      }
+
+      const isAdmin = rid === 1 || rid === 2 || rtxt === "admin" || rtxt === "superadmin";
+
+      // 4) Persist ONCE
+      localStorage.setItem("user", JSON.stringify({ auth_id: user.id, email: user.email }));
+      localStorage.setItem("profile_id", profileId || "");
+      localStorage.setItem("role_id", String(rid));
+      localStorage.setItem("role", rtxt || (isAdmin ? (rid === 2 ? "superadmin" : "admin") : "user"));
 
       setLoading(false);
 
-      if (error) {
-        console.error("Login error:", error);
-        setErr(`Database error: ${error.message}`);
-        return;
-      }
+      // 5) SINGLE redirect
+      navigate(isAdmin ? "/admin/dashboard" : "/home");
 
-      if (data) {
-        // save session info
-        localStorage.setItem("user", JSON.stringify(data));
-        localStorage.setItem("role_id", data.role_id); // 👈 Save role globally
+      // optional debug
+      console.log("login:", { auth_id: user.id, profile_id: profileId, rid, rtxt, isAdmin });
 
-        // redirect by role
-        if (data.role_id === 1 || data.role_id === 2) {
-          navigate("/admin/dashboard"); // Admin or Super Admin
-        } else {
-          navigate("/home"); // Employee
-        }
-      } else {
-        setErr("Invalid email or password. Please try again.");
-      }
-    } catch (e) {
-      console.error("Unexpected login error:", e);
+    } catch (error) {
+      console.error("Login error:", error);
       setErr("An unexpected error occurred. Please try again.");
+      setLoading(false);
     }
+
   };
 
   return (
@@ -66,7 +98,7 @@ export default function Login() {
       </div>
 
       {/* Background image overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-30"
         style={{ backgroundImage: "url('/bg.png')" }}
       />
@@ -134,20 +166,18 @@ export default function Login() {
 
             {/* Links */}
             <div className="mt-6 text-center">
-              <Link to="/forgot" className="text-sm text-cyan-300 hover:underline">
+              <Link
+                to="/forgot"
+                className="text-sm text-cyan-300 hover:underline"
+              >
                 Forgot password?
               </Link>
             </div>
-
-            <button
-              onClick={() => navigate("/signUp")}
-              className="mt-4 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 py-3 px-4 font-semibold text-white hover:from-emerald-500 hover:to-emerald-600"
-            >
-              Create New Account
-            </button>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+
