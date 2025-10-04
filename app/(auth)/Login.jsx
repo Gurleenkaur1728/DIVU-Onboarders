@@ -22,32 +22,77 @@ export default function Login() {
 
     try {
       setLoading(true);
-      // Get user info including stored password
-      const { data, error } = await supabase
+
+      // 1) Auth sign-in (Auth → Users)
+      const { data: { user }, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: username.trim(),
+          password
+        });
+
+      if (authError || !user) {
+        setLoading(false);
+        setErr(authError?.message || "Invalid email or password.");
+        return;
+      }
+      
+
+      // 2) Get profile from  table by email (case-insensitive)
+      const { data: profile, error: profErr } = await supabase
         .from("users")
-        .select("id, email, role_id, password")
-        .eq("email", username.trim())
-        .single();
+        .select("id, name, email, role_id")
+        .ilike("email", username.trim())
+        .maybeSingle();
+
+      if (profErr) {
+        console.warn("Profile fetch error:", profErr.message);
+      }
+
+      const profileId = profile?.id ?? null;
+
+      // 3) Role from user_roles by *profile id*, fallback to users.role_id, default 0
+      let rid = 0;
+      let rtxt = "";
+      if (profileId) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role_id, role")
+          .eq("user_id", profileId)
+          .maybeSingle();
+        rid = Number(roleRow?.role_id ?? profile?.role_id ?? 0);
+        rtxt = (roleRow?.role ?? "").toLowerCase();
+      } else {
+        rid = Number(profile?.role_id ?? 0);
+      }
+
+      const isAdmin = rid === 1 || rid === 2 || rtxt === "admin" || rtxt === "superadmin";
+
+      // 4) Persist ONCE
+      localStorage.setItem("user", JSON.stringify({ auth_id: user.id, email: user.email }));
+      localStorage.setItem("profile_id", profileId || "");
+      localStorage.setItem("role_id", String(rid));
+      localStorage.setItem("role", rtxt || (isAdmin ? (rid === 2 ? "superadmin" : "admin") : "user"));
 
       setLoading(false);
 
-      if (error || !data) {
-        setErr("Invalid email or password. Please try again.");
-        return;
-      }
+      // 5) SINGLE redirect
+      navigate(isAdmin ? "/admin/dashboard" : "/home");
+
+      // optional debug
+      console.log("login:", { auth_id: user.id, profile_id: profileId, rid, rtxt, isAdmin });
 
       let isValid = false;
 
       // Case 1: Stored password looks like a bcrypt hash
       if (
-        data.password.startsWith("$2a$") ||
-        data.password.startsWith("$2b$") ||
-        data.password.startsWith("$2y$")
+        user.password.startsWith("$2a$") ||
+        user.password.startsWith("$2b$") ||
+        user.password.startsWith("$2y$")
       ) {
-        isValid = await bcrypt.compare(password, data.password);
+        isValid = await bcrypt.compare(password, user.password);
       } else {
         // Case 2: Legacy plain text password
-        isValid = password === data.password;
+        isValid = password === user.password;
 
         // If correct, upgrade to bcrypt immediately
         if (isValid) {
@@ -55,7 +100,7 @@ export default function Login() {
           await supabase
             .from("users")
             .update({ password: hashed })
-            .eq("id", data.id);
+            .eq("id", user.id);
         }
       }
 
@@ -64,23 +109,13 @@ export default function Login() {
         return;
       }
 
-      // Save session info
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ id: data.id, email: data.email })
-      );
-      localStorage.setItem("role_id", data.role_id);
-
-      // Redirect based on role
-      if (data.role_id === 1 || data.role_id === 2) {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/home");
-      }
-    } catch (e) {
-      console.error("Unexpected login error:", e);
+    
+    } catch (error) {
+      console.error("Login error:", error);
       setErr("An unexpected error occurred. Please try again.");
+      setLoading(false);
     }
+
   };
 
   return (
