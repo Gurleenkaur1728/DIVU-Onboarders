@@ -3,7 +3,6 @@ import { createBrowserRouter } from "react-router-dom";
 // Auth pages
 import Login from "./app/(auth)/Login.jsx";
 import ForgotPassword from "./app/(auth)/ForgotPassword.jsx";
-import SignUp from "./app/(auth)/SignUp.jsx";
 
 // Main pages
 import Home from "./app/pages/Home.jsx";
@@ -39,7 +38,6 @@ export const router = createBrowserRouter([
   // Auth
   { path: "/", element: <Login /> },
   { path: "/forgot", element: <ForgotPassword /> },
-  { path: "/signup", element: <SignUp /> },
 
   // Main user pages
   { path: "/home", element: <Home /> },
