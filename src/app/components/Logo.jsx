@@ -1,4 +1,4 @@
-export default function Logo({ size = 140 }) {
+export default function Logo({ size = 200 }) {
   return (
     <div
       className="flex items-center justify-center"
