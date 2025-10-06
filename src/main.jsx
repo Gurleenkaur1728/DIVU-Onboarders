@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes.jsx";  // your updated router
-import { AuthProvider } from "./app/context/AuthContext.jsx"; // Ensure correct path
+import { AuthProvider } from "../app/context/AuthContext.jsx"; // Ensure correct path
 
 import "./index.css"
 
