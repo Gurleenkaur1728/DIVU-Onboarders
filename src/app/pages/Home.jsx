@@ -2,9 +2,36 @@ import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
-import { supabase } from "../../supabaseClient"; // <-- adjust path if needed
+import { supabase } from "../../supabaseClient"; 
 
 export default function Home() {
+
+  const [name, setName] = useState(() => localStorage.getItem("profile.name") || "");
+  const [role, setRole] = useState(() => localStorage.getItem("profile.role") || "");
+
+  useEffect(() => {
+
+    const pid = localStorage.getItem("profile_id");
+    if (!pid) return;
+
+    (async () => {
+      const { data: rows, error } = await supabase
+        .from("users")
+        .select("name", "role")
+        .eq("id", pid)
+        .limit(1);          
+
+      if (!error && rows?.length) {
+        const row = rows[0];
+        const display = row?.name?.trim() || (row?.role?.toUpperCase());
+        setName(display);
+        setRole(row?.role || "user");
+        localStorage.setItem("profile_name", display);
+        localStorage.setItem("profile.role", row?.role);
+      }
+    })();
+  }, [name]);
+
   const [hero, setHero] = useState({
     title: "Welcome to DIVU",
     subtitle: "Your onboarding journey starts here.",
@@ -46,8 +73,9 @@ export default function Home() {
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
           <div className="flex items-center gap-2">
             <Menu className="w-5 h-5 text-emerald-900 cursor-pointer md:hidden" />
-            <span className="text-emerald-950 font-semibold">Welcome to DIVU!</span>
-          </div>
+            <span className="text-emerald-950 font-semibold">Welcome to DIVU, {name}!</span>
+            <span className=" text-emerald-800 italic">{role}</span>
+          </div>        
           <AppWindow className="w-5 h-5 text-emerald-900" />
         </div>
 
