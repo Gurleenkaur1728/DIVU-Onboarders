@@ -39,7 +39,7 @@ const buildEmailHTML = ({ firstName, position, token_hash }) => `
         </p>
 
         <div style="text-align:center;margin:32px 0;">
-          <a href="https://divu-client.vercel.app/activate?token=${token_hash}"
+          <a href="https://divu-client01.vercel.app/activate?token=${token_hash}"
              style="background:linear-gradient(90deg,#10b981 60%,#34d399 100%);
                     color:#fff;text-decoration:none;padding:16px 36px;border-radius:10px;
                     font-size:1.1rem;font-weight:700;box-shadow:0 2px 8px rgba(16,185,129,0.10);
