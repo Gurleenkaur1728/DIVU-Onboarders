@@ -4,15 +4,13 @@ import { CheckCircle, Circle, ChevronDown, ChevronRight } from "lucide-react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 
-// Small helpers
-const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+// Small helpers for ui
 const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "-");
 
 export default function Checklist() {
   // Current user identity used for filtering
   const me = useMemo(
     () => ({
-      // If you store your internal user/profile id, prefer it:
       profileId: localStorage.getItem("profile_id") || null,
       name: localStorage.getItem("profile_name") || "",
     }),
@@ -21,8 +19,8 @@ export default function Checklist() {
 
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
-  const [groups, setGroups] = useState([]); // [{id, name, items:[...] }]
-  const [expanded, setExpanded] = useState({}); // groupId -> bool
+  const [groups, setGroups] = useState([]); 
+  const [expanded, setExpanded] = useState({}); 
 
   useEffect(() => {
     load();
@@ -34,7 +32,7 @@ export default function Checklist() {
     setNotice("");
 
     try {
-      // Fallback: if profile_id is missing, try auth user id (only if your schema matches)
+      // Fallback: if profile_id is missing, try auth user id
       let userId = me.profileId;
       if (!userId) {
         const { data: auth } = await supabase.auth.getUser();
@@ -155,10 +153,14 @@ export default function Checklist() {
           </span>
         </div>
 
-        <div className="bg-emerald-950/90 px-4 py-3 rounded-md mb-4 shadow-md">
+        <div className="flex items-center justify-between bg-emerald-950/90 px-4 py-3 rounded-md mb-4 shadow-md">
           <h2 className="text-lg md:text-xl font-bold text-emerald-100 tracking-wide">
             ONBOARDING CHECKLIST
           </h2>
+            <div className="flex gap-2">
+            <Tab label="Checklist" active />
+            <Tab label="Modules" to="/modules" />
+          </div>
         </div>
 
         {notice && (
@@ -228,7 +230,6 @@ export default function Checklist() {
                                 </button>
                               </td>
 
-                              {/* title (optionally link to a module detail if you map it) */}
                               <td className="px-4 py-3">{it.title}</td>
 
                               {/* assigned_on */}
@@ -254,11 +255,42 @@ export default function Checklist() {
   );
 }
 
-/* ---------- UI bits ---------- */
+/* ---------- UI bits for table ---------- */
 function Th({ children, className = "" }) {
   return (
     <th className={`px-4 py-3 font-bold border-r border-emerald-800/50 ${className}`}>
       {children}
     </th>
+  );
+}
+
+function Tab({ label, active, to }) {
+  return to ? (
+    <Link
+      to={to}
+      replace={false}
+      className={`
+        px-4 py-1 rounded-md text-sm font-semibold transition-all duration-300
+        ${active
+          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
+        }
+      `}
+    >
+      {label}
+    </Link>
+  ) : (
+    <button
+      className={`
+        px-4 py-1 rounded-md text-sm font-semibold transition-all duration-300
+        ${active
+          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
+        }
+      `}
+      disabled
+    >
+      {label}
+    </button>
   );
 }
