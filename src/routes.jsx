@@ -3,6 +3,8 @@ import { createBrowserRouter } from "react-router-dom";
 // Auth pages
 import Login from "./app/(auth)/Login.jsx";
 import ForgotPassword from "./app/(auth)/ForgotPassword.jsx";
+import ActivateAccount from "./app/(auth)/ActivateAccount.jsx";
+import AuthCallback from "./app/(auth)/AuthCallback.jsx";
 
 // Main pages
 import Home from "./app/pages/Home.jsx";
@@ -27,6 +29,7 @@ import ManageModules from "./app/pages/admin/ManageModules.jsx";
 import ViewFeedback from "./app/pages/admin/ManageFeedback.jsx";
 import ViewProgress from "./app/pages/admin/ManageProgress.jsx";
 import ManageQuestions from "./app/pages/admin/ManageQuestions.jsx";
+import AssignTemplates from "./app/pages/admin/AssignTemplates.jsx";
 
 // Super Admin pages
 import ManageEmployees from "./app/pages/admin/super/ManageEmployees.jsx";
@@ -38,6 +41,8 @@ export const router = createBrowserRouter([
   // Auth
   { path: "/", element: <Login /> },
   { path: "/forgot", element: <ForgotPassword /> },
+  { path: "/activate", element: <ActivateAccount /> },
+  { path: "/auth/callback", element: <AuthCallback /> },
 
   // Main user pages
   { path: "/home", element: <Home /> },
@@ -65,6 +70,7 @@ export const router = createBrowserRouter([
   { path: "/admin/feedback", element: <ViewFeedback /> },
   { path: "/admin/progress", element: <ViewProgress /> },
   { path: "/admin/manage-questions", element: <ManageQuestions /> },
+  { path: "/admin/assign-templates", element: <AssignTemplates /> },
 
   // Super Admin pages
   { path: "/admin/super/manage-employees", element: <ManageEmployees /> },
