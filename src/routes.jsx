@@ -27,6 +27,7 @@ import ManageModules from "../app/pages/admin/ManageModules.jsx";
 import ViewFeedback from "../app/pages/admin/ManageFeedback.jsx";
 import ViewProgress from "../app/pages/admin/ManageProgress.jsx";
 import ManageQuestions from "../app/pages/admin/ManageQuestions.jsx";
+import AssignTemplates from "../app/pages/admin/AssignTemplates.jsx";
 
 // Super Admin pages
 import ManageEmployees from "../app/pages/admin/super/ManageEmployees.jsx";
@@ -67,6 +68,7 @@ export const router = createBrowserRouter([
   { path: "/admin/feedback", element: <ViewFeedback /> },
   { path: "/admin/progress", element: <ViewProgress /> },
   { path: "/admin/manage-questions", element: <ManageQuestions /> },
+  { path: "/admin/assign-templates", element: <AssignTemplates /> },
 
   // Super Admin pages
   { path: "/admin/super/manage-employees", element: <ManageEmployees /> },
