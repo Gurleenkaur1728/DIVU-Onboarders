@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
-import { supabase } from "../../src/lib/supabaseClient.js"; 
+import { supabase } from "../../supabaseClient"; 
 
 export default function Home() {
 

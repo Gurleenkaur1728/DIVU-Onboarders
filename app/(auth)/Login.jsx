@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
-import { supabase } from "../../src/lib/supabaseClient";
-import bcrypt from "bcryptjs";
+import { supabase } from "../../src/lib/supabaseClient.js";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
+  const [visualizePassword, setVisualizePassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -81,35 +82,6 @@ export default function Login() {
       // optional debug
       console.log("login:", { auth_id: user.id, profile_id: profileId, rid, rtxt, isAdmin });
 
-      let isValid = false;
-
-      // Case 1: Stored password looks like a bcrypt hash
-      if (
-        user.password.startsWith("$2a$") ||
-        user.password.startsWith("$2b$") ||
-        user.password.startsWith("$2y$")
-      ) {
-        isValid = await bcrypt.compare(password, user.password);
-      } else {
-        // Case 2: Legacy plain text password
-        isValid = password === user.password;
-
-        // If correct, upgrade to bcrypt immediately
-        if (isValid) {
-          const hashed = await bcrypt.hash(password, 10);
-          await supabase
-            .from("users")
-            .update({ password: hashed })
-            .eq("id", user.id);
-        }
-      }
-
-      if (!isValid) {
-        setErr("Invalid email or password. Please try again.");
-        return;
-      }
-
-    
     } catch (error) {
       console.error("Login error:", error);
       setErr("An unexpected error occurred. Please try again.");
@@ -117,6 +89,10 @@ export default function Login() {
     }
 
   };
+
+  const togglePasswordVisibility = () => {
+    setVisualizePassword((prev) => !prev);
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-800">
@@ -139,7 +115,7 @@ export default function Login() {
           <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
             {/* Logo */}
             <div className="flex justify-center mb-8">
-              <div className="p-4 rounded-full bg-gradient-to-r from-emerald-400/20 to-blue-400/20 backdrop-blur-sm">
+              <div className="p-4 rounded-full from-emerald-400/20 to-blue-400/20 ">
                 <Logo />
               </div>
             </div>
@@ -165,16 +141,29 @@ export default function Login() {
 
               {/* Password */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-emerald-200/90">
+                <label className="block text-sm font-medium text-emerald-200/90 ">
                   Password
                 </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className="w-full rounded-xl border border-white/30 bg-white/5 backdrop-blur-sm px-4 py-3 text-white placeholder-white/50 outline-none focus:border-emerald-400/60 focus:bg-white/10 focus:ring-2 focus:ring-emerald-400/20"
-                />
+                <div className="relative">
+                    <input
+                      type={visualizePassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      className="w-full rounded-xl border border-white/30 bg-white/5 backdrop-blur-sm px-4 pr-10 py-3 text-white placeholder-white/50 outline-none focus:border-emerald-400/60 focus:bg-white/10 focus:ring-2 focus:ring-emerald-400/20"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={togglePasswordVisibility}
+                      aria-label={visualizePassword ? "Hide password" : "Show password"}
+                      aria-pressed={visualizePassword}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+                    >
+                      {visualizePassword ? <Eye /> : <EyeOff />}
+                    </button>
+                  </div>
               </div>
 
               {/* Error */}
