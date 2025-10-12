@@ -1,3 +1,5 @@
+//chatgpt prompt -Can  go through the return() section of my AddEmployee.jsx file and explain how the form, tabs, and recent invitations table are being displayed? I want to make sure I understand how it switches between them.
+//My AddEmployee page runs fine but I’m a bit confused — when I click ‘Send Invitation Link’, it sends the email and also updates Supabase. Can you help me understand what’s happening in handleSubmit?
 import { useState, useEffect } from "react";
 import Sidebar, { ROLES } from "../../../components/Sidebar.jsx";
 import { Send, RefreshCcw, XCircle } from "lucide-react";
