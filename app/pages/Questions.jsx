@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { HelpCircle, Send, MessageSquare } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient.js";
@@ -110,7 +110,7 @@ export default function Questions() {
       return;
     }
 
-    // optimistic add (realtime will also refresh)
+    // realtime will also refresh
     setMyQuestions((prev) => [
       {
         id: data.id,

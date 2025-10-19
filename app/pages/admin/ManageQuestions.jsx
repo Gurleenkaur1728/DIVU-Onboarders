@@ -4,7 +4,7 @@ import { Pencil, Trash2, User, PlusCircle, X, MessageSquare } from "lucide-react
 import { supabase } from "../../../src/lib/supabaseClient";
 
 export default function ManageQuestions() {
-  // Role
+  // detect role for sidebar (doesn't affect RLS)
   const [role, setRole] = useState(() => {
     const stored = localStorage.getItem("role_id");
     return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
@@ -14,15 +14,20 @@ export default function ManageQuestions() {
     if (stored !== null) setRole(parseInt(stored, 10));
   }, []);
 
-  const [tab, setTab] = useState("faqs");
+  const [tab, setTab] = useState("employee");
 
-  /* ===== FAQs state ===== */
+  // ---- FAQs state ----
   const [faqs, setFaqs] = useState([]);
   const [newQ, setNewQ] = useState("");
   const [newA, setNewA] = useState("");
   const [editingFaq, setEditingFaq] = useState(null);
 
-  /* ===== Load FAQs + realtime ===== */
+  // ---- Employee questions state ----
+  const [employeeQuestions, setEmployeeQuestions] = useState([]);
+  const [answeringQ, setAnsweringQ] = useState(null);
+  const [answerText, setAnswerText] = useState("");
+
+  /* ================= FAQs ================ */
   useEffect(() => {
     let ignore = false;
 
@@ -31,17 +36,19 @@ export default function ManageQuestions() {
         .from("faqs")
         .select("id, question, answer, is_published, created_at, updated_at")
         .order("created_at", { ascending: false });
-
-      if (!ignore) {
-        if (error) console.error(error);
-        setFaqs(data ?? []);
-      }
+      if (error) console.error(error);
+      if (!ignore) setFaqs(data ?? []);
     };
 
     loadFaqs();
+
     const ch = supabase
       .channel("faqs-admin")
-      .on("postgres_changes", { event: "*", schema: "public", table: "faqs" }, loadFaqs)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "faqs" },
+        loadFaqs
+      )
       .subscribe();
 
     return () => {
@@ -50,7 +57,6 @@ export default function ManageQuestions() {
     };
   }, []);
 
-  /* ===== FAQ CRUD ===== */
   const addFaq = async () => {
     if (!newQ.trim() || !newA.trim()) return;
     const { error } = await supabase
@@ -77,28 +83,40 @@ export default function ManageQuestions() {
     setEditingFaq(null);
   };
 
-  /* ===== Employee questions ===== */
-  const [employeeQuestions, setEmployeeQuestions] = useState([]);
-
+  /* ============== Employee Questions ============== */
   useEffect(() => {
     let ignore = false;
 
     const load = async () => {
+      // joins users via foreignTable to show name/email
       const { data, error } = await supabase
         .from("user_questions")
         .select(`
-          id, question_text, answer_text, status, created_at, answered_by,
-          profiles:user_id ( full_name, email )
+          id,
+          question_text,
+          answer_text,
+          status,
+          created_at,
+          answered_by,
+          users:user_id (
+            name,
+            email
+          )
         `)
         .order("created_at", { ascending: false });
 
+      if (error) {
+        console.error(error);
+        if (!ignore) setEmployeeQuestions([]);
+        return;
+      }
+
       if (!ignore) {
-        if (error) console.error(error);
         setEmployeeQuestions(
           (data ?? []).map((r) => ({
             id: r.id,
-            name: r.profiles?.full_name ?? "Employee",
-            email: r.profiles?.email ?? "N/A",
+            name: r.users?.name ?? "Employee",
+            email: r.users?.email ?? "",
             question: r.question_text,
             answer: r.answer_text,
             status: r.status,
@@ -108,32 +126,30 @@ export default function ManageQuestions() {
     };
 
     load();
-    const ch = supabase
+
+    const channel = supabase
       .channel("uq-admin")
-      .on("postgres_changes", { event: "*", schema: "public", table: "user_questions" }, load)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_questions" },
+        load
+      )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(ch);
+      supabase.removeChannel(channel);
       ignore = true;
     };
   }, []);
 
-  // Answer modal
-  const [answeringQ, setAnsweringQ] = useState(null);
-  const [answerText, setAnswerText] = useState("");
-
   const saveAnswer = async () => {
     if (!answeringQ) return;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    const { data: auth } = await supabase.auth.getUser();
     const payload = {
       answer_text: answerText.trim(),
       status: "answered",
-      answered_by: user?.id ?? null,
+      answered_by: auth?.user?.id ?? null, // safe if session missing
     };
 
     const { data, error } = await supabase
@@ -145,22 +161,27 @@ export default function ManageQuestions() {
 
     if (error) return alert(error.message);
 
+    // local update; realtime will also refresh
     setEmployeeQuestions((prev) =>
-      prev.map((q) => (q.id === data.id ? { ...q, answer: data.answer_text, status: data.status } : q))
+      prev.map((q) =>
+        q.id === data.id ? { ...q, answer: data.answer_text, status: data.status } : q
+      )
     );
-    setAnsweringQ(null);
     setAnswerText("");
+    setAnsweringQ(null);
   };
 
-  // ⬇⬇⬇ NEW: top-level delete handler (so the button can call it)
   const deleteQuestion = async (id) => {
+    const ok = confirm("Delete this question?");
+    if (!ok) return;
     const { error } = await supabase.from("user_questions").delete().eq("id", id);
     if (error) return alert(error.message);
     setEmployeeQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
+  /* ================= Render ================= */
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+    <div className="flex min-h-dvh bg-cover bg-center" style={{ backgroundImage: "url('/bg.png')" }}>
       <Sidebar role={role} active="manage-questions" />
 
       <div className="flex-1 flex flex-col p-6">
@@ -168,7 +189,7 @@ export default function ManageQuestions() {
           <span className="text-emerald-950 font-semibold">Admin Panel – Manage Questions</span>
         </div>
 
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
+        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
           MANAGE QUESTIONS
         </div>
 
@@ -233,20 +254,10 @@ export default function ManageQuestions() {
 
 /* ---------- Subcomponents ---------- */
 function FaqsTab({
-  faqs,
-  newQ,
-  newA,
-  setNewQ,
-  setNewA,
-  addFaq,
-  deleteFaq,
-  editingFaq,
-  setEditingFaq,
-  saveEditFaq,
+  faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, setEditingFaq,
 }) {
   return (
     <div className="space-y-6">
-      {/* Add new FAQ */}
       <div className="bg-emerald-900/90 text-emerald-100 rounded-lg shadow-lg p-4 border border-emerald-400/60 space-y-3">
         <h3 className="font-bold flex items-center gap-2">
           <PlusCircle size={18} className="text-emerald-300" /> Add New FAQ
@@ -273,7 +284,6 @@ function FaqsTab({
         </button>
       </div>
 
-      {/* List FAQs */}
       <div className="space-y-4">
         {faqs.map((faq) => (
           <div key={faq.id} className="bg-emerald-900/80 text-emerald-100 rounded-lg shadow-lg p-4 border border-emerald-400/40">
@@ -301,7 +311,7 @@ function FaqsTab({
 function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ, deleteQuestion }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-emerald-400/70 shadow-lg bg-white">
-      <table className="min-w-[600px] w-full border-collapse">
+      <table className="min-w-[700px] w-full border-collapse">
         <thead>
           <tr className="bg-emerald-900/95 text-left text-emerald-100">
             <Th>Employee</Th>
@@ -311,10 +321,16 @@ function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ, deleteQuestion
           </tr>
         </thead>
         <tbody>
-          {employeeQuestions.map((q, idx) => (
+          {employeeQuestions.length === 0 ? (
+            <tr><td className="px-4 py-4 text-gray-500 italic" colSpan={4}>No employee questions yet.</td></tr>
+          ) : employeeQuestions.map((q, idx) => (
             <tr key={q.id} className={`text-emerald-950 text-sm ${idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"}`}>
               <td className="px-4 py-3 flex items-center gap-2">
-                <User size={16} className="text-emerald-300" /> {q.name}
+                <User size={16} className="text-emerald-300" />
+                <div className="leading-tight">
+                  <div className="font-medium">{q.name}</div>
+                  <div className="text-xs text-gray-500">{q.email}</div>
+                </div>
               </td>
               <td className="px-4 py-3">{q.question}</td>
               <td className="px-4 py-3">
@@ -342,6 +358,7 @@ function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ, deleteQuestion
   );
 }
 
+/* ---------- tiny bits ---------- */
 function Modal({ title, onClose, onSave, children }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -365,8 +382,9 @@ function Tab({ label, active, onClick }) {
     <button
       onClick={onClick}
       className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-300 ${
-        active ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-               : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
+        active
+          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
       }`}
     >
       {label}
