@@ -17,7 +17,6 @@ import {
   Shield,
   UserPlus,
   ClipboardCheck,
-  UserCheckIcon,
 } from "lucide-react";
 
 // Example role IDs (match your DB)
@@ -137,15 +136,12 @@ export default function Sidebar({ role }) {
                 <Item icon={UserPlus} label="Add Employee" route="/admin/super/add-employee" isActive={location.pathname === "/admin/super/add-employee"} collapsed={collapsed}/>
                 <Item icon={Shield} label="Manage Admins" route="/admin/super/manage-admins" isActive={location.pathname === "/admin/super/manage-admins"} collapsed={collapsed}/>
                 <Item icon={ClipboardCheck} label="Admin Requests" route="/admin/super/admin-requests" isActive={location.pathname === "/admin/super/admin-requests"} collapsed={collapsed}/>
-                <Item icon={ClipboardCheck} label="Employee Requests" route="/admin/super/access-requests" isActive={location.pathname === "/admin/super/access-requests"} collapsed={collapsed}/>
-                <Item icon={Shield} label="Records" route="/admin/super/records" isActive={location.pathname === "/admin/super/records"} collapsed={collapsed}/>
                 {/* Divider below admin requests */}
                 <div className="mx-4 my-2 h-[1px] bg-emerald-700/40" />
               </>
             )}
             <Item icon={FileEdit} label="Manage Content" route="/admin/content" isActive={location.pathname === "/admin/content"} collapsed={collapsed}/>
             <Item icon={ListChecks} label="Manage Checklist" route="/admin/checklist" isActive={location.pathname === "/admin/checklist"} collapsed={collapsed}/>
-            <Item icon={UserCheckIcon} label="Assign Templates" route="/admin/assign-templates" isActive={location.pathname === "/admin/assign-templates"} collapsed={collapsed}/>
             <Item icon={BookOpen} label="Manage Modules" route="/admin/modules" isActive={location.pathname === "/admin/modules"} collapsed={collapsed}/>
             <Item icon={MessageSquare} label="View Feedback" route="/admin/feedback" isActive={location.pathname === "/admin/feedback"} collapsed={collapsed}/>
             <Item icon={BarChart2} label="View Progress" route="/admin/progress" isActive={location.pathname === "/admin/progress"} collapsed={collapsed}/>
