@@ -1,74 +1,243 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
-import { Menu, AppWindow } from "lucide-react";
+import { supabase } from "../../../src/lib/supabaseClient.js";
+import { Upload } from "lucide-react";
 
 export default function ManageContent() {
-  // Dynamically detect role from localStorage (fallback to ADMIN)
-  const [role, setRole] = useState(() => {
-    const stored = localStorage.getItem("role_id");
-    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
-  });
-  useEffect(() => {
-    const stored = localStorage.getItem("role_id");
-    if (stored !== null) setRole(parseInt(stored, 10));
-  }, []);
   const [activeTab, setActiveTab] = useState("welcome");
+  const [content, setContent] = useState({
+    title: "",
+    subtitle: "",
+    media_url: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  // 🧭 Load content whenever the active tab changes
+  useEffect(() => {
+    if (activeTab) loadContent(activeTab);
+  }, [activeTab]);
+
+  // ✅ Fetch content from Supabase for the current tab
+  async function loadContent(tab) {
+    setLoading(true);
+    setMessage("");
+
+    const section =
+      tab === "welcome" ? "hero" : tab === "culture" ? "culture" : "about";
+
+    const { data, error } = await supabase
+      .from("home_content")
+      .select("*")
+      .eq("section", section)
+      .eq("sort_order", 0)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      setMessage("⚠️ Failed to load content.");
+    } else if (data) {
+      setContent(data);
+    } else {
+      setContent({ title: "", subtitle: "", media_url: "" });
+    }
+
+    setLoading(false);
+  }
+
+  // ✅ Handle image upload (Supabase Storage)
+  async function handleUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const filePath = `${activeTab}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("assets")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error(uploadError);
+      setMessage("⚠️ Image upload failed.");
+      return;
+    }
+
+    const { data } = supabase.storage
+      .from("assets")
+      .getPublicUrl(filePath);
+
+    setContent((prev) => ({ ...prev, media_url: data.publicUrl }));
+    setMessage("✅ Image uploaded successfully!");
+  }
+
+  // ✅ Save updated content back to Supabase
+  async function saveContent() {
+    setLoading(true);
+    setMessage("");
+
+    const section =
+      activeTab === "welcome" ? "hero" : activeTab === "culture" ? "culture" : "about";
+
+    // Check if the record already exists
+    const { data: existing } = await supabase
+      .from("home_content")
+      .select("id")
+      .eq("section", section)
+      .eq("sort_order", 0)
+      .maybeSingle();
+
+    let result;
+    if (existing) {
+      // Update existing
+      result = await supabase
+        .from("home_content")
+        .update({
+          title: content.title,
+          subtitle: content.subtitle,
+          media_url: content.media_url,
+        })
+        .eq("id", existing.id);
+    } else {
+      // Insert new
+      result = await supabase.from("home_content").insert([
+        {
+          section,
+          sort_order: 0,
+          title: content.title,
+          subtitle: content.subtitle,
+          media_url: content.media_url,
+        },
+      ]);
+    }
+
+    if (result.error) {
+      console.error(result.error);
+      setMessage("⚠️ Failed to save changes.");
+    } else {
+      setMessage(
+        `✅ ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} content updated successfully!`
+      );
+    }
+
+    setLoading(false);
+  }
 
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      {/* Sidebar now uses detected role */}
-      <Sidebar active="manage-content" role={role} />
+    <div
+      className="flex min-h-dvh bg-cover bg-center relative"
+      style={{ backgroundImage: "url('/bg.png')" }}
+    >
+      <Sidebar active="manage-content" role={ROLES.ADMIN} />
 
-      {/* Main */}
       <div className="flex-1 flex flex-col p-6">
         {/* Ribbon */}
-        <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-3 shadow">
-          <div className="flex items-center gap-2">
-            <Menu className="w-5 h-5 text-emerald-900" />
-            <span className="text-emerald-950 font-semibold">
-              Welcome &lt;Admin&gt; to DIVU!
-            </span>
-          </div>
-          <AppWindow className="w-5 h-5 text-emerald-900" />
+        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
+          <span className="font-semibold text-emerald-950">
+            Admin – Manage Content
+          </span>
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-900/95 text-white font-extrabold rounded-xl px-6 py-4 shadow-lg border border-emerald-400/70 text-2xl mb-4 tracking-wide drop-shadow-lg">
+        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
           MANAGE CONTENT
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mt-4">
-          <Tab label="Welcome" active={activeTab === "welcome"} onClick={() => setActiveTab("welcome")} />
-          <Tab label="Culture" active={activeTab === "culture"} onClick={() => setActiveTab("culture")} />
-          <Tab label="About" active={activeTab === "about"} onClick={() => setActiveTab("about")} />
+        <div className="flex gap-2 mb-6">
+          <Tab
+            label="Welcome"
+            active={activeTab === "welcome"}
+            onClick={() => setActiveTab("welcome")}
+          />
+          <Tab
+            label="Culture"
+            active={activeTab === "culture"}
+            onClick={() => setActiveTab("culture")}
+          />
+          <Tab
+            label="About"
+            active={activeTab === "about"}
+            onClick={() => setActiveTab("about")}
+          />
         </div>
 
-        {/* Body */}
-        <div className="mt-6">
-          {activeTab === "welcome" && (
-            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 text-white rounded-2xl shadow-2xl p-10 border border-emerald-400/70 space-y-6 relative overflow-hidden">
-              <div className="absolute right-8 bottom-8 opacity-10 pointer-events-none select-none">
-                <img src="/divu-logo.png" alt="DIVU Logo" className="w-40" />
-              </div>
-              <WelcomeEditor />
+        {/* Content Editor */}
+        <div className="bg-white rounded-xl p-6 shadow-lg max-w-3xl">
+          <h3 className="font-bold text-lg mb-4 text-emerald-900">
+            {activeTab === "welcome"
+              ? "Homepage Hero Section"
+              : activeTab === "culture"
+              ? "Culture Page Section"
+              : "About Page Section"}
+          </h3>
+
+          {/* Title Field */}
+          <label className="block mb-4">
+            <span className="font-semibold text-emerald-900">Title</span>
+            <input
+              type="text"
+              value={content.title}
+              onChange={(e) => setContent({ ...content, title: e.target.value })}
+              placeholder="Enter title"
+              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-400"
+            />
+          </label>
+
+          {/* Subtitle / Body Field */}
+          <label className="block mb-4">
+            <span className="font-semibold text-emerald-900">
+              {activeTab === "welcome" ? "Subtitle" : "Body Text"}
+            </span>
+            <textarea
+              rows="4"
+              value={content.subtitle}
+              onChange={(e) =>
+                setContent({ ...content, subtitle: e.target.value })
+              }
+              placeholder="Enter description text"
+              className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-400"
+            />
+          </label>
+
+          {/* Image Upload Field */}
+          <div className="mb-4">
+            <span className="font-semibold text-emerald-900">Image Upload</span>
+            <div className="flex items-center gap-3 mt-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleUpload}
+                className="cursor-pointer"
+              />
+              {content.media_url && (
+                <img
+                  src={content.media_url}
+                  alt="preview"
+                  className="w-32 h-20 object-cover rounded border"
+                />
+              )}
             </div>
-          )}
-          {activeTab === "culture" && (
-            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 text-white rounded-2xl shadow-2xl p-10 border border-emerald-400/70 space-y-6 relative overflow-hidden">
-              <div className="absolute right-8 bottom-8 opacity-10 pointer-events-none select-none">
-                <img src="/divu-logo.png" alt="DIVU Logo" className="w-40" />
-              </div>
-              <CultureEditor />
-            </div>
-          )}
-          {activeTab === "about" && (
-            <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 text-white rounded-2xl shadow-2xl p-10 border border-emerald-400/70 space-y-6 relative overflow-hidden">
-              <div className="absolute right-8 bottom-8 opacity-10 pointer-events-none select-none">
-                <img src="/divu-logo.png" alt="DIVU Logo" className="w-40" />
-              </div>
-              <AboutEditor />
-            </div>
+          </div>
+
+          {/* Save Button */}
+          <button
+            onClick={saveContent}
+            disabled={loading}
+            className="px-6 py-2 bg-emerald-600 text-white font-semibold rounded hover:bg-emerald-700 transition"
+          >
+            {loading ? "Saving..." : "Save Changes"}
+          </button>
+
+          {/* Message */}
+          {message && (
+            <p
+              className={`mt-4 font-medium ${
+                message.includes("⚠️")
+                  ? "text-red-600"
+                  : "text-emerald-700"
+              }`}
+            >
+              {message}
+            </p>
           )}
         </div>
       </div>
@@ -76,142 +245,17 @@ export default function ManageContent() {
   );
 }
 
-/* -------- TABS -------- */
 function Tab({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`
-        px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300
-        ${active
+      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+        active
           ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700"}
-      `}
+          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700"
+      }`}
     >
       {label}
     </button>
-  );
-}
-
-/* -------- WELCOME TAB -------- */
-function WelcomeEditor() {
-  const [title, setTitle] = useState("Welcome to DIVU");
-  const [subtitle, setSubtitle] = useState("Your onboarding journey starts here.");
-  const [backgroundImage, setBackgroundImage] = useState("/bg.png");
-
-  return (
-    <div className="bg-emerald-50/90 rounded-lg p-6 shadow space-y-4">
-      <h2 className="text-lg font-bold text-emerald-900 mb-2">Edit Welcome Section</h2>
-
-      <label className="block text-sm font-medium text-emerald-800">Title</label>
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <label className="block text-sm font-medium text-emerald-800">Subtitle</label>
-      <input
-        type="text"
-        value={subtitle}
-        onChange={(e) => setSubtitle(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <label className="block text-sm font-medium text-emerald-800">Background Image</label>
-      <input
-        type="text"
-        value={backgroundImage}
-        onChange={(e) => setBackgroundImage(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <button className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-md shadow hover:bg-emerald-700">
-        Save Changes
-      </button>
-    </div>
-  );
-}
-
-/* -------- CULTURE TAB -------- */
-function CultureEditor() {
-  const [heading, setHeading] = useState("Our Culture");
-  const [description, setDescription] = useState("Lorem ipsum dolor sit amet...");
-  const [videoUrl, setVideoUrl] = useState("/culture.mp4");
-
-  return (
-    <div className="bg-emerald-50/90 rounded-lg p-6 shadow space-y-4">
-      <h2 className="text-lg font-bold text-emerald-900 mb-2">Edit Culture Section</h2>
-
-      <label className="block text-sm font-medium text-emerald-800">Heading</label>
-      <input
-        type="text"
-        value={heading}
-        onChange={(e) => setHeading(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <label className="block text-sm font-medium text-emerald-800">Description</label>
-      <textarea
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        rows="4"
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <label className="block text-sm font-medium text-emerald-800">Video URL</label>
-      <input
-        type="text"
-        value={videoUrl}
-        onChange={(e) => setVideoUrl(e.target.value)}
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <button className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-md shadow hover:bg-emerald-700">
-        Save Changes
-      </button>
-    </div>
-  );
-}
-
-/* -------- ABOUT TAB -------- */
-function AboutEditor() {
-  const [mission, setMission] = useState("Deliver outstanding employee experiences...");
-  const [values, setValues] = useState("Put people first, Communicate clearly, Own the outcome...");
-  const [howWeWork, setHowWeWork] = useState("We bias toward action, document decisions, and keep feedback loops short...");
-
-  return (
-    <div className="bg-emerald-50/90 rounded-lg p-6 shadow space-y-4">
-      <h2 className="text-lg font-bold text-emerald-900 mb-2">Edit About Section</h2>
-
-      <label className="block text-sm font-medium text-emerald-800">Mission</label>
-      <textarea
-        value={mission}
-        onChange={(e) => setMission(e.target.value)}
-        rows="2"
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <label className="block text-sm font-medium text-emerald-800">Values</label>
-      <textarea
-        value={values}
-        onChange={(e) => setValues(e.target.value)}
-        rows="2"
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <label className="block text-sm font-medium text-emerald-800">How We Work</label>
-      <textarea
-        value={howWeWork}
-        onChange={(e) => setHowWeWork(e.target.value)}
-        rows="3"
-        className="w-full rounded-md border border-emerald-300 px-3 py-2 text-emerald-900 bg-white placeholder-emerald-400"
-      />
-
-      <button className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-md shadow hover:bg-emerald-700">
-        Save Changes
-      </button>
-    </div>
   );
 }
