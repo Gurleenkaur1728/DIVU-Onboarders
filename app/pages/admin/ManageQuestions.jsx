@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import Sidebar, {ROLES} from "../../components/Sidebar.jsx";
+import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import { Pencil, Trash2, User, PlusCircle, X, MessageSquare } from "lucide-react";
+import { supabase } from "../../../src/lib/supabaseClient";
 
 export default function ManageQuestions() {
-  // Dynamically detect role from localStorage (fallback to ADMIN)
+  // Role
   const [role, setRole] = useState(() => {
     const stored = localStorage.getItem("role_id");
     return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
@@ -14,80 +15,168 @@ export default function ManageQuestions() {
   }, []);
 
   const [tab, setTab] = useState("faqs");
-  const [faqs, setFaqs] = useState([
-    { id: 1, question: "How do I reset my password?", answer: "Go to your account settings and click reset password." },
-    { id: 2, question: "Where can I find the employee handbook?", answer: "It is available under the 'Resources' section on the home page." },
-    { id: 3, question: "What is the probation period?", answer: "The probation period is 3 months from your joining date." },
-  ]);
 
-  const [employeeQuestions, setEmployeeQuestions] = useState([
-    { id: 1, name: "John Doe", question: "Will there be training for the new software?", answer: null },
-    { id: 2, name: "Jane Smith", question: "Can I take leave during probation?", answer: null },
-    { id: 3, name: "Michael Lee", question: "Who should I contact for payroll issues?", answer: null },
-  ]);
-
+  /* ===== FAQs state ===== */
+  const [faqs, setFaqs] = useState([]);
   const [newQ, setNewQ] = useState("");
   const [newA, setNewA] = useState("");
   const [editingFaq, setEditingFaq] = useState(null);
 
-  // Answer modal state
+  /* ===== Load FAQs + realtime ===== */
+  useEffect(() => {
+    let ignore = false;
+
+    const loadFaqs = async () => {
+      const { data, error } = await supabase
+        .from("faqs")
+        .select("id, question, answer, is_published, created_at, updated_at")
+        .order("created_at", { ascending: false });
+
+      if (!ignore) {
+        if (error) console.error(error);
+        setFaqs(data ?? []);
+      }
+    };
+
+    loadFaqs();
+    const ch = supabase
+      .channel("faqs-admin")
+      .on("postgres_changes", { event: "*", schema: "public", table: "faqs" }, loadFaqs)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ch);
+      ignore = true;
+    };
+  }, []);
+
+  /* ===== FAQ CRUD ===== */
+  const addFaq = async () => {
+    if (!newQ.trim() || !newA.trim()) return;
+    const { error } = await supabase
+      .from("faqs")
+      .insert({ question: newQ.trim(), answer: newA.trim(), is_published: true });
+    if (error) return alert(error.message);
+    setNewQ("");
+    setNewA("");
+  };
+
+  const deleteFaq = async (id) => {
+    const { error } = await supabase.from("faqs").delete().eq("id", id);
+    if (error) alert(error.message);
+  };
+
+  const saveEditFaq = async () => {
+    if (!editingFaq) return;
+    const { id, question, answer } = editingFaq;
+    const { error } = await supabase
+      .from("faqs")
+      .update({ question: question.trim(), answer: answer.trim() })
+      .eq("id", id);
+    if (error) return alert(error.message);
+    setEditingFaq(null);
+  };
+
+  /* ===== Employee questions ===== */
+  const [employeeQuestions, setEmployeeQuestions] = useState([]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("user_questions")
+        .select(`
+          id, question_text, answer_text, status, created_at, answered_by,
+          profiles:user_id ( full_name, email )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (!ignore) {
+        if (error) console.error(error);
+        setEmployeeQuestions(
+          (data ?? []).map((r) => ({
+            id: r.id,
+            name: r.profiles?.full_name ?? "Employee",
+            email: r.profiles?.email ?? "N/A",
+            question: r.question_text,
+            answer: r.answer_text,
+            status: r.status,
+          }))
+        );
+      }
+    };
+
+    load();
+    const ch = supabase
+      .channel("uq-admin")
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_questions" }, load)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ch);
+      ignore = true;
+    };
+  }, []);
+
+  // Answer modal
   const [answeringQ, setAnsweringQ] = useState(null);
   const [answerText, setAnswerText] = useState("");
 
-  /* ----- FAQ Functions ----- */
-  const addFaq = () => {
-    if (!newQ.trim() || !newA.trim()) return;
-    const newFaq = { id: faqs.length + 1, question: newQ, answer: newA };
-    setFaqs((prev) => [...prev, newFaq]);
-    setNewQ(""); setNewA("");
+  const saveAnswer = async () => {
+    if (!answeringQ) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const payload = {
+      answer_text: answerText.trim(),
+      status: "answered",
+      answered_by: user?.id ?? null,
+    };
+
+    const { data, error } = await supabase
+      .from("user_questions")
+      .update(payload)
+      .eq("id", answeringQ.id)
+      .select("id, answer_text, status")
+      .single();
+
+    if (error) return alert(error.message);
+
+    setEmployeeQuestions((prev) =>
+      prev.map((q) => (q.id === data.id ? { ...q, answer: data.answer_text, status: data.status } : q))
+    );
+    setAnsweringQ(null);
+    setAnswerText("");
   };
 
-  const deleteFaq = (id) => setFaqs((prev) => prev.filter((f) => f.id !== id));
-
-  const saveEditFaq = () => {
-    if (editingFaq) {
-      setFaqs((prev) => prev.map((f) => (f.id === editingFaq.id ? editingFaq : f)));
-      setEditingFaq(null);
-    }
-  };
-
-  /* ----- Employee Question Answer ----- */
-  const saveAnswer = () => {
-    if (answeringQ) {
-      setEmployeeQuestions((prev) =>
-        prev.map((q) => (q.id === answeringQ.id ? { ...q, answer: answerText } : q))
-      );
-      setAnsweringQ(null);
-      setAnswerText("");
-    }
+  // ⬇⬇⬇ NEW: top-level delete handler (so the button can call it)
+  const deleteQuestion = async (id) => {
+    const { error } = await supabase.from("user_questions").delete().eq("id", id);
+    if (error) return alert(error.message);
+    setEmployeeQuestions((prev) => prev.filter((q) => q.id !== id));
   };
 
   return (
     <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      {/* Sidebar now uses detected role */}
       <Sidebar role={role} active="manage-questions" />
 
-      {/* Main */}
       <div className="flex-1 flex flex-col p-6">
-        {/* Ribbon */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
-          <span className="text-emerald-950 font-semibold">
-            Admin Panel – Manage Questions
-          </span>
+          <span className="text-emerald-950 font-semibold">Admin Panel – Manage Questions</span>
         </div>
 
-        {/* Title */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
+        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
           MANAGE QUESTIONS
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-2 mb-6">
           <Tab label="FAQs" active={tab === "faqs"} onClick={() => setTab("faqs")} />
           <Tab label="Employee Questions" active={tab === "employee"} onClick={() => setTab("employee")} />
         </div>
 
-        {/* Content */}
         {tab === "faqs" ? (
           <FaqsTab
             faqs={faqs}
@@ -105,11 +194,11 @@ export default function ManageQuestions() {
           <EmployeeQuestionsTab
             employeeQuestions={employeeQuestions}
             setAnsweringQ={setAnsweringQ}
+            deleteQuestion={deleteQuestion}
           />
         )}
       </div>
 
-      {/* Edit FAQ Modal */}
       {editingFaq && (
         <Modal title="Edit FAQ" onClose={() => setEditingFaq(null)} onSave={saveEditFaq}>
           <input
@@ -127,7 +216,6 @@ export default function ManageQuestions() {
         </Modal>
       )}
 
-      {/* Answer Question Modal */}
       {answeringQ && (
         <Modal title={`Answer: ${answeringQ.question}`} onClose={() => setAnsweringQ(null)} onSave={saveAnswer}>
           <textarea
@@ -144,10 +232,21 @@ export default function ManageQuestions() {
 }
 
 /* ---------- Subcomponents ---------- */
-function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, editingFaq, setEditingFaq, saveEditFaq }) {
+function FaqsTab({
+  faqs,
+  newQ,
+  newA,
+  setNewQ,
+  setNewA,
+  addFaq,
+  deleteFaq,
+  editingFaq,
+  setEditingFaq,
+  saveEditFaq,
+}) {
   return (
     <div className="space-y-6">
-      {/* Add new FAQ form */}
+      {/* Add new FAQ */}
       <div className="bg-emerald-900/90 text-emerald-100 rounded-lg shadow-lg p-4 border border-emerald-400/60 space-y-3">
         <h3 className="font-bold flex items-center gap-2">
           <PlusCircle size={18} className="text-emerald-300" /> Add New FAQ
@@ -174,7 +273,7 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, editin
         </button>
       </div>
 
-      {/* Existing FAQs */}
+      {/* List FAQs */}
       <div className="space-y-4">
         {faqs.map((faq) => (
           <div key={faq.id} className="bg-emerald-900/80 text-emerald-100 rounded-lg shadow-lg p-4 border border-emerald-400/40">
@@ -184,16 +283,10 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, editin
                 <p className="text-sm text-emerald-200/80 mt-1">{faq.answer}</p>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={() => setEditingFaq({ ...faq })}
-                  className="p-2 rounded-md bg-emerald-700 hover:bg-emerald-600"
-                >
+                <button onClick={() => setEditingFaq({ ...faq })} className="p-2 rounded-md bg-emerald-700 hover:bg-emerald-600">
                   <Pencil size={16} />
                 </button>
-                <button
-                  onClick={() => deleteFaq(faq.id)}
-                  className="p-2 rounded-md bg-red-600 hover:bg-red-500"
-                >
+                <button onClick={() => deleteFaq(faq.id)} className="p-2 rounded-md bg-red-600 hover:bg-red-500">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -205,7 +298,7 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, editin
   );
 }
 
-function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ }) {
+function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ, deleteQuestion }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-emerald-400/70 shadow-lg bg-white">
       <table className="min-w-[600px] w-full border-collapse">
@@ -219,29 +312,26 @@ function EmployeeQuestionsTab({ employeeQuestions, setAnsweringQ }) {
         </thead>
         <tbody>
           {employeeQuestions.map((q, idx) => (
-            <tr
-              key={q.id}
-              className={`text-emerald-950 text-sm ${
-                idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"
-              }`}
-            >
+            <tr key={q.id} className={`text-emerald-950 text-sm ${idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"}`}>
               <td className="px-4 py-3 flex items-center gap-2">
                 <User size={16} className="text-emerald-300" /> {q.name}
               </td>
               <td className="px-4 py-3">{q.question}</td>
               <td className="px-4 py-3">
-                {q.answer ? (
-                  <span className="text-emerald-700 font-medium">{q.answer}</span>
-                ) : (
-                  <span className="text-gray-400 italic">No answer yet</span>
-                )}
+                {q.answer ? <span className="text-emerald-700 font-medium">{q.answer}</span> : <span className="text-gray-400 italic">No answer yet</span>}
               </td>
-              <td className="px-4 py-3">
+              <td className="px-4 py-3 flex gap-2">
                 <button
                   onClick={() => setAnsweringQ(q)}
                   className="flex items-center gap-1 px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white"
                 >
                   <MessageSquare size={14} /> Answer
+                </button>
+                <button
+                  onClick={() => deleteQuestion(q.id)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-xs font-semibold text-white"
+                >
+                  <Trash2 size={14} /> Delete
                 </button>
               </td>
             </tr>
@@ -256,27 +346,14 @@ function Modal({ title, onClose, onSave, children }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="w-full max-w-md bg-emerald-950/95 text-white rounded-xl shadow-lg border border-emerald-700 backdrop-blur-xl p-6 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 p-2 rounded-full bg-emerald-700/50 hover:bg-emerald-600"
-        >
+        <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-emerald-700/50 hover:bg-emerald-600">
           <X size={18} />
         </button>
         <h2 className="text-lg font-bold mb-4">{title}</h2>
         {children}
         <div className="flex justify-end gap-2 mt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-gray-600/70 hover:bg-gray-500"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onSave}
-            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500"
-          >
-            Save
-          </button>
+          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-600/70 hover:bg-gray-500">Cancel</button>
+          <button onClick={onSave} className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500">Save</button>
         </div>
       </div>
     </div>
@@ -287,13 +364,10 @@ function Tab({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`
-        px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-300
-        ${active
-          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
-        }
-      `}
+      className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-300 ${
+        active ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+               : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
+      }`}
     >
       {label}
     </button>
@@ -301,9 +375,5 @@ function Tab({ label, active, onClick }) {
 }
 
 function Th({ children }) {
-  return (
-    <th className="px-4 py-3 font-bold border-r border-emerald-800/50">
-      {children}
-    </th>
-  );
+  return <th className="px-4 py-3 font-bold border-r border-emerald-800/50">{children}</th>;
 }
