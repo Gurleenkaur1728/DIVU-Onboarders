@@ -17,7 +17,9 @@ import {
   Shield,
   UserPlus,
   ClipboardCheck,
+  UserCheckIcon,
 } from "lucide-react";
+import AssignTemplates from "../pages/admin/AssignTemplates.jsx";
 
 // Example role IDs (match your DB)
 const ROLES = {
@@ -142,6 +144,7 @@ export default function Sidebar({ role }) {
             )}
             <Item icon={FileEdit} label="Manage Content" route="/admin/content" isActive={location.pathname === "/admin/content"} collapsed={collapsed}/>
             <Item icon={ListChecks} label="Manage Checklist" route="/admin/checklist" isActive={location.pathname === "/admin/checklist"} collapsed={collapsed}/>
+            <Item icon={UserCheckIcon} label="Assign Templates" route="/admin/assign-templates" isActive={location.pathname === "/admin/assign-templates"} collapsed={collapsed}/>
             <Item icon={BookOpen} label="Manage Modules" route="/admin/modules" isActive={location.pathname === "/admin/modules"} collapsed={collapsed}/>
             <Item icon={MessageSquare} label="View Feedback" route="/admin/feedback" isActive={location.pathname === "/admin/feedback"} collapsed={collapsed}/>
             <Item icon={BarChart2} label="View Progress" route="/admin/progress" isActive={location.pathname === "/admin/progress"} collapsed={collapsed}/>
