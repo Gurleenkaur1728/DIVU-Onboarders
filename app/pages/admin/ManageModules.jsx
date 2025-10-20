@@ -1,4 +1,10 @@
-import { useEffect, useState, useMemo } from "react";
+/*Can you help me write a reusable function in 
+React called addSection() that adds a new section to a module? Each section can be of type text, image, or video and should use crypto.randomUUID() for IDs. It should update state dynamically so the new section appears instantly on the UI. Please include example code and state structure.import { useEffect, useState, useMemo } from "react";*/
+
+/*Can you help me link a checklist template to a user by their ID? Just the Supabase insert logic.*/
+
+/*Quick one — how do I move a section up or down in an array in React without breaking order?*/
+/*What’s the cleanest way to save all my module data at once — template + items + content — to Supabase?*/
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import Toast from "../../components/Toast.jsx";
