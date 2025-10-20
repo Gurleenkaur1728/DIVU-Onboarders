@@ -4,7 +4,7 @@ import { createBrowserRouter } from "react-router-dom";
 import Login from "../app/(auth)/Login.jsx";
 import ForgotPassword from "../app/(auth)/ForgotPassword.jsx";
 
-// Main pages
+// Main user pages
 import Home from "../app/pages/Home.jsx";
 import Checklist from "../app/pages/Checklist.jsx";
 import Account from "../app/pages/Account.jsx";
@@ -38,11 +38,11 @@ import AccessRequests from "../app/pages/admin/super/EmployeeRequests.jsx";
 import Records from "../app/pages/admin/super/Records.jsx";
 
 export const router = createBrowserRouter([
-  // Auth
+  // ✅ Auth pages
   { path: "/", element: <Login /> },
   { path: "/forgot", element: <ForgotPassword /> },
 
-  // Main user pages
+  // ✅ Main user pages
   { path: "/home", element: <Home /> },
   { path: "/checklist", element: <Checklist /> },
   { path: "/account", element: <Account /> },
@@ -50,17 +50,18 @@ export const router = createBrowserRouter([
   { path: "/modules/:id", element: <ModuleDetail /> },
   { path: "/modules/:id/complete", element: <ModuleComplete /> },
 
-  { path: "/feedback", element: <Feedback /> },
-  { path: "/feedback/:id", element: <FeedbackForm /> },
+  // ✅ Feedback routes
+  { path: "/feedback", element: <Feedback /> }, // Feedback dashboard
+  { path: "/feedback/:id", element: <FeedbackForm /> }, // Create/View feedback form
 
+  // ✅ Other user pages
   { path: "/progress", element: <Progress /> },
   { path: "/certificate/:id", element: <Certificate /> },
-
   { path: "/culture", element: <Culture /> },
   { path: "/about", element: <About /> },
   { path: "/questions", element: <Questions /> },
 
-  // Admin pages
+  // ✅ Admin pages
   { path: "/admin/dashboard", element: <AdminDashboard /> },
   { path: "/admin/content", element: <ManageContent /> },
   { path: "/admin/checklist", element: <ManageChecklist /> },
@@ -70,11 +71,11 @@ export const router = createBrowserRouter([
   { path: "/admin/manage-questions", element: <ManageQuestions /> },
   { path: "/admin/assign-templates", element: <AssignTemplates /> },
 
-  // Super Admin pages
+  // ✅ Super Admin pages
   { path: "/admin/super/manage-employees", element: <ManageEmployees /> },
   { path: "/admin/super/add-employee", element: <AddEmployee /> },
   { path: "/admin/super/manage-admins", element: <ManageAdmins /> },
   { path: "/admin/super/admin-requests", element: <AdminRequests /> },
-  { path: "/admin/super/access-requests", element: <AccessRequests/> },
-  { path: "/admin/super/records", element: <Records /> }
+  { path: "/admin/super/access-requests", element: <AccessRequests /> },
+  { path: "/admin/super/records", element: <Records /> },
 ]);
