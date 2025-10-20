@@ -16,6 +16,7 @@ export default function ForgotPassword() {
   const [storedAnswer, setStoredAnswer] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // ✅ Step 1: Verify email and send verification code
   const handleEmailSubmit = async (e) => {
@@ -23,23 +24,49 @@ export default function ForgotPassword() {
     setError("");
     setSuccess("");
 
-    const { data: user, error: fetchError } = await supabase
-      .from("employee_invitations")
-      .select("*")
-      .eq("email", email.trim())
+    const lowerEmail = email.trim().toLowerCase();
+    let userName = "User";
+
+    // Check admin first
+    const { data: admin, error: adminErr } = await supabase
+      .from("users")
+      .select("name, email")
+      .eq("email", lowerEmail)
       .maybeSingle();
 
-    if (fetchError || !user) {
-      setError("Email not found in our system.");
-      return;
+    if (admin && !adminErr) {
+      setIsAdmin(true);
+      // ✅ Smart name extraction (first word of name or before @)
+      userName = admin.name
+        ? admin.name.trim().split(" ")[0]
+        : admin.email.split("@")[0].split(".")[0];
+    } else {
+      // Check employee table
+      const { data: emp, error: fetchError } = await supabase
+        .from("employee_invitations")
+        .select("*")
+        .eq("email", lowerEmail)
+        .maybeSingle();
+
+      if (fetchError || !emp) {
+        setError("Email not found in our system.");
+        return;
+      }
+
+      setIsAdmin(false);
+      // ✅ Smart name extraction for employee
+      userName = emp.name
+        ? emp.name.trim().split(" ")[0]
+        : emp.email.split("@")[0].split(".")[0];
+
+      const extra = emp.extra_data || {};
+      setSecurityQuestion(
+        extra.security_question || "What is your favorite color?"
+      );
+      setStoredAnswer(extra.security_answer || "");
     }
 
-    // ✅ Extract security question/answer from extra_data JSON
-    const extra = user.extra_data || {};
-    setSecurityQuestion(extra.security_question || "What is your favorite color?");
-    setStoredAnswer(extra.security_answer || "");
-
-    // Generate random 6-digit code
+    // ✅ Generate random 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
 
@@ -50,7 +77,7 @@ export default function ForgotPassword() {
         body: JSON.stringify({
           to: email,
           subject: "Reset your Divu Password Securely",
-          text: `Hello ${extra.first_name || "User"}, your password reset code is ${code}.`,
+          text: `Hello ${userName}, your password reset code is ${code}.`,
           html: `
             <!DOCTYPE html>
             <html>
@@ -69,7 +96,7 @@ export default function ForgotPassword() {
                   <!-- Body -->
                   <div style="background:#fff;padding:32px 28px;color:#222;">
                     <p style="font-size:1.15rem;font-weight:600;margin-bottom:18px;">
-                      Hello <span style="color:#10b981;">${extra.first_name || "User"}</span>,
+                      Hello <span style="color:#10b981;">${userName}</span>,
                     </p>
 
                     <p style="font-size:1.05rem;margin-bottom:18px;">
@@ -118,7 +145,7 @@ export default function ForgotPassword() {
   const handleCodeVerification = (e) => {
     e.preventDefault();
     if (verificationCode.trim() === generatedCode) {
-      setStep(3);
+      setStep(isAdmin ? 4 : 3);
       setError("");
     } else {
       setError("Invalid verification code. Please try again.");
@@ -153,10 +180,13 @@ export default function ForgotPassword() {
     try {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
 
+      const targetTable = isAdmin ? "users" : "employee_invitations";
+      const column = isAdmin ? "password" : "password_hash";
+
       const { error: updateError } = await supabase
-        .from("employee_invitations")
-        .update({ password_hash: hashedPassword })
-        .eq("email", email.trim());
+        .from(targetTable)
+        .update({ [column]: hashedPassword })
+        .eq("email", email.trim().toLowerCase());
 
       if (updateError) {
         console.error(updateError);
@@ -174,6 +204,7 @@ export default function ForgotPassword() {
     }
   };
 
+  // ✅ UI (unchanged)
   return (
     <div
       className="flex min-h-dvh items-center justify-center bg-[#0c1214] bg-cover bg-center p-6"
@@ -231,7 +262,7 @@ export default function ForgotPassword() {
         )}
 
         {/* Step 3 — Security Question */}
-        {step === 3 && (
+        {!isAdmin && step === 3 && (
           <form onSubmit={handleSecurityVerification}>
             <h2 className="mb-4 text-center text-white font-semibold text-lg">
               {securityQuestion}
