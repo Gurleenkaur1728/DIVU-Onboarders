@@ -13,6 +13,30 @@ export default function ManageContent() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [roleId, setRoleId] = useState(() => {
+    const r = localStorage.getItem("role_id");
+    const n = r ? parseInt(r, 10) : NaN;
+        return Number.isNaN(n) ? null : n;
+  });
+
+  useEffect(() => {
+    // If not in localStorage, fall back to fetching profile
+    (async () => {
+      if (roleId != null) return;
+      const { data: { user } = {} } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: prof } = await supabase
+        .from("users")
+        .select("role_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (prof?.role_id != null) {
+        setRoleId(typeof prof.role_id === "string" ? parseInt(prof.role_id, 10) : prof.role_id);
+      }
+    })();
+  }, [roleId]);
+
+
   // 🧭 Load content whenever the active tab changes
   useEffect(() => {
     if (activeTab) loadContent(activeTab);
@@ -126,7 +150,7 @@ export default function ManageContent() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="manage-content" role={ROLES.ADMIN} />
+      <Sidebar active="manage-content" role={roleId ?? ROLES.ADMIN} />
 
       <div className="flex-1 flex flex-col p-6">
         {/* Ribbon */}
