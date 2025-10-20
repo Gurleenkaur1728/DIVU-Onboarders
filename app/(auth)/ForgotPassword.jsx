@@ -11,80 +11,53 @@ export default function ForgotPassword() {
   const [generatedCode, setGeneratedCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [securityQuestion, setSecurityQuestion] = useState("");
-  const [securityAnswer, setSecurityAnswer] = useState("");
-  const [storedAnswer, setStoredAnswer] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [userName, setUserName] = useState("");
 
-  // ✅ Step 1: Verify email and send verification code
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
     const lowerEmail = email.trim().toLowerCase();
-    let userName = "User";
 
-    // Check admin first
-    const { data: admin, error: adminErr } = await supabase
+    // Check in USERS table
+    const { data: user, error: fetchError } = await supabase
       .from("users")
       .select("name, email")
       .eq("email", lowerEmail)
       .maybeSingle();
 
-    if (admin && !adminErr) {
-      setIsAdmin(true);
-      // ✅ Smart name extraction (first word of name or before @)
-      userName = admin.name
-        ? admin.name.trim().split(" ")[0]
-        : admin.email.split("@")[0].split(".")[0];
-    } else {
-      // Check employee table
-      const { data: emp, error: fetchError } = await supabase
-        .from("employee_invitations")
-        .select("*")
-        .eq("email", lowerEmail)
-        .maybeSingle();
-
-      if (fetchError || !emp) {
-        setError("Email not found in our system.");
-        return;
-      }
-
-      setIsAdmin(false);
-      // ✅ Smart name extraction for employee
-      userName = emp.name
-        ? emp.name.trim().split(" ")[0]
-        : emp.email.split("@")[0].split(".")[0];
-
-      const extra = emp.extra_data || {};
-      setSecurityQuestion(
-        extra.security_question || "What is your favorite color?"
-      );
-      setStoredAnswer(extra.security_answer || "");
+    if (fetchError || !user) {
+      setError("Email not found in our system.");
+      return;
     }
 
-    // ✅ Generate random 6-digit code
+    const nameToUse = user.name
+      ? user.name.trim().split(" ")[0]
+      : user.email.split("@")[0];
+    setUserName(nameToUse);
+
+    // Generate code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
 
+    // Send Email
     try {
       const res = await fetch("https://divu-server.vercel.app/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          to: email,
+          to: lowerEmail,
           subject: "Reset your Divu Password Securely",
-          text: `Hello ${userName}, your password reset code is ${code}.`,
+          text: `Hello ${nameToUse}, your password reset code is ${code}.`,
           html: `
             <!DOCTYPE html>
             <html>
-              <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
-                <div style="max-width:600px;margin:auto;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;box-shadow:0 6px 24px rgba(16,185,129,0.12);">
+              <body style="margin:0;padding:0;background:#0c1214;font-family:Arial,sans-serif;">
+                <div style="max-width:600px;margin:auto;border:1px solid #1f2937;border-radius:18px;overflow:hidden;box-shadow:0 6px 24px rgba(16,185,129,0.15);">
                   
-                  <!-- Header -->
                   <div style="background:linear-gradient(90deg,#065f46 60%,#34d399 100%);padding:24px;text-align:center;">
                     <img src="https://zhnulozkwqzycapxvsxk.supabase.co/storage/v1/object/public/assets/divu-logo.png"
                          alt="Divu Logo" style="height:80px;margin-bottom:12px;" />
@@ -93,33 +66,31 @@ export default function ForgotPassword() {
                     </h1>
                   </div>
 
-                  <!-- Body -->
-                  <div style="background:#fff;padding:32px 28px;color:#222;">
+                  <div style="background:#000;padding:32px 28px;color:#fff;">
                     <p style="font-size:1.15rem;font-weight:600;margin-bottom:18px;">
-                      Hello <span style="color:#10b981;">${userName}</span>,
+                      Hello <span style="color:#34d399;font-weight:700;">${nameToUse}</span>,
                     </p>
 
                     <p style="font-size:1.05rem;margin-bottom:18px;">
                       We received a request to reset your <strong>Divu account password</strong>.
                     </p>
 
-                    <p style="font-size:1.05rem;margin-bottom:18px;">
+                    <p style="font-size:1.05rem;margin-bottom:18px;color:#d8b4fe;">
                       Please use the verification code below to continue the reset process:
                     </p>
 
                     <div style="text-align:center;margin:32px 0;">
-                      <h1 style="font-size:2.2rem;color:#065f46;letter-spacing:4px;">
+                      <h1 style="font-size:2.5rem;color:#34d399;letter-spacing:4px;">
                         ${code}
                       </h1>
                     </div>
 
-                    <p style="font-size:1rem;margin-top:20px;">
+                    <p style="font-size:1rem;margin-top:20px;color:#e5e7eb;">
                       This code will expire soon. If you didn’t request a password reset, you can safely ignore this email.
                     </p>
                   </div>
 
-                  <!-- Footer -->
-                  <div style="background:#f9fafb;padding:18px;text-align:center;font-size:0.95rem;color:#065f46;border-top:1px solid #e5e7eb;">
+                  <div style="background:#111827;padding:18px;text-align:center;font-size:0.95rem;color:#34d399;border-top:1px solid #1f2937;">
                     <span style="font-weight:600;">© ${new Date().getFullYear()} Divu Inc.</span> All rights reserved.
                   </div>
                 </div>
@@ -130,7 +101,7 @@ export default function ForgotPassword() {
       });
 
       if (res.ok) {
-        setSuccess("✅ Verification code sent to your email!");
+        setSuccess("Verification code sent to your email!");
         setStep(2);
       } else {
         setError("Error sending email. Try again later.");
@@ -141,32 +112,16 @@ export default function ForgotPassword() {
     }
   };
 
-  // ✅ Step 2: Verify Code
   const handleCodeVerification = (e) => {
     e.preventDefault();
     if (verificationCode.trim() === generatedCode) {
-      setStep(isAdmin ? 4 : 3);
+      setStep(3);
       setError("");
     } else {
-      setError("Invalid verification code. Please try again.");
+      setError("Invalid verification code.");
     }
   };
 
-  // ✅ Step 3: Verify Security Answer
-  const handleSecurityVerification = (e) => {
-    e.preventDefault();
-    if (
-      securityAnswer.trim().toLowerCase() ===
-      (storedAnswer || "").trim().toLowerCase()
-    ) {
-      setStep(4);
-      setError("");
-    } else {
-      setError("Incorrect answer. Please try again.");
-    }
-  };
-
-  // ✅ Step 4: Reset Password using bcryptjs
   const handlePasswordReset = async (e) => {
     e.preventDefault();
     setError("");
@@ -178,21 +133,17 @@ export default function ForgotPassword() {
     }
 
     try {
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      const targetTable = isAdmin ? "users" : "employee_invitations";
-      const column = isAdmin ? "password" : "password_hash";
+      const hashed = await bcrypt.hash(newPassword, 10);
 
       const { error: updateError } = await supabase
-        .from(targetTable)
-        .update({ [column]: hashedPassword })
+        .from("users")
+        .update({ password: hashed })
         .eq("email", email.trim().toLowerCase());
 
       if (updateError) {
-        console.error(updateError);
         setError("Error updating password. Try again.");
       } else {
-        setSuccess("✅ Password updated successfully! You can now log in.");
+        setSuccess("Password updated successfully! You can now log in.");
         setStep(1);
         setEmail("");
         setNewPassword("");
@@ -204,7 +155,6 @@ export default function ForgotPassword() {
     }
   };
 
-  // ✅ UI (unchanged)
   return (
     <div
       className="flex min-h-dvh items-center justify-center bg-[#0c1214] bg-cover bg-center p-6"
@@ -215,7 +165,6 @@ export default function ForgotPassword() {
           <Logo />
         </div>
 
-        {/* Step 1 — Email */}
         {step === 1 && (
           <form onSubmit={handleEmailSubmit}>
             <h2 className="mb-4 text-center text-white font-semibold text-lg">
@@ -238,7 +187,6 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        {/* Step 2 — Code Verification */}
         {step === 2 && (
           <form onSubmit={handleCodeVerification}>
             <h2 className="mb-4 text-center text-white font-semibold text-lg">
@@ -261,31 +209,7 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        {/* Step 3 — Security Question */}
-        {!isAdmin && step === 3 && (
-          <form onSubmit={handleSecurityVerification}>
-            <h2 className="mb-4 text-center text-white font-semibold text-lg">
-              {securityQuestion}
-            </h2>
-            <input
-              type="text"
-              value={securityAnswer}
-              onChange={(e) => setSecurityAnswer(e.target.value)}
-              placeholder="Your Answer"
-              className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-white placeholder-white/60 outline-none"
-              required
-            />
-            <button
-              type="submit"
-              className="mt-4 w-full rounded-lg bg-green-600 py-2 text-white font-semibold hover:bg-green-700 transition"
-            >
-              Verify Answer
-            </button>
-          </form>
-        )}
-
-        {/* Step 4 — Reset Password */}
-        {step === 4 && (
+        {step === 3 && (
           <form onSubmit={handlePasswordReset}>
             <h2 className="mb-4 text-center text-white font-semibold text-lg">
               Reset Your Password
