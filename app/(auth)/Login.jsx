@@ -26,60 +26,51 @@ export default function Login() {
     }
 
     try {
-      // 1️⃣ Try to find Admin in USERS table
-      const { data: admin, error: adminErr } = await supabase
+      // Fetch user from USERS table
+      const { data: user, error } = await supabase
         .from("users")
-        .select("id, email, password, role_id")
+        .select("id, email, password, role_id, name")
         .eq("email", email)
         .maybeSingle();
 
-      if (admin && !adminErr) {
-        const validAdmin = await bcrypt.compare(password, admin.password || "");
-        if (validAdmin) {
-          console.log("✅ Logged in as Admin from USERS table");
-
-          const rid = Number(admin.role_id ?? 1);
-          localStorage.setItem("user", JSON.stringify({ email }));
-          localStorage.setItem("role_id", rid);
-          localStorage.setItem("role", "admin");
-
-          navigate("/admin/dashboard");
-          setLoading(false);
-          return;
-        }
-      }
-
-      // 2️⃣ If not Admin, try Employee from EMPLOYEE_INVITATIONS table
-      console.log("🔍 Checking Employee table...");
-      const { data: emp, error: empErr } = await supabase
-        .from("employee_invitations")
-        .select("id, email, password_hash, extra_data")
-        .eq("email", email)
-        .maybeSingle();
-
-      if (empErr || !emp) {
+      if (error || !user) {
         setErr("Invalid email or password.");
         setLoading(false);
         return;
       }
 
-      // 3️⃣ Compare bcrypt password for employee
-      const validEmp = await bcrypt.compare(password, emp.password_hash || "");
-      console.log("Employee bcrypt compare:", validEmp);
-
-      if (!validEmp) {
+      // Verify password
+      const valid = await bcrypt.compare(password, user.password || "");
+      if (!valid) {
         setErr("Invalid email or password.");
         setLoading(false);
         return;
       }
 
-      // ✅ Successful Employee login
+      // Determine role & redirect
+      const roleId = Number(user.role_id);
+      let role = "employee";
+      let path = "/home";
+
+      if (roleId === 1) {
+        role = "admin";
+        path = "/admin/dashboard";
+      } else if (roleId === 2) {
+        role = "superadmin";
+        path = "/admin/dashboard";
+      } else if (roleId === 0) {
+        role = "employee";
+        path = "/home";
+      }
+
+      // Store session
       localStorage.setItem("user", JSON.stringify({ email }));
-      localStorage.setItem("role_id", "3");
-      localStorage.setItem("role", "employee");
+      localStorage.setItem("role_id", roleId);
+      localStorage.setItem("role", role);
+      localStorage.setItem("user_name", user.name || "");
 
-      console.log("✅ Logged in as Employee");
-      navigate("/home");
+      // Redirect
+      navigate(path);
       setLoading(false);
     } catch (e) {
       console.error("Login error:", e);
@@ -116,7 +107,6 @@ export default function Login() {
             </h2>
 
             <form onSubmit={handleLogin} className="space-y-6">
-              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-emerald-200/90">
                   Email
@@ -130,7 +120,6 @@ export default function Login() {
                 />
               </div>
 
-              {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-emerald-200/90">
                   Password
@@ -154,14 +143,12 @@ export default function Login() {
                 </div>
               </div>
 
-              {/* Error */}
               {err && (
                 <p className="bg-red-500/20 text-red-300 px-4 py-2 rounded-lg text-sm">
                   {err}
                 </p>
               )}
 
-              {/* Submit */}
               <button
                 type="submit"
                 disabled={loading}
@@ -171,7 +158,6 @@ export default function Login() {
               </button>
             </form>
 
-            {/* Links */}
             <div className="mt-6 text-center">
               <Link to="/forgot" className="text-sm text-cyan-300 hover:underline">
                 Forgot password?
