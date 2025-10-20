@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { Eye, EyeOff } from "lucide-react";
+import bcrypt from "bcryptjs";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,56 +16,71 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setErr("");
-
-    if (!username || !password) {
-      setErr("Please enter both email and password");
-      return;
-    }
-
     setLoading(true);
 
-    // ✅ Use Supabase Auth login
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: username.trim(),
-      password: password,
-    });
-
-    if (error) {
-      console.error("Login error:", error);
-      setErr("Invalid email or password.");
+    const email = username.trim().toLowerCase();
+    if (!email || !password) {
+      setErr("Please enter both email and password");
       setLoading(false);
       return;
     }
 
-    // ✅ Get user info from your users table
-    const { data: profile } = await supabase
-      .from("users")
-      .select("id, name, email, role_id")
-      .ilike("email", username.trim())
-      .maybeSingle();
+    try {
+      // Fetch user from USERS table
+      const { data: user, error } = await supabase
+        .from("users")
+        .select("id, email, password, role_id, name")
+        .eq("email", email)
+        .maybeSingle();
 
-    if (!profile) {
-      setErr("User not found.");
+      if (error || !user) {
+        setErr("Invalid email or password.");
+        setLoading(false);
+        return;
+      }
+
+      // Verify password
+      const valid = await bcrypt.compare(password, user.password || "");
+      if (!valid) {
+        setErr("Invalid email or password.");
+        setLoading(false);
+        return;
+      }
+
+      // Determine role & redirect
+      const roleId = Number(user.role_id);
+      let role = "employee";
+      let path = "/home";
+
+      if (roleId === 1) {
+        role = "admin";
+        path = "/admin/dashboard";
+      } else if (roleId === 2) {
+        role = "superadmin";
+        path = "/admin/dashboard";
+      } else if (roleId === 0) {
+        role = "employee";
+        path = "/home";
+      }
+
+      // Store session
+      localStorage.setItem("user", JSON.stringify({ email }));
+      localStorage.setItem("role_id", roleId);
+      localStorage.setItem("role", role);
+      localStorage.setItem("user_name", user.name || "");
+
+      // Redirect
+      navigate(path);
       setLoading(false);
-      return;
+    } catch (e) {
+      console.error("Login error:", e);
+      setErr("Unexpected error. Try again.");
+      setLoading(false);
     }
-
-    // ✅ Save user info locally
-    localStorage.setItem("user", JSON.stringify({ email: profile.email }));
-    localStorage.setItem("profile_id", profile.id || "");
-    localStorage.setItem("role_id", profile.role_id || "0");
-    localStorage.setItem("role", profile.role_id === 1 ? "admin" : "user");
-
-    setLoading(false);
-
-    // ✅ Redirect
-    const isAdmin = profile.role_id === 1 || profile.role_id === 2;
-    navigate(isAdmin ? "/admin/dashboard" : "/home");
   };
 
-  const togglePasswordVisibility = () => {
+  const togglePasswordVisibility = () =>
     setVisualizePassword((prev) => !prev);
-  };
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-emerald-900 to-slate-800">
@@ -83,30 +99,28 @@ export default function Login() {
         <div className="w-full max-w-md">
           <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
             <div className="flex justify-center mb-8">
-              <div className="p-4 rounded-full">
-                <Logo />
-              </div>
+              <Logo />
             </div>
 
             <h2 className="mb-8 text-center text-2xl font-bold bg-gradient-to-r from-emerald-300 to-blue-300 bg-clip-text text-transparent">
-              Employee Login
+              Employee / Admin Login
             </h2>
 
             <form onSubmit={handleLogin} className="space-y-6">
-              <div className="space-y-2">
+              <div>
                 <label className="block text-sm font-medium text-emerald-200/90">
                   Email
                 </label>
                 <input
-                  type="text"
+                  type="email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter your email"
-                  className="w-full rounded-xl border border-white/30 bg-white/5 px-4 py-3 text-white placeholder-white/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+                  className="w-full rounded-xl border border-white/30 bg-white/5 px-4 py-3 text-white placeholder-white/50 outline-none focus:border-emerald-400/60 focus:bg-white/10"
                 />
               </div>
 
-              <div className="space-y-2">
+              <div>
                 <label className="block text-sm font-medium text-emerald-200/90">
                   Password
                 </label>
@@ -116,7 +130,8 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full rounded-xl border border-white/30 bg-white/5 px-4 pr-10 py-3 text-white placeholder-white/50 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/20"
+                    autoComplete="current-password"
+                    className="w-full rounded-xl border border-white/30 bg-white/5 px-4 pr-10 py-3 text-white placeholder-white/50 outline-none focus:border-emerald-400/60 focus:bg-white/10"
                   />
                   <button
                     type="button"
@@ -137,7 +152,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3 px-4 font-semibold text-white shadow-lg hover:from-blue-500 hover:to-blue-600 focus:ring-2 focus:ring-blue-400/50 disabled:opacity-50"
+                className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 py-3 px-4 font-semibold text-white shadow-lg hover:from-blue-500 hover:to-blue-600 disabled:opacity-50"
               >
                 {loading ? "Signing in..." : "Login"}
               </button>
@@ -154,3 +169,4 @@ export default function Login() {
     </div>
   );
 }
+//login
