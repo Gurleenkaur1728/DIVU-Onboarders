@@ -1,17 +1,36 @@
-import Sidebar, {ROLES}  from "../components/Sidebar.jsx";
+import { useEffect, useState } from "react";
+import Sidebar, { ROLES } from "../components/Sidebar";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
+import { supabase } from "../../src/lib/supabaseClient";
+
 
 export default function Culture() {
+  const [content, setContent] = useState({
+    title: "DIVU Culture",
+    subtitle: "Loading content...",
+    media_url: "/cultureglobe.jpg",
+  });
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("home_content")
+        .select("title, subtitle, media_url")
+        .eq("section", "culture")
+        .eq("sort_order", 0)
+        .maybeSingle();
+      if (!error && data) setContent(data);
+    })();
+  }, []);
+
   return (
     <div
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      {/* Sidebar */}
-      <Sidebar active="culture" role={ROLES.USER} />
+      <Sidebar role={ROLES.USER} active="culture" />
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
@@ -31,53 +50,23 @@ export default function Culture() {
           <Tab label="About" to="/about" />
         </div>
 
-        {/* Content Card */}
+        {/* Content */}
         <div className="bg-white/95 rounded-xl shadow-lg p-10 max-w-5xl mx-auto">
-          {/* Title */}
           <h1 className="text-3xl font-extrabold text-emerald-900 mb-6">
-            DIVU Culture
+            {content.title}
           </h1>
 
-          {/* Text + First Image in Grid */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div>
-              <p className="text-lg text-gray-800 leading-relaxed mb-4">
-                Our culture is built on <span className="font-semibold">trust</span>,
-                <span className="font-semibold"> inclusiveness</span>, and{" "}
-                <span className="italic">shared responsibility</span>. We embrace
-                diversity across borders and time zones, working as a remote-first
-                company that thrives on collaboration and accountability.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed mb-4">
-                We believe that curiosity sparks better questions, and better
-                questions lead to smarter solutions.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed mb-4">
-                At DIVU, everyone has the autonomy to take ownership, challenge
-                ideas, and drive sustainable innovation.
-              </p>
-              <p className="text-lg text-gray-800 leading-relaxed">
-                Together we celebrate achievements, learn from setbacks, and
-                continuously evolve as a team that values integrity and meaningful
-                progress.
-              </p>
-            </div>
-            <div className="flex items-start justify-center">
+          <div className="grid md:grid-cols-2 gap-6 items-center">
+            <p className="text-lg text-gray-800 leading-relaxed">
+              {content.subtitle}
+            </p>
+            {content.media_url && (
               <img
-                src="/cultureglobe.jpg"
-                alt="Culture globe"
+                src={content.media_url}
+                alt="Culture visual"
                 className="rounded-lg shadow-lg w-full object-cover"
               />
-            </div>
-          </div>
-
-          {/* Second Image full width */}
-          <div>
-            <img
-              src="/cultureWorkshop.jpg"
-              alt="Workshop session"
-              className="rounded-lg shadow-lg w-full object-cover"
-            />
+            )}
           </div>
         </div>
       </div>
@@ -90,11 +79,9 @@ function Tab({ label, to, active }) {
     <Link
       to={to}
       className={`px-5 py-2 rounded-lg text-sm font-semibold transition shadow
-        ${
-          active
-            ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950"
-            : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700"
-        }`}
+        ${active
+          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950"
+          : "bg-gray-200 text-gray-800 hover:bg-gray-300"}`}
     >
       {label}
     </Link>
