@@ -71,7 +71,7 @@ export default function Login() {
 
       // Redirect
       navigate(path);
-      setLoading(false);
+      setLoading(false)
     } catch (e) {
       console.error("Login error:", e);
       setErr("Unexpected error. Try again.");
