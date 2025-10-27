@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../src/lib/supabaseClient.js";
 
 export default function FeedbackForm() {
-  const { id } = useParams(); // could be numeric
+  const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [itemUUID, setItemUUID] = useState(null); // ✅ real UUID from checklist_item
+  const [itemUUID, setItemUUID] = useState(null);
   const [formData, setFormData] = useState({
     clarity: "",
     difficulty: "",
@@ -15,28 +15,21 @@ export default function FeedbackForm() {
     suggestions: "",
   });
 
-  // ✅ 1. Fetch UUID for this module if numeric
+  // ✅ Fetch UUID for this module if numeric
   useEffect(() => {
     const fetchItemUUID = async () => {
-      // Try if id is already UUID
       if (id && id.includes("-")) {
         setItemUUID(id);
         return;
       }
-
-      console.log("Fetching checklist_item UUID for numeric id:", id);
 
       const { data, error } = await supabase
         .from("checklist_item")
         .select("item_id")
         .limit(1);
 
-      if (error) {
-        console.error("❌ Error fetching checklist_item:", error);
-      } else if (data && data.length > 0) {
-        console.log("✅ Found checklist_item UUID:", data[0].item_id);
-        setItemUUID(data[0].item_id);
-      }
+      if (!error && data?.length > 0) setItemUUID(data[0].item_id);
+      else if (error) console.error("Error fetching checklist_item:", error);
     };
     fetchItemUUID();
   }, [id]);
@@ -76,49 +69,41 @@ export default function FeedbackForm() {
       suggestions: formData.suggestions?.trim() || null,
     };
 
-    console.log("🟢 Final feedback payload before insert:", newFeedback);
-
-    const { data, error } = await supabase
-      .from("feedback")
-      .insert([newFeedback])
-      .select();
-
+    const { error } = await supabase.from("feedback").insert([newFeedback]).select();
     if (error) {
-      console.error("❌ Insert error:", error);
       alert("❌ Feedback submission failed: " + error.message);
     } else {
       alert("✅ Feedback submitted successfully!");
       navigate("/feedback");
     }
-
     setLoading(false);
   };
 
   return (
     <div
-      className="min-h-screen flex justify-center items-start p-10"
+      className="min-h-screen flex justify-center items-start p-4 sm:p-8 md:p-10 bg-gradient-to-br from-emerald-50 to-green-100/60"
       style={{
         backgroundImage: "url('/bg.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-3xl">
-        <h1 className="text-3xl font-bold text-emerald-900 text-center mb-8">
+      <div className="bg-white/95 rounded-2xl shadow-xl p-6 sm:p-10 w-full max-w-3xl border border-emerald-200">
+        <h1 className="text-2xl sm:text-3xl font-bold text-emerald-900 text-center mb-8">
           Feedback for Module <span className="italic">{id}</span>
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {["clarity", "difficulty", "relevance"].map((field) => (
             <div key={field}>
-              <p className="font-semibold text-gray-800 mb-2 capitalize">
+              <p className="font-semibold text-emerald-900 mb-2 capitalize">
                 {field === "clarity"
                   ? "How clear were the instructions?"
                   : field === "difficulty"
                   ? "How easy or difficult was this task?"
                   : "How relevant was this task to your role?"}
               </p>
-              <div className="flex gap-4">
+              <div className="flex gap-4 flex-wrap">
                 {[1, 2, 3, 4, 5].map((num) => (
                   <label key={num} className="flex flex-col items-center">
                     <input
@@ -137,25 +122,25 @@ export default function FeedbackForm() {
           ))}
 
           <div>
-            <label className="font-semibold text-gray-800 mb-2 block">
+            <label className="font-semibold text-emerald-900 mb-2 block">
               What challenges did you face while completing this task?
             </label>
             <textarea
               value={formData.challenges}
               onChange={(e) => handleChange("challenges", e.target.value)}
-              className="w-full border rounded-lg p-3 text-gray-700 focus:ring-2 focus:ring-emerald-500"
+              className="w-full border rounded-lg p-3 text-gray-800 focus:ring-2 focus:ring-emerald-500 resize-none"
               rows="3"
             />
           </div>
 
           <div>
-            <label className="font-semibold text-gray-800 mb-2 block">
+            <label className="font-semibold text-emerald-900 mb-2 block">
               Suggestions for improving this module?
             </label>
             <textarea
               value={formData.suggestions}
               onChange={(e) => handleChange("suggestions", e.target.value)}
-              className="w-full border rounded-lg p-3 text-gray-700 focus:ring-2 focus:ring-emerald-500"
+              className="w-full border rounded-lg p-3 text-gray-800 focus:ring-2 focus:ring-emerald-500 resize-none"
               rows="3"
             />
           </div>
@@ -164,7 +149,7 @@ export default function FeedbackForm() {
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-md"
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400"
             >
               {loading ? "Submitting..." : "Submit Feedback"}
             </button>
