@@ -65,10 +65,11 @@ export default function Login() {
 
       // Store session
       localStorage.setItem("user", JSON.stringify({ email }));
+      localStorage.setItem("profile_id", user.id);
       localStorage.setItem("role_id", roleId);
       localStorage.setItem("role", role);
       localStorage.setItem("user_name", user.name || "");
-
+await new Promise((r) => setTimeout(r, 150));
       // Redirect
       navigate(path);
       setLoading(false)
