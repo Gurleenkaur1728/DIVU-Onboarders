@@ -4,7 +4,7 @@ import { CheckCircle, Circle, ChevronDown, ChevronRight } from "lucide-react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 
-// Small helpers for ui
+// Small helper to format dates
 const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "-");
 
 export default function Checklist() {
@@ -19,8 +19,8 @@ export default function Checklist() {
 
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
-  const [groups, setGroups] = useState([]); 
-  const [expanded, setExpanded] = useState({}); 
+  const [groups, setGroups] = useState([]);
+  const [expanded, setExpanded] = useState({});
 
   useEffect(() => {
     load();
@@ -70,7 +70,10 @@ export default function Checklist() {
         `
         )
         .eq("user_id", userId)
-        .order("sort_order", { foreignTable: "checklist_groups", ascending: true })
+        .order("sort_order", {
+          foreignTable: "checklist_groups",
+          ascending: true,
+        })
         .order("title", { foreignTable: "checklist_item", ascending: true });
 
       if (error) throw error;
@@ -88,7 +91,6 @@ export default function Checklist() {
           due_date: row.due_date,
           done: !!row.done,
           completed_at: row.completed_at,
-          // keep ids in case you need links later:
           template_item_id: row.template_item_id,
           group_id: row.group_id,
         });
@@ -96,7 +98,6 @@ export default function Checklist() {
 
       const list = Array.from(bucket.values());
       setGroups(list);
-      // expand all groups by default
       const exp = {};
       list.forEach((g) => (exp[g.id] = true));
       setExpanded(exp);
@@ -137,42 +138,49 @@ export default function Checklist() {
     if (error) {
       console.error(error);
       setNotice("Could not update item status.");
-      // revert if it failed
       await load();
     }
   }
 
   return (
-    <div className="flex min-h-dvh bg-cover bg-center" style={{ backgroundImage: "url('/bg.png')" }}>
+    <div
+      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
+      style={{ backgroundImage: "url('/bg.png')" }}
+    >
       <Sidebar role={ROLES.USER} />
-      <div className="flex-1 flex flex-col p-6 z-10">
+      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Ribbon */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 shadow-md mb-4">
-          <span className="font-semibold text-emerald-950">
-            Welcome {me.name || "to DIVU"}!
+        <div className="flex items-center justify-between h-12 rounded-lg bg-emerald-100/90 px-4 shadow-sm border border-emerald-200/50 mb-6">
+          <span className="font-semibold text-emerald-950 text-sm sm:text-base">
+            Welcome {me.name || "Employee"}!
           </span>
         </div>
 
-        <div className="flex items-center justify-between bg-emerald-950/90 px-4 py-3 rounded-md mb-4 shadow-md">
+        {/* Header Tabs */}
+        <div className="flex flex-wrap items-center justify-between bg-emerald-950/90 px-4 py-3 rounded-lg mb-6 shadow-md border border-emerald-800/70">
           <h2 className="text-lg md:text-xl font-bold text-emerald-100 tracking-wide">
             ONBOARDING CHECKLIST
           </h2>
-            <div className="flex gap-2">
+          <div className="flex gap-2 mt-2 sm:mt-0">
             <Tab label="Checklist" active />
             <Tab label="Modules" to="/modules" />
           </div>
         </div>
 
+        {/* Notice */}
         {notice && (
           <div className="mb-4 px-4 py-2 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded">
             {notice}
           </div>
         )}
 
+        {/* Main Content */}
         {loading ? (
-          <div className="text-emerald-100">Loading…</div>
+          <div className="text-emerald-800 animate-pulse italic">
+            Loading checklist...
+          </div>
         ) : groups.length === 0 ? (
-          <div className="text-emerald-100">
+          <div className="text-emerald-800">
             Nothing assigned yet. Check back later.
           </div>
         ) : (
@@ -182,12 +190,12 @@ export default function Checklist() {
               return (
                 <div
                   key={g.id}
-                  className="bg-white/95 rounded-xl shadow border border-emerald-200"
+                  className="bg-white/95 rounded-xl shadow-md border border-emerald-200 overflow-hidden transition-all duration-300"
                 >
                   {/* Group header */}
-                  <div className="flex items-center justify-between px-4 py-3 bg-emerald-900/95 text-emerald-100 rounded-t-xl">
+                  <div className="flex items-center justify-between px-4 py-3 bg-emerald-900 text-emerald-100 rounded-t-xl">
                     <button
-                      className="flex items-center gap-2 font-semibold"
+                      className="flex items-center gap-2 font-semibold hover:text-emerald-300 transition-colors duration-200"
                       onClick={() =>
                         setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))
                       }
@@ -200,7 +208,7 @@ export default function Checklist() {
                   {/* Group table */}
                   {open && (
                     <div className="overflow-x-auto">
-                      <table className="min-w-[960px] w-full border-collapse">
+                      <table className="min-w-[960px] w-full border-collapse text-emerald-950 text-sm">
                         <thead>
                           <tr className="bg-emerald-800 text-left text-emerald-100">
                             <Th>Completed</Th>
@@ -213,32 +221,29 @@ export default function Checklist() {
                           {g.items.map((it, idx) => (
                             <tr
                               key={it.assignedId}
-                              className={
+                              className={`transition-colors duration-200 ${
                                 idx % 2 === 0
-                                  ? "bg-emerald-50/90"
-                                  : "bg-emerald-100/80"
-                              }
+                                  ? "bg-emerald-50/90 hover:bg-emerald-100"
+                                  : "bg-emerald-100/80 hover:bg-emerald-200/80"
+                              }`}
                             >
-                              {/* toggle */}
                               <td className="px-4 py-3 text-center">
-                                <button onClick={() => toggleDone(it)}>
+                                <button
+                                  onClick={() => toggleDone(it)}
+                                  className="focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-full"
+                                  title="Mark complete"
+                                >
                                   {it.done ? (
-                                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                                    <CheckCircle className="w-5 h-5 text-emerald-600" />
                                   ) : (
-                                    <Circle className="w-5 h-5 text-gray-400" />
+                                    <Circle className="w-5 h-5 text-gray-400 hover:text-emerald-500" />
                                   )}
                                 </button>
                               </td>
 
                               <td className="px-4 py-3">{it.title}</td>
-
-                              {/* assigned_on */}
                               <td className="px-4 py-3">{fmt(it.assigned_on)}</td>
-
-                              {/* completed_at */}
-                              <td className="px-4 py-3">
-                                {fmt(it.completed_at)}
-                              </td>
+                              <td className="px-4 py-3">{fmt(it.completed_at)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -258,7 +263,9 @@ export default function Checklist() {
 /* ---------- UI bits for table ---------- */
 function Th({ children, className = "" }) {
   return (
-    <th className={`px-4 py-3 font-bold border-r border-emerald-800/50 ${className}`}>
+    <th
+      className={`px-4 py-3 font-semibold border-r border-emerald-800/50 ${className}`}
+    >
       {children}
     </th>
   );
@@ -269,25 +276,23 @@ function Tab({ label, active, to }) {
     <Link
       to={to}
       replace={false}
-      className={`
-        px-4 py-1 rounded-md text-sm font-semibold transition-all duration-300
-        ${active
-          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
-        }
-      `}
+      className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400
+        ${
+          active
+            ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+            : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-[1.03]"
+        }`}
     >
       {label}
     </Link>
   ) : (
     <button
-      className={`
-        px-4 py-1 rounded-md text-sm font-semibold transition-all duration-300
-        ${active
-          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
-        }
-      `}
+      className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400
+        ${
+          active
+            ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+            : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-[1.03]"
+        }`}
       disabled
     >
       {label}
