@@ -4,7 +4,9 @@ import { supabase } from "../../../src/lib/supabaseClient.js";
 import PageEditor from "./PageEditor.jsx";
 
 /* helpers */
-const uid = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+const uid = () =>
+  globalThis.crypto?.randomUUID?.() ??
+  `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const words = (t = "") => t.trim().split(/\s+/).filter(Boolean).length;
 
@@ -33,7 +35,11 @@ export const defaultSection = (type) => {
     case "dropdowns":
       return { id: uid(), type, items: [{ id: uid(), header: "", info: "" }] };
     case "questionnaire":
-      return { id: uid(), type, questions: [{ id: uid(), q: "", kind: "mcq", options: ["", ""], correctIndex: 0 }] };
+      return {
+        id: uid(),
+        type,
+        questions: [{ id: uid(), q: "", kind: "mcq", options: ["", ""], correctIndex: 0 }],
+      };
     case "checklist":
       return { id: uid(), type, items: [{ id: uid(), text: "", required: true }] };
     case "embed":
@@ -43,7 +49,7 @@ export const defaultSection = (type) => {
   }
 };
 
-export default function ModuleBuilderModal({ draftId, onClose, showToast }) {
+export default function ModuleBuilderModal({ draftId, onClose, showToast, onModuleCreated }) {
   /* steps: 0 Info → 1 Pages → 2 Review */
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -106,6 +112,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast }) {
         progress_percent: progress,
         draft_data: { pages },
         updated_at: new Date().toISOString(),
+        status: "draft", // ✅ ensures any unfinished draft is marked as draft
         ...patch,
       })
       .eq("id", draftId);
@@ -208,26 +215,47 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast }) {
         const s = p.sections[sIndex] || {};
         switch (s.type) {
           case "text":
-            if (!s.body || !s.body.trim()) { showToast(`Page ${pIndex + 1} — text section ${sIndex + 1} cannot be empty.`, "error"); return false; }
+            if (!s.body || !s.body.trim()) {
+              showToast(`Page ${pIndex + 1} — text section ${sIndex + 1} cannot be empty.`, "error"); 
+              return false;
+            }
             break;
           case "photo":
           case "video":
-            if (!s.media_path || !s.media_path.trim()) { showToast(`Page ${pIndex + 1} — ${s.type} section ${sIndex + 1} requires an upload.`, "error"); return false; }
+            if (!s.media_path || !s.media_path.trim()) {
+              showToast(`Page ${pIndex + 1} — ${s.type} section ${sIndex + 1} requires an upload.`, "error");
+              return false;
+            }
             break;
           case "flashcards":
-            if (!Array.isArray(s.cards) || s.cards.length === 0) { showToast(`Page ${pIndex + 1} — flashcards need at least one card.`, "error"); return false; }
+            if (!Array.isArray(s.cards) || s.cards.length === 0) {
+              showToast(`Page ${pIndex + 1} — flashcards need at least one card.`, "error"); 
+              return false;
+            }
             break;
           case "dropdowns":
-            if (!Array.isArray(s.items) || s.items.length === 0) { showToast(`Page ${pIndex + 1} — dropdown needs at least one item.`, "error"); return false; }
+            if (!Array.isArray(s.items) || s.items.length === 0) {
+              showToast(`Page ${pIndex + 1} — dropdown needs at least one item.`, "error");
+              return false;
+            }
             break;
           case "questionnaire":
-            if (!Array.isArray(s.questions) || s.questions.length === 0) { showToast(`Page ${pIndex + 1} — questionnaire needs at least one question.`, "error"); return false; }
+            if (!Array.isArray(s.questions) || s.questions.length === 0) {
+              showToast(`Page ${pIndex + 1} — questionnaire needs at least one question.`, "error");
+              return false;
+            }
             break;
           case "checklist":
-            if (!Array.isArray(s.items) || s.items.length === 0) { showToast(`Page ${pIndex + 1} — checklist needs at least one item.`, "error"); return false; }
+            if (!Array.isArray(s.items) || s.items.length === 0) {
+              showToast(`Page ${pIndex + 1} — checklist needs at least one item.`, "error");
+              return false;
+            }
             break;
           case "embed":
-            if (!s.url || !s.url.trim()) { showToast(`Page ${pIndex + 1} — embed requires a URL.`, "error"); return false; }
+            if (!s.url || !s.url.trim()) {
+              showToast(`Page ${pIndex + 1} — embed requires a URL.`, "error");
+              return false;
+            }
             break;
           default:
             break;
@@ -269,6 +297,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast }) {
         description: description.trim(),
         created_by: profileId,
         estimated_time_min: 10,
+        status: "published", // ✅ mark as published
       })
       .select("*")
       .single();
@@ -309,10 +338,15 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast }) {
     await supabase.from("module_drafts").delete().eq("id", draftId);
     setSaving(false);
     showToast("Module created successfully!", "success");
+
+    // ✅ Notify parent to refresh and close modal
+    if (typeof onModuleCreated === "function") {
+      onModuleCreated();
+    }
     onClose();
   };
 
-  /* abandon draft (exact confirm behavior) */
+  /* abandon draft */
   const abandonModule = async () => {
     try {
       await supabase.from("module_drafts").delete().eq("id", draftId);
@@ -327,7 +361,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast }) {
     onClose();
   };
 
-  /* upload helper (modules_assets) */
+  /* upload helper */
   const uploadToBucket = async (file) => {
     if (!file) return null;
     const ext = file.name.split(".").pop() || "bin";
@@ -342,13 +376,12 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast }) {
     return path;
   };
 
-  /* progress dot UI like big file */
+  /* progress dot UI */
   const ProgressDot = ({ label, active, done, onClick, index }) => (
     <button
       onClick={onClick}
       className="flex flex-col items-center gap-1 group focus:outline-none"
       title={label}
-      aria-label={`${label} ${done ? "completed" : active ? "current step" : "not completed"}`}
     >
       <div
         className={`flex items-center justify-center w-8 h-8 rounded-full font-bold border shadow-sm transition-all
@@ -377,316 +410,340 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast }) {
       </div>
     );
   }
-
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50">
-      {/* fixed-size modal */}
-      <div className="w-full max-w-5xl h-[80vh] bg-white rounded-2xl shadow-xl overflow-visible flex flex-col">
-        {/* header */}
-        <div className="flex items-center justify-between bg-emerald-900 text-white rounded-t-2xl p-4">
-          {/* progress dots w/ connectors */}
-          <div className="flex items-center gap-3 overflow-x-auto">
-            <ProgressDot label="Info" active={step === 0} done={step > 0} onClick={goInfo} />
-            <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />
-            {pages.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-3">
-                <ProgressDot
-                  label={`Page ${i + 1}`}
-                  active={step === 1 && activePageIndex === i}
-                  done={step === 2 || (step === 1 && activePageIndex > i)}
-                  onClick={() => goPage(i)}
-                  index={i}
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50">
+    {/* fixed-size modal */}
+    <div className="w-full max-w-5xl h-[80vh] bg-white rounded-2xl shadow-xl overflow-visible flex flex-col">
+      {/* header */}
+      <div className="flex items-center justify-between bg-emerald-900 text-white rounded-t-2xl p-4">
+        {/* progress dots w/ connectors */}
+        <div className="flex items-center gap-3 overflow-x-auto">
+          <ProgressDot label="Info" active={step === 0} done={step > 0} onClick={goInfo} />
+          <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />
+          {pages.map((p, i) => (
+            <div key={p.id} className="flex items-center gap-3">
+              <ProgressDot
+                label={`Page ${i + 1}`}
+                active={step === 1 && activePageIndex === i}
+                done={step === 2 || (step === 1 && activePageIndex > i)}
+                onClick={() => goPage(i)}
+                index={i}
+              />
+              {i < pages.length - 1 && <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />}
+            </div>
+          ))}
+          {pages.length > 0 && <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />}
+          <ProgressDot label="Review" active={step === 2} done={false} onClick={goReview} />
+        </div>
+
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={() => setAbandonConfirmOpen(true)}
+            className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-sm font-semibold"
+          >
+            Abandon
+          </button>
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 text-sm font-semibold"
+          >
+            Close
+          </button>
+        </div>
+
+        {/* Abandon confirm modal */}
+        {abandonConfirmOpen && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40">
+            <div className="bg-white w-full max-w-md rounded-xl shadow-xl p-6 mx-4">
+              <div className="text-lg font-semibold text-emerald-900 mb-2">Abandon draft?</div>
+              <p className="text-sm text-emerald-700 mb-4">
+                This will permanently delete your draft and all progress. This action cannot be undone.
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setAbandonConfirmOpen(false)}
+                  className="px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={abandonModule}
+                  className="px-3 py-1.5 rounded bg-red-600 text-white"
+                >
+                  Yes, abandon
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* unified progress bar */}
+      <div className="px-6 py-3 flex items-center gap-4">
+        <div className="relative flex-1 h-3 rounded-full bg-emerald-100/70 shadow-inner overflow-hidden">
+          <div
+            className="absolute left-0 top-0 h-full rounded-full transition-[width] duration-500 ease-out bg-gradient-to-r from-emerald-600 to-emerald-400 shadow"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        <div className="w-12 text-right">
+          <span className="text-sm font-semibold text-emerald-900">{progress}%</span>
+        </div>
+      </div>
+
+      {/* scroll body */}
+      <div className="px-6 pb-4 flex-1 overflow-auto">
+        {/* Step 0: Info */}
+        {step === 0 && (
+          <div className="grid grid-cols-1 gap-6">
+            <div className="p-4 border rounded-xl border-emerald-300 bg-white">
+              <div className="mb-3">
+                <div className="font-semibold text-emerald-900 mb-2">Module Title</div>
+                <input
+                  value={title}
+                  onChange={(e) => onChangeTitle(e.target.value)}
+                  onBlur={() => persistDraft()}
+                  placeholder="Module Title (max 100 words)"
+                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm mb-2"
                 />
-                {i < pages.length - 1 && <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />}
+                <div className="text-xs text-emerald-700">{words(title)}/100 words</div>
               </div>
-            ))}
-            {pages.length > 0 && <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />}
-            <ProgressDot label="Review" active={step === 2} done={false} onClick={goReview} />
-          </div>
 
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={() => setAbandonConfirmOpen(true)}
-              className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-500 text-sm font-semibold"
-            >
-              Abandon
-            </button>
-            <button
-              onClick={onClose}
-              className="px-3 py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 text-sm font-semibold"
-            >
-              Close
-            </button>
-          </div>
-
-          {/* Abandon confirm modal */}
-          {abandonConfirmOpen && (
-            <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40">
-              <div className="bg-white w-full max-w-md rounded-xl shadow-xl p-6 mx-4">
-                <div className="text-lg font-semibold text-emerald-900 mb-2">Abandon draft?</div>
-                <p className="text-sm text-emerald-700 mb-4">
-                  This will permanently delete your draft and all progress. This action cannot be undone.
-                </p>
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setAbandonConfirmOpen(false)} className="px-3 py-1.5 rounded bg-gray-200 hover:bg-gray-300">
-                    Cancel
-                  </button>
-                  <button onClick={abandonModule} className="px-3 py-1.5 rounded bg-red-600 text-white">
-                    Yes, abandon
-                  </button>
-                </div>
+              <div>
+                <div className="font-semibold text-emerald-900 mb-2">Module Description</div>
+                <textarea
+                  value={description}
+                  onChange={(e) => onChangeDescription(e.target.value)}
+                  onBlur={() => persistDraft()}
+                  placeholder="Module Description (max 250 words)"
+                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm h-28 resize-none"
+                />
+                <div className="text-xs text-emerald-700">{words(description)}/250 words</div>
               </div>
-            </div>
-          )}
-        </div>
 
-        {/* unified progress bar */}
-        <div className="px-6 py-3 flex items-center gap-4">
-          <div className="relative flex-1 h-3 rounded-full bg-emerald-100/70 shadow-inner overflow-hidden">
-            <div
-              className="absolute left-0 top-0 h-full rounded-full transition-[width] duration-500 ease-out bg-gradient-to-r from-emerald-600 to-emerald-400 shadow"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="w-12 text-right">
-            <span className="text-sm font-semibold text-emerald-900">{progress}%</span>
-          </div>
-        </div>
+              {!selectTypeOpen && (
+                <button
+                  onClick={handleAddPage}
+                  className="mt-3 px-3 py-2 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500"
+                >
+                  + Add First Page
+                </button>
+              )}
 
-        {/* scroll body */}
-        <div className="px-6 pb-4 flex-1 overflow-auto">
-          {/* Step 0: Info */}
-          {step === 0 && (
-            <div className="grid grid-cols-1 gap-6">
-              <div className="p-4 border rounded-xl border-emerald-300 bg-white">
-                <div className="mb-3">
-                  <div className="font-semibold text-emerald-900 mb-2">Module Title</div>
-                  <input
-                    value={title}
-                    onChange={(e) => onChangeTitle(e.target.value)}
-                    onBlur={() => persistDraft()}
-                    placeholder="Module Title (max 100 words)"
-                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm mb-2"
-                  />
-                  <div className="text-xs text-emerald-700">{words(title)}/100 words</div>
-                </div>
-
-                <div>
-                  <div className="font-semibold text-emerald-900 mb-2">Module Description</div>
-                  <textarea
-                    value={description}
-                    onChange={(e) => onChangeDescription(e.target.value)}
-                    onBlur={() => persistDraft()}
-                    placeholder="Module Description (max 250 words)"
-                    className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm h-28 resize-none"
-                  />
-                  <div className="text-xs text-emerald-700">{words(description)}/250 words</div>
-                </div>
-
-                {/* Add first page */}
-                {!selectTypeOpen && (
-                  <button
-                    onClick={handleAddPage}
-                    className="mt-3 px-3 py-2 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500"
-                  >
-                    + Add First Page
-                  </button>
-                )}
-
-                {/* type chooser */}
-                {selectTypeOpen && (
-                  <div className="mt-4 p-4 border rounded-xl border-emerald-300 bg-emerald-50">
-                    <div className="font-semibold text-emerald-900 mb-2">Choose content type for new page</div>
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
-                      {SECTION_TYPES.map((t) => (
-                        <button
-                          key={t.key}
-                          onClick={() => addPageWithSectionType(t.key)}
-                          className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border border-emerald-200 bg-white hover:bg-emerald-100 text-emerald-900"
-                        >
-                          <span className="text-xs">{t.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <div className="text-right mt-3">
-                      <button
-                        onClick={() => setSelectTypeOpen(false)}
-                        className="px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-                    </div>
+              {selectTypeOpen && (
+                <div className="mt-4 p-4 border rounded-xl border-emerald-300 bg-emerald-50">
+                  <div className="font-semibold text-emerald-900 mb-2">
+                    Choose content type for new page
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Step 1: Pages (left list + right editor) */}
-          {step === 1 && (
-            <div className="grid grid-cols-12 gap-6">
-              {/* left */}
-              <div className="col-span-12 lg:col-span-4 space-y-4">
-                <div className="p-4 border rounded-xl border-emerald-300 bg-white">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-emerald-900">Pages</div>
+                  <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                    {SECTION_TYPES.map((t) => (
+                      <button
+                        key={t.key}
+                        onClick={() => addPageWithSectionType(t.key)}
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border border-emerald-200 bg-white hover:bg-emerald-100 text-emerald-900"
+                      >
+                        <span className="text-xs">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-right mt-3">
                     <button
-                      onClick={() => setSelectTypeOpen(true)}
-                      className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500"
+                      onClick={() => setSelectTypeOpen(false)}
+                      className="px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm hover:bg-gray-300"
                     >
-                      <Plus size={14} className="inline mr-1" />
-                      Add Page
+                      Cancel
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-                  <div className="mt-3 space-y-2">
-                    {pages.length === 0 ? (
-                      <div className="text-sm text-emerald-700">No pages yet. Click “Add Page”.</div>
-                    ) : (
-                      pages.map((p, i) => (
-                        <div
-                          key={p.id}
-                          className={`flex items-center justify-between border rounded-lg px-3 py-2 ${
-                            i === activePageIndex ? "border-emerald-300 bg-emerald-50" : "border-gray-200 bg-white"
-                          }`}
-                        >
-                          <button
-                            className="text-left text-sm text-emerald-800 font-medium truncate"
-                            onClick={() => setActivePageIndex(i)}
-                            title="Open page"
-                          >
-                            {p.name || `Page ${i + 1}`}
-                          </button>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => duplicatePage(i)}
-                              className="p-1.5 rounded bg-blue-600 text-white hover:bg-blue-500"
-                              title="Duplicate page"
-                            >
-                              <Copy size={14} />
-                            </button>
-                            <button
-                              onClick={() => removePage(i)}
-                              className="p-1.5 rounded bg-red-600 text-white hover:bg-red-500"
-                              title="Delete page"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
+        {/* Step 1: Pages */}
+        {step === 1 && (
+          <div className="grid grid-cols-12 gap-6">
+            {/* left panel */}
+            <div className="col-span-12 lg:col-span-4 space-y-4">
+              <div className="p-4 border rounded-xl border-emerald-300 bg-white">
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold text-emerald-900">Pages</div>
+                  <button
+                    onClick={() => setSelectTypeOpen(true)}
+                    className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500"
+                  >
+                    <Plus size={14} className="inline mr-1" />
+                    Add Page
+                  </button>
                 </div>
 
-                {/* type chooser in Pages step */}
-                {selectTypeOpen && (
-                  <div className="p-4 border rounded-xl border-emerald-300 bg-white">
-                    <div className="font-semibold text-emerald-900 mb-2">Choose Content Type for New Page</div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {SECTION_TYPES.map((t) => (
-                        <button
-                          key={t.key}
-                          onClick={() => addPageWithSectionType(t.key)}
-                          className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border border-emerald-200 hover:bg-emerald-50 text-emerald-900"
-                        >
-                          <span className="text-xs">{t.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <div className="text-right mt-3">
-                      <button
-                        onClick={() => setSelectTypeOpen(false)}
-                        className="px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm hover:bg-gray-300"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* right */}
-              <div className="col-span-12 lg:col-span-8">
-                {activePageIndex === -1 || !pages[activePageIndex] ? (
-                  <div className="text-gray-400 text-center p-10">Select or create a page to edit.</div>
-                ) : (
-                  <PageEditor
-                    page={pages[activePageIndex]}
-                    onRename={async (name) => updateActivePage({ name })}
-                    onAddSection={onAddSection}
-                    onRemoveSection={onRemoveSection}
-                    onMoveSection={onMoveSection}
-                    onUpdateSection={async (sectionIndex, sectionPatch) => {
-                      const page = pages[activePageIndex] || { sections: [] };
-                      const next = Array.isArray(page.sections) ? [...page.sections] : [];
-                      next[sectionIndex] = { ...next[sectionIndex], ...sectionPatch };
-                      await updateActivePage({ sections: next });
-                    }}
-                    uploadToBucket={uploadToBucket}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Review */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <div className="p-4 border rounded-xl border-emerald-300 bg-white">
-                <div className="font-semibold text-emerald-900 mb-2">Review Summary</div>
-                <div className="text-sm text-emerald-900">
-                  <div><span className="font-semibold">Title:</span> {title || <i>(empty)</i>}</div>
-                  <div className="mt-1"><span className="font-semibold">Description:</span> {description || <i>(empty)</i>}</div>
-                  <div className="mt-3 font-semibold">Pages:</div>
+                <div className="mt-3 space-y-2">
                   {pages.length === 0 ? (
-                    <div className="text-emerald-700">No pages added.</div>
+                    <div className="text-sm text-emerald-700">
+                      No pages yet. Click “Add Page”.
+                    </div>
                   ) : (
-                    <ul className="list-disc pl-6">
-                      {pages.map((p, i) => (
-                        <li key={p.id} className="mb-1">
-                          <span className="font-medium">{p.name || `Page ${i + 1}`}</span> — {(p.sections || []).length} section(s)
-                        </li>
-                      ))}
-                    </ul>
+                    pages.map((p, i) => (
+                      <div
+                        key={p.id}
+                        className={`flex items-center justify-between border rounded-lg px-3 py-2 ${
+                          i === activePageIndex
+                            ? "border-emerald-300 bg-emerald-50"
+                            : "border-gray-200 bg-white"
+                        }`}
+                      >
+                        <button
+                          className="text-left text-sm text-emerald-800 font-medium truncate"
+                          onClick={() => setActivePageIndex(i)}
+                          title="Open page"
+                        >
+                          {p.name || `Page ${i + 1}`}
+                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => duplicatePage(i)}
+                            className="p-1.5 rounded bg-blue-600 text-white hover:bg-blue-500"
+                            title="Duplicate page"
+                          >
+                            <Copy size={14} />
+                          </button>
+                          <button
+                            onClick={() => removePage(i)}
+                            className="p-1.5 rounded bg-red-600 text-white hover:bg-red-500"
+                            title="Delete page"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
+
+              {selectTypeOpen && (
+                <div className="p-4 border rounded-xl border-emerald-300 bg-white">
+                  <div className="font-semibold text-emerald-900 mb-2">
+                    Choose Content Type for New Page
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {SECTION_TYPES.map((t) => (
+                      <button
+                        key={t.key}
+                        onClick={() => addPageWithSectionType(t.key)}
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border border-emerald-200 hover:bg-emerald-50 text-emerald-900"
+                      >
+                        <span className="text-xs">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-right mt-3">
+                    <button
+                      onClick={() => setSelectTypeOpen(false)}
+                      className="px-3 py-1.5 rounded bg-gray-200 text-gray-800 text-sm hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        {/* footer */}
-        <div className="flex items-center justify-between border-t border-gray-200 p-4">
-          <div className="text-xs text-emerald-800">Draft is autosaved</div>
+            {/* right editor */}
+            <div className="col-span-12 lg:col-span-8">
+              {activePageIndex === -1 || !pages[activePageIndex] ? (
+                <div className="text-gray-400 text-center p-10">
+                  Select or create a page to edit.
+                </div>
+              ) : (
+                <PageEditor
+                  page={pages[activePageIndex]}
+                  onRename={async (name) => updateActivePage({ name })}
+                  onAddSection={onAddSection}
+                  onRemoveSection={onRemoveSection}
+                  onMoveSection={onMoveSection}
+                  onUpdateSection={async (sectionIndex, sectionPatch) => {
+                    const page = pages[activePageIndex] || { sections: [] };
+                    const next = Array.isArray(page.sections) ? [...page.sections] : [];
+                    next[sectionIndex] = { ...next[sectionIndex], ...sectionPatch };
+                    await updateActivePage({ sections: next });
+                  }}
+                  uploadToBucket={uploadToBucket}
+                />
+              )}
+            </div>
+          </div>
+        )}
 
-          {step < 2 ? (
-            step === 0 ? (
-              <button
-                onClick={handleAddPage}
-                className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500"
-              >
-                Add Page
-              </button>
-            ) : (
-              <button
-                onClick={handleNext}
-                className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500"
-              >
-                Complete & Review
-              </button>
-            )
+        {/* Step 2: Review */}
+        {step === 2 && (
+          <div className="space-y-6">
+            <div className="p-4 border rounded-xl border-emerald-300 bg-white">
+              <div className="font-semibold text-emerald-900 mb-2">Review Summary</div>
+              <div className="text-sm text-emerald-900">
+                <div>
+                  <span className="font-semibold">Title:</span>{" "}
+                  {title || <i>(empty)</i>}
+                </div>
+                <div className="mt-1">
+                  <span className="font-semibold">Description:</span>{" "}
+                  {description || <i>(empty)</i>}
+                </div>
+                <div className="mt-3 font-semibold">Pages:</div>
+                {pages.length === 0 ? (
+                  <div className="text-emerald-700">No pages added.</div>
+                ) : (
+                  <ul className="list-disc pl-6">
+                    {pages.map((p, i) => (
+                      <li key={p.id} className="mb-1">
+                        <span className="font-medium">
+                          {p.name || `Page ${i + 1}`}
+                        </span>{" "}
+                        — {(p.sections || []).length} section(s)
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* footer */}
+      <div className="flex items-center justify-between border-t border-gray-200 p-4">
+        <div className="text-xs text-emerald-800">Draft is autosaved</div>
+
+        {step < 2 ? (
+          step === 0 ? (
+            <button
+              onClick={handleAddPage}
+              className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500"
+            >
+              Add Page
+            </button>
           ) : (
             <button
-              onClick={completeModule}
-              disabled={saving}
-              className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500 disabled:opacity-50"
+              onClick={handleNext}
+              className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500"
             >
-              {saving ? "Saving..." : "Complete Module"}
+              Complete & Review
             </button>
-          )}
-        </div>
+          )
+        ) : (
+          <button
+            onClick={completeModule}
+            disabled={saving}
+            className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Complete Module"}
+          </button>
+        )}
       </div>
     </div>
-  );
+  </div>
+);
+
 }
+
+  

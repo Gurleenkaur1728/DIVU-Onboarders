@@ -18,7 +18,6 @@ export default function Account() {
   const nav = useNavigate();
   const isSmall = typeof window !== "undefined" ? window.innerWidth < 900 : false;
 
-  // Dynamically detect role from localStorage (fallback to USER)
   const [role, setRole] = useState(() => {
     const stored = localStorage.getItem("role_id");
     return stored !== null ? parseInt(stored, 10) : ROLES.USER;
@@ -26,7 +25,6 @@ export default function Account() {
 
   useEffect(() => {
     fetchUserData();
-    // Also update role from localStorage in case it changes
     const stored = localStorage.getItem("role_id");
     if (stored !== null) setRole(parseInt(stored, 10));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -36,11 +34,12 @@ export default function Account() {
     try {
       setLoading(true);
 
-      // who is logged in?
-      const { data: { user: authUser }, error: auErr } = await supabase.auth.getUser();
+      const {
+        data: { user: authUser },
+        error: auErr,
+      } = await supabase.auth.getUser();
       if (auErr || !authUser) throw new Error("Not signed in");
 
-      // profile row for THIS user (join by email since public.users is your legacy table)
       const { data: profile, error: profErr } = await supabase
         .from("users")
         .select("id, name, email, employee_id")
@@ -55,15 +54,18 @@ export default function Account() {
         setEmployeeId(profile.employee_id || "");
       }
 
-      // get effective role from user_roles (source of truth)
       const { data: roleRow } = await supabase
         .from("user_roles")
         .select("role_id, role")
         .eq("user_id", authUser.id)
         .maybeSingle();
 
-      const rid = Number(roleRow?.role_id ?? Number(localStorage.getItem("role_id") ?? 0));
-      setRole(rid === 2 ? ROLES.SUPER_ADMIN : rid === 1 ? ROLES.ADMIN : ROLES.USER);
+      const rid = Number(
+        roleRow?.role_id ?? Number(localStorage.getItem("role_id") ?? 0)
+      );
+      setRole(
+        rid === 2 ? ROLES.SUPER_ADMIN : rid === 1 ? ROLES.ADMIN : ROLES.USER
+      );
     } catch (e) {
       alert("Error fetching user data: " + e.message);
     } finally {
@@ -71,12 +73,9 @@ export default function Account() {
     }
   };
 
-
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setProfileImage(URL.createObjectURL(file));
-    }
+    if (file) setProfileImage(URL.createObjectURL(file));
   };
 
   const triggerFileInput = () => {
@@ -86,8 +85,6 @@ export default function Account() {
   const save = async () => {
     try {
       setBusy(true);
-      // Put your save logic here; e.g., update the user in Supabase
-      // await supabase.from("users").update({ name }).eq("id", userId);
       console.log("Save clicked");
       alert("Changes saved (stub). Add your Supabase update here.");
     } catch (e) {
@@ -98,20 +95,20 @@ export default function Account() {
   };
 
   const signOut = () => {
-    nav("/"); // Simplified → just go back to login
+    nav("/"); // redirect to login
   };
 
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
-        <p className="text-emerald-100 text-lg">Loading...</p>
+        <p className="text-emerald-100 text-lg animate-pulse">Loading...</p>
       </div>
     );
   }
 
   return (
     <div
-      className="flex min-h-dvh"
+      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60"
       style={{
         backgroundImage: "url('/bg.png')",
         backgroundSize: "cover",
@@ -120,29 +117,32 @@ export default function Account() {
     >
       <Sidebar role={role} />
 
-      <div className="flex-1 p-8">
-        {/* Header row: Title (left) + Sign out (right) */}
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-white">Account</h1>
+      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
+        {/* Header */}
+        <div className="mb-6 flex flex-wrap items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 shadow-sm border border-emerald-200/50">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-emerald-950">
+            Account
+          </h1>
           <button
             onClick={signOut}
-            className="px-4 py-2 rounded-lg font-semibold border-2 border-red-500 text-red-600 bg-red-50 hover:bg-red-100 transition"
+            className="px-5 py-2 rounded-lg font-semibold border-2 border-red-500 text-red-600 bg-red-50 hover:bg-red-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400"
           >
-            Sign out
+            Sign Out
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 mb-6 flex-wrap">
+        <div className="flex gap-3 flex-wrap mb-6">
           {["employment", "role", "department", "settings"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 rounded font-semibold capitalize ${
-                activeTab === tab
-                  ? "bg-emerald-600 text-white"
-                  : "bg-white text-emerald-700 hover:bg-gray-100"
-              }`}
+              className={`px-5 py-2 rounded-full font-semibold capitalize transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400
+                ${
+                  activeTab === tab
+                    ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+                    : "bg-white text-emerald-800 hover:bg-gray-100"
+                }`}
             >
               {tab === "employment"
                 ? "Employment Details"
@@ -156,14 +156,14 @@ export default function Account() {
         </div>
 
         {/* Content Card */}
-        <div className="bg-white/95 rounded-2xl p-6 shadow-lg">
+        <div className="bg-white/95 rounded-2xl p-6 sm:p-8 shadow-lg border border-emerald-200">
           {/* SETTINGS (editable) */}
           {activeTab === "settings" && (
             <div className="flex flex-col gap-8 max-w-3xl">
-              {/* Profile image upload is EDITABLE, so it belongs only in settings */}
+              {/* Profile Image */}
               <div
                 onClick={triggerFileInput}
-                className="w-32 h-32 bg-gray-200 rounded-md flex items-center justify-center text-gray-500 font-semibold cursor-pointer hover:bg-gray-300 transition"
+                className="w-32 h-32 bg-emerald-50 border border-emerald-200 rounded-md flex items-center justify-center text-emerald-700 font-semibold cursor-pointer hover:bg-emerald-100 transition-all duration-200"
                 title="Click to upload profile image"
               >
                 {profileImage ? (
@@ -187,7 +187,7 @@ export default function Account() {
               <div className="grid grid-cols-1 gap-4 max-w-lg">
                 <label className="block">
                   <span className="block text-sm font-semibold text-emerald-900 mb-1">
-                    Full name
+                    Full Name
                   </span>
                   <input
                     type="text"
@@ -245,18 +245,17 @@ export default function Account() {
                 <button
                   onClick={save}
                   disabled={busy}
-                  className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-md hover:from-emerald-400 hover:to-green-500 transition"
+                  className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-md hover:from-emerald-400 hover:to-green-500 transition disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                 >
-                  {busy ? "Saving…" : "Save changes"}
+                  {busy ? "Saving…" : "Save Changes"}
                 </button>
-                {/* You already have Sign out in header; keep only one primary sign-out */}
               </div>
             </div>
           )}
 
-          {/* EMPLOYMENT (read-only) */}
+          {/* EMPLOYMENT */}
           {activeTab === "employment" && (
-            <div className="flex-1 space-y-2 text-gray-800">
+            <div className="space-y-2 text-emerald-900 leading-relaxed">
               <p>
                 <span className="font-semibold">Employee Name:</span> {name || "—"}
               </p>
@@ -284,9 +283,9 @@ export default function Account() {
             </div>
           )}
 
-          {/* ROLE (read-only) */}
+          {/* ROLE */}
           {activeTab === "role" && (
-            <div className="flex-1 space-y-2 text-gray-800">
+            <div className="space-y-2 text-emerald-900 leading-relaxed">
               <p>
                 <span className="font-semibold">Role Name:</span> Frontend Engineer
               </p>
@@ -295,8 +294,8 @@ export default function Account() {
                 development using React & Tailwind
               </p>
               <p>
-                <span className="font-semibold">Role Specifications:</span> Works closely with UX
-                team and backend developers
+                <span className="font-semibold">Specifications:</span> Works closely
+                with UX and backend teams
               </p>
               <p>
                 <span className="font-semibold">Hire Date:</span> 01-06-2025
@@ -307,14 +306,14 @@ export default function Account() {
             </div>
           )}
 
-          {/* DEPARTMENT (read-only) */}
+          {/* DEPARTMENT */}
           {activeTab === "department" && (
-            <div className="flex-1 space-y-2 text-gray-800">
+            <div className="space-y-2 text-emerald-900 leading-relaxed">
               <p>
                 <span className="font-semibold">Department:</span> Technology
               </p>
               <p>
-                <span className="font-semibold">Department Team:</span> Web Development
+                <span className="font-semibold">Team:</span> Web Development
               </p>
               <p>
                 <span className="font-semibold">Manager:</span> John Smith
