@@ -248,4 +248,3 @@ function SectionBlock({ children }) {
 function isVideo(url = "") {
   return /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url);
 }
- 
