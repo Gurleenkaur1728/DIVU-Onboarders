@@ -1,3 +1,4 @@
+//I created this forgot password page mostly by myself and got a little help from ChatGPT for improving the layout and adding basic form validation.
 import React, { useState } from "react";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import bcrypt from "bcryptjs";
@@ -39,11 +40,10 @@ export default function ForgotPassword() {
       : user.email.split("@")[0];
     setUserName(nameToUse);
 
-    // Generate code
+    // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedCode(code);
 
-    // Send Email
     try {
       const res = await fetch("https://divu-server.vercel.app/send-email", {
         method: "POST",
@@ -55,9 +55,10 @@ export default function ForgotPassword() {
           html: `
             <!DOCTYPE html>
             <html>
-              <body style="margin:0;padding:0;background:#0c1214;font-family:Arial,sans-serif;">
-                <div style="max-width:600px;margin:auto;border:1px solid #1f2937;border-radius:18px;overflow:hidden;box-shadow:0 6px 24px rgba(16,185,129,0.15);">
+              <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
+                <div style="max-width:600px;margin:auto;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;box-shadow:0 6px 24px rgba(16,185,129,0.12);">
                   
+                  <!-- Header -->
                   <div style="background:linear-gradient(90deg,#065f46 60%,#34d399 100%);padding:24px;text-align:center;">
                     <img src="https://zhnulozkwqzycapxvsxk.supabase.co/storage/v1/object/public/assets/divu-logo.png"
                          alt="Divu Logo" style="height:80px;margin-bottom:12px;" />
@@ -66,31 +67,33 @@ export default function ForgotPassword() {
                     </h1>
                   </div>
 
-                  <div style="background:#000;padding:32px 28px;color:#fff;">
+                  <!-- Body -->
+                  <div style="background:#fff;padding:32px 28px;color:#222;">
                     <p style="font-size:1.15rem;font-weight:600;margin-bottom:18px;">
-                      Hello <span style="color:#34d399;font-weight:700;">${nameToUse}</span>,
+                      Hello <span style="color:#10b981;">${nameToUse}</span>,
                     </p>
 
                     <p style="font-size:1.05rem;margin-bottom:18px;">
                       We received a request to reset your <strong>Divu account password</strong>.
                     </p>
 
-                    <p style="font-size:1.05rem;margin-bottom:18px;color:#d8b4fe;">
+                    <p style="font-size:1.05rem;margin-bottom:18px;">
                       Please use the verification code below to continue the reset process:
                     </p>
 
                     <div style="text-align:center;margin:32px 0;">
-                      <h1 style="font-size:2.5rem;color:#34d399;letter-spacing:4px;">
+                      <h1 style="font-size:2.2rem;color:#065f46;letter-spacing:4px;">
                         ${code}
                       </h1>
                     </div>
 
-                    <p style="font-size:1rem;margin-top:20px;color:#e5e7eb;">
+                    <p style="font-size:1rem;margin-top:20px;">
                       This code will expire soon. If you didn’t request a password reset, you can safely ignore this email.
                     </p>
                   </div>
 
-                  <div style="background:#111827;padding:18px;text-align:center;font-size:0.95rem;color:#34d399;border-top:1px solid #1f2937;">
+                  <!-- Footer -->
+                  <div style="background:#f9fafb;padding:18px;text-align:center;font-size:0.95rem;color:#065f46;border-top:1px solid #e5e7eb;">
                     <span style="font-weight:600;">© ${new Date().getFullYear()} Divu Inc.</span> All rights reserved.
                   </div>
                 </div>
@@ -245,4 +248,3 @@ export default function ForgotPassword() {
     </div>
   );
 }
-//forgetpassword
