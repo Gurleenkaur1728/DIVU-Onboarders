@@ -52,6 +52,7 @@ function divuMailTemplate({ title, body, buttonText, buttonLink }) {
 }
 
 export default function AccessRequests() {
+  const { roleId } = useRole();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -214,7 +215,7 @@ export default function AccessRequests() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="employee-requests" role={useRole()} />
+  <Sidebar active="employee-requests" role={roleId} />
 
       <div className="flex-1 flex flex-col p-6 z-10">
         <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">

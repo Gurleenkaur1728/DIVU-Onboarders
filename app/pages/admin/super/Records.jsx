@@ -5,6 +5,7 @@ import { supabase } from "../../../../src/lib/supabaseClient.js";
 import { ChevronDown, ChevronRight, RefreshCcw } from "lucide-react";
 
 export default function Records() {
+  const { roleId } = useRole();
   const [logs, setLogs] = useState([]);
   const [expanded, setExpanded] = useState({});
   const [loading, setLoading] = useState(true);
@@ -108,7 +109,7 @@ export default function Records() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="records" role={useRole()} />
+  <Sidebar active="records" role={roleId} />
 
       <div className="flex-1 flex flex-col p-6 overflow-y-auto">
         {/* Header */}

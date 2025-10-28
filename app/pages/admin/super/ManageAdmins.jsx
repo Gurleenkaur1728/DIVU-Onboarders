@@ -5,6 +5,7 @@ import { Trash2, Plus, Loader2 } from "lucide-react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
 
 export default function ManageAdmins() {
+  const { roleId } = useRole();
   const [admins, setAdmins] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +109,7 @@ export default function ManageAdmins() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="manage-admins" role={useRole()} />
+  <Sidebar active="manage-admins" role={roleId} />
 
       <div className="flex-1 flex flex-col p-6">
         {/* Header */}

@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import Sidebar from "../../components/Sidebar.jsx";
 import { Plus, Trash2, Save, Lock } from "lucide-react";
 import { useRole } from "../../../src/lib/hooks/useRole.js";
+import { supabase } from "../../../src/lib/supabaseClient.js";
  
 export default function ManageContent() {
   const navigate = useNavigate();
@@ -29,56 +30,65 @@ export default function ManageContent() {
     if (!isAdmin) navigate("/");
   }, [isAdmin, navigate]);
  
+  const tabToSection = useCallback((tab) => {
+    return tab === "welcome" ? "hero" : tab === "culture" ? "culture" : "about";
+  }, []);
+
   /* Load Data */
-  const fetchSections = useCallback((tab) => {
+  const fetchSections = useCallback(async (tab) => {
     setLoading(true);
     setMessage("");
     const section = tabToSection(tab);
-    
+
     try {
-      const storedContent = JSON.parse(localStorage.getItem("home_content") || "[]");
-      let data = storedContent.filter(item => item.section === section)
-                             .sort((a, b) => a.sort_order - b.sort_order);
-      
-      // Ensure first section exists (sort_order = 0)
-      if (!data || data.length === 0) {
-        const newSection = {
-          id: Date.now(),
-          section,
-          sort_order: 0,
-          title: section === "hero" ? "Welcome" : "Section Title",
-          subtitle: "",
-          description: "",
-          media_url: "",
-          cta_label: "",
-          cta_href: "",
-          is_active: true,
-        };
-        
-        storedContent.push(newSection);
-        localStorage.setItem("home_content", JSON.stringify(storedContent));
-        setSections([newSection]);
-      } else {
-        setSections(data);
+      const { data, error } = await supabase
+        .from("home_content")
+        .select("*")
+        .eq("section", section)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      let rows = data || [];
+
+      if (rows.length === 0) {
+        const { data: inserted, error: insertError } = await supabase
+          .from("home_content")
+          .insert([
+            {
+              section,
+              sort_order: 0,
+              title: section === "hero" ? "Welcome" : "Section Title",
+              subtitle: "",
+              description: "",
+              media_url: "",
+              cta_label: "",
+              cta_href: "",
+              is_active: true,
+            },
+          ])
+          .select("*")
+          .maybeSingle();
+
+        if (insertError) throw insertError;
+        rows = inserted ? [inserted] : [];
       }
+
+      setSections(rows);
     } catch (error) {
-      console.error(error);
+      console.error("Error loading content sections:", error);
       setMessage("⚠️ Failed to load content.");
       setSections([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tabToSection]);
 
   // Load all sections for current tab
   useEffect(() => {
     if (activeTab) fetchSections(activeTab);
   }, [activeTab, fetchSections]);
- 
-  function tabToSection(tab) {
-    // You mapped "welcome" => "hero" earlier; keeping that for the first panel.
-    return tab === "welcome" ? "hero" : tab === "culture" ? "culture" : "about";
-  }
 
   function updateLocal(index, patch) {
     setSections((prev) => {
@@ -92,37 +102,38 @@ export default function ManageContent() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // For now, just use FileReader to create a data URL
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result;
-      if (dataUrl) {
-        updateLocal(index, { media_url: dataUrl });
-        setMessage("✅ Media uploaded!");
-      }
-    };
-    reader.onerror = () => {
-      console.error("Error reading file");
+    const sectionName = sections[index]?.section || tabToSection(activeTab);
+    const fileExt = file.name.split(".").pop();
+    const filePath = `${sectionName}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("assets")
+      .upload(filePath, file, { upsert: false });
+
+    if (uploadError) {
+      console.error(uploadError);
       setMessage("⚠️ Upload failed.");
-    };
-    reader.readAsDataURL(file);
+      return;
+    }
+
+    const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
+    updateLocal(index, { media_url: data.publicUrl });
+    setMessage("✅ Media uploaded!");
   }
 
   // Save section
-  function saveSection(index) {
+  async function saveSection(index) {
     setLoading(true);
     setMessage("");
     const row = sections[index];
-    
+
     try {
-      const storedContent = JSON.parse(localStorage.getItem("home_content") || "[]");
-      let updatedContent;
+      let result;
 
       if (row.id) {
-        // Update existing section
-        updatedContent = storedContent.map(item => 
-          item.id === row.id ? {
-            ...item,
+        result = await supabase
+          .from("home_content")
+          .update({
             title: row.title ?? "",
             subtitle: row.subtitle ?? "",
             description: row.description ?? "",
@@ -131,30 +142,36 @@ export default function ManageContent() {
             cta_href: row.cta_href ?? "",
             is_active: row.is_active ?? true,
             sort_order: row.sort_order ?? 0,
-          } : item
-        );
+          })
+          .eq("id", row.id)
+          .select("*")
+          .maybeSingle();
       } else {
-        // Create new section
-        const newSection = {
-          id: Date.now(),
-          section: tabToSection(activeTab),
-          title: row.title ?? "",
-          subtitle: row.subtitle ?? "",
-          description: row.description ?? "",
-          media_url: row.media_url ?? "",
-          cta_label: row.cta_label ?? "",
-          cta_href: row.cta_href ?? "",
-          is_active: row.is_active ?? true,
-          sort_order: row.sort_order ?? sections.length,
-        };
-        updatedContent = [...storedContent, newSection];
+        result = await supabase
+          .from("home_content")
+          .insert([
+            {
+              section: tabToSection(activeTab),
+              title: row.title ?? "",
+              subtitle: row.subtitle ?? "",
+              description: row.description ?? "",
+              media_url: row.media_url ?? "",
+              cta_label: row.cta_label ?? "",
+              cta_href: row.cta_href ?? "",
+              is_active: row.is_active ?? true,
+              sort_order: row.sort_order ?? sections.length,
+            },
+          ])
+          .select("*")
+          .maybeSingle();
       }
 
-      localStorage.setItem("home_content", JSON.stringify(updatedContent));
+      if (result.error) throw result.error;
+
       setMessage("✅ Section saved.");
-      fetchSections(activeTab);
+      await fetchSections(activeTab);
     } catch (error) {
-      console.error(error);
+      console.error("Error saving content section:", error);
       setMessage("⚠️ Failed to save changes.");
     } finally {
       setLoading(false);
@@ -162,7 +179,7 @@ export default function ManageContent() {
   }
 
   // Delete section
-  function deleteSection(index) {
+  async function deleteSection(index) {
     const row = sections[index];
     if (!row) return;
 
@@ -174,7 +191,6 @@ export default function ManageContent() {
     }
 
     if (!row.id) {
-      // Local-only row not saved yet; just remove locally
       setSections((prev) => prev.filter((_, i) => i !== index));
       return;
     }
@@ -183,15 +199,18 @@ export default function ManageContent() {
     setMessage("");
 
     try {
-      const storedContent = JSON.parse(localStorage.getItem("home_content") || "[]");
-      const updatedContent = storedContent.filter(item => item.id !== row.id);
-      
-      localStorage.setItem("home_content", JSON.stringify(updatedContent));
+      const { error } = await supabase
+        .from("home_content")
+        .delete()
+        .eq("id", row.id);
+
+      if (error) throw error;
+
       setMessage("🗑️ Section deleted.");
-      resequenceSortOrder();
-      fetchSections(activeTab);
+      await resequenceSortOrder();
+      await fetchSections(activeTab);
     } catch (error) {
-      console.error(error);
+      console.error("Error deleting content section:", error);
       setMessage("⚠️ Failed to delete section.");
     } finally {
       setLoading(false);
@@ -199,24 +218,27 @@ export default function ManageContent() {
   }
 
   // Resequence sort order
-  function resequenceSortOrder() {
+  async function resequenceSortOrder() {
     try {
-      const storedContent = JSON.parse(localStorage.getItem("home_content") || "[]");
       const section = tabToSection(activeTab);
-      
-      // Get sections for current tab and sort them
-      const sectionContent = storedContent
-        .filter(item => item.section === section)
-        .sort((a, b) => a.sort_order - b.sort_order);
-      
-      // Update sort orders
-      const updatedContent = storedContent.map(item => {
-        if (item.section !== section) return item;
-        const index = sectionContent.findIndex(s => s.id === item.id);
-        return { ...item, sort_order: index };
-      });
-      
-      localStorage.setItem("home_content", JSON.stringify(updatedContent));
+      const { data, error } = await supabase
+        .from("home_content")
+        .select("id")
+        .eq("section", section)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      if (!data) return;
+
+      const updates = data.map((row, idx) => ({ id: row.id, sort_order: idx }));
+      if (updates.length === 0) return;
+
+      const { error: upsertError } = await supabase
+        .from("home_content")
+        .upsert(updates, { onConflict: "id" });
+
+      if (upsertError) throw upsertError;
     } catch (error) {
       console.error("Error resequencing sort order:", error);
     }

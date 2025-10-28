@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
-import Sidebar, { ROLES } from "../components/Sidebar";
+import Sidebar from "../components/Sidebar";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
+import { supabase } from "../../src/lib/supabaseClient.js";
  
 export default function Home() {
   const { roleId, role } = useRole();
@@ -26,46 +27,54 @@ export default function Home() {
  
   // Load all active sections for the Welcome page
   useEffect(() => {
-    setLoading(true);
-    try {
-      const storedSections = JSON.parse(localStorage.getItem("home_content") || "[]");
-      if (Array.isArray(storedSections) && storedSections.length) {
-        setSections(storedSections);
-      } else {
-        // Graceful fallback if nothing found
-        setSections([
-          {
-            id: "fallback",
-            title: "Welcome to DIVU",
-            subtitle: "Your onboarding journey starts here.",
-            description: "",
-            media_url: "/divu-logo.png",
-            cta_label: "",
-            cta_href: "",
-            sort_order: 0,
-            is_active: true,
-          },
-        ]);
+    let active = true;
+    const fallback = [
+      {
+        id: "fallback",
+        title: "Welcome to DIVU",
+        subtitle: "Your onboarding journey starts here.",
+        description: "",
+        media_url: "/divu-logo.png",
+        cta_label: "",
+        cta_href: "",
+        sort_order: 0,
+        is_active: true,
+      },
+    ];
+
+    async function loadSections() {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("home_content")
+          .select("*")
+          .eq("section", "hero")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        if (!active) return;
+
+        if (Array.isArray(data) && data.length > 0) {
+          setSections(data);
+        } else {
+          setSections(fallback);
+        }
+      } catch (error) {
+        console.error("Error loading home sections:", error);
+        if (active) setSections(fallback);
+      } finally {
+        if (active) setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading home sections:", error);
-      // Use fallback if local storage data is invalid
-      setSections([
-        {
-          id: "fallback",
-          title: "Welcome to DIVU",
-          subtitle: "Your onboarding journey starts here.",
-          description: "",
-          media_url: "/divu-logo.png",
-          cta_label: "",
-          cta_href: "",
-          sort_order: 0,
-          is_active: true,
-        },
-      ]);
-    } finally {
-      setLoading(false);
     }
+
+    loadSections();
+
+    return () => {
+      active = false;
+    };
   }, []);
  
   return (
