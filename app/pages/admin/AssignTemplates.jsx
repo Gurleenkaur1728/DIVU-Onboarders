@@ -23,6 +23,7 @@ export default function AssignTemplates() {
 
   useEffect(() => {
     (async () => {
+      // pulls from users table in supabase
       const { data: u, error: ue } = await supabase
         .from("users")
         .select("id, name, email")
@@ -30,6 +31,7 @@ export default function AssignTemplates() {
       if (ue) console.error(ue);
       setUsers(u || []);
 
+      // pulls from checklist_groups table in supabase
       const { data: g, error: ge } = await supabase
         .from("checklist_groups")
         .select("id, name, sort_order")
