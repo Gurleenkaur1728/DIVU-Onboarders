@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { HelpCircle, Send, MessageSquare } from "lucide-react";
-import { supabase } from "../../src/lib/supabaseClient.js";
+import { useRole } from "../../src/lib/hooks/useRole.js";
 
 export default function Questions() {
   const [tab, setTab] = useState("faqs");
@@ -13,66 +13,30 @@ export default function Questions() {
 
   // Load FAQs (published) + my questions
   useEffect(() => {
-    let ignore = false;
-
-    async function load() {
+    const load = () => {
       setNotice("");
-      // FAQs
-      const { data: fData, error: fErr } = await supabase
-        .from("faqs")
-        .select("id, question, answer, is_published, created_at")
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-      if (!ignore) {
-        if (fErr) console.error(fErr);
-        setFaqs(fData ?? []);
-      }
+      // For now, we'll load from localStorage or another data source
+      // This would typically be replaced with an API call to your backend
+      
+      const storedFaqs = JSON.parse(localStorage.getItem("faqs") || "[]");
+      setFaqs(storedFaqs);
 
-      // who am I?
-      const { data: auth } = await supabase.auth.getUser();
-      const userId = auth?.user?.id ?? null;
-      if (!userId) {
-        if (!ignore) setNotice("You must be signed in to view your questions.");
+      const profileId = localStorage.getItem("profile_id");
+      if (!profileId) {
+        setNotice("You must be signed in to view your questions.");
         return;
       }
 
-      // My questions
-      const { data: qData, error: qErr } = await supabase
-        .from("user_questions")
-        .select("id, question_text, answer_text, status, created_at")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-
-      if (!ignore) {
-        if (qErr) console.error(qErr);
-        setMyQuestions(
-          (qData ?? []).map((r) => ({
-            id: r.id,
-            question: r.question_text,
-            answer: r.answer_text,
-            status: r.status,
-          }))
-        );
-      }
-    }
+      const storedQuestions = JSON.parse(localStorage.getItem("my_questions") || "[]");
+      setMyQuestions(storedQuestions);
+    };
 
     load();
-
-    // realtime for FAQs + my questions
-    const ch1 = supabase
-      .channel("faqs-public")
-      .on("postgres_changes", { event: "*", schema: "public", table: "faqs" }, load)
-      .subscribe();
-
-    const ch2 = supabase
-      .channel("uq-self")
-      .on("postgres_changes", { event: "*", schema: "public", table: "user_questions" }, load)
-      .subscribe();
+    // Set up an interval to check for updates periodically
+    const interval = setInterval(load, 30000);
 
     return () => {
-      ignore = true;
-      supabase.removeChannel(ch1);
-      supabase.removeChannel(ch2);
+      clearInterval(interval);
     };
   }, []);
 
@@ -84,43 +48,36 @@ export default function Questions() {
     setLoading(true);
     setNotice("");
 
-    const { data: auth } = await supabase.auth.getUser();
-    const userId = auth?.user?.id ?? null;
-    if (!userId) {
+    const profileId = localStorage.getItem("profile_id");
+    if (!profileId) {
       setLoading(false);
       setNotice("You must be signed in to ask a question.");
       return;
     }
 
-    const { data, error } = await supabase
-      .from("user_questions")
-      .insert({
-        user_id: userId,
-        question_text: text,
-        status: "open",
-      })
-      .select("id, question_text, answer_text, status")
-      .single();
+    try {
+      // Create a new question object
+      const newQuestion = {
+        id: Date.now(), // temporary ID
+        question: text,
+        answer: null,
+        status: "open"
+      };
 
-    setLoading(false);
+      // Update local storage with the new question
+      const existingQuestions = JSON.parse(localStorage.getItem("my_questions") || "[]");
+      const updatedQuestions = [newQuestion, ...existingQuestions];
+      localStorage.setItem("my_questions", JSON.stringify(updatedQuestions));
 
-    if (error) {
+      // Update state
+      setMyQuestions(updatedQuestions);
+      setNewQ("");
+    } catch (error) {
       console.error(error);
-      setNotice(error.message);
-      return;
+      setNotice("Failed to save question");
+    } finally {
+      setLoading(false);
     }
-
-    // realtime will also refresh
-    setMyQuestions((prev) => [
-      {
-        id: data.id,
-        question: data.question_text,
-        answer: data.answer_text,
-        status: data.status,
-      },
-      ...prev,
-    ]);
-    setNewQ("");
   };
 
   return (
@@ -128,7 +85,7 @@ export default function Questions() {
       className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar role={ROLES.USER} active="questions" />
+      <Sidebar role={useRole().roleId} active="questions" />
 
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}

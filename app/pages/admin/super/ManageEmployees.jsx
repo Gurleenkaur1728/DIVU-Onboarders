@@ -1,5 +1,6 @@
 import { useState } from "react";
-import Sidebar, { ROLES } from "../../../components/Sidebar.jsx";
+import Sidebar from "../../../components/Sidebar.jsx";
+import { useRole } from "../../../../src/lib/hooks/useRole.js";
 import { Edit, Trash2 } from "lucide-react";
 
 export default function ManageEmployees() {
@@ -11,7 +12,7 @@ export default function ManageEmployees() {
 
   return (
     <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar active="manage-employees" role={ROLES.SUPER_ADMIN} />
+      <Sidebar active="manage-employees" role={useRole()} />
 
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}

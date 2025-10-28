@@ -1,13 +1,8 @@
 import { useState, useEffect } from "react";
-import Sidebar, { ROLES } from "../../../components/Sidebar.jsx";
+import Sidebar from "../../../components/Sidebar.jsx";
 import { Send, RefreshCcw, XCircle } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
-
-// ✅ Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { useRole } from "../../../../src/lib/hooks/useRole.js";
+import { supabase } from "../../../../src/lib/supabaseClient.js";
 
 // ✅ Helper: Add Audit Log
 const addAuditLog = async (employeeEmail, employeeName, action, performedBy) => {
@@ -75,6 +70,8 @@ const sendEmail = async ({ email, firstName, lastName, position, token_hash }) =
 };
 
 export default function AddEmployee() {
+  const { roleId } = useRole();
+
   const [formData, setFormData] = useState({
     employeeId: "",
     firstName: "",
@@ -188,7 +185,7 @@ export default function AddEmployee() {
 
   return (
     <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar active="add-employee" role={ROLES.SUPER_ADMIN} />
+      <Sidebar active="add-employee" role={roleId} />
       <div className="flex-1 flex flex-col p-6">
         <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-6 text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">ADD EMPLOYEE</div>
 

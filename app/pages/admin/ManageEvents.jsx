@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import Toast from "../../components/Toast.jsx";
-import { supabase } from "../../../src/lib/supabaseClient.js";
 import { CalendarPlus, ChevronLeft, ChevronRight, List, Grid, Clock, MapPin } from "lucide-react";
+import { useRole } from "../../../src/lib/hooks/useRole.js";
  
 export default function ManageEvents() {
-  /* Role (condensed) */
-  const [roleId, setRoleId] = useState(() => (+localStorage.getItem("role_id") || ROLES.ADMIN));
-  useEffect(() => { const r = localStorage.getItem("role_id"); r && setRoleId(+r); }, []);
+  /* Role */
+  const { roleId } = useRole();
  
   /* State */
   const today = new Date();
@@ -36,24 +35,30 @@ export default function ManageEvents() {
   const endWindow = useMemo(() => endOfMonth(addMonths(start, 5)), [start]); // current month + next 5
  
   /* Data */
-  const load = async () => {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .gte("event_date", ymd(start))
-      .lte("event_date", ymd(endWindow))
-      .order("event_date", { ascending: true })
-      .order("start_time", { ascending: true });
-    if (!error) setEvents(data || []);
-  };
-  useEffect(() => { load(); }, [cursor]);
+  const load = useCallback(() => {
+    try {
+      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+      const filteredEvents = storedEvents.filter(ev => {
+        const eventDate = new Date(ev.event_date);
+        return eventDate >= start && eventDate <= endWindow;
+      }).sort((a, b) => {
+        const dateCompare = a.event_date.localeCompare(b.event_date);
+        return dateCompare !== 0 ? dateCompare : a.start_time.localeCompare(b.start_time);
+      });
+      setEvents(filteredEvents);
+    } catch (error) {
+      console.error("Error loading events:", error);
+      setEvents([]);
+    }
+  }, [start, endWindow]);
+
+  useEffect(() => { load(); }, [load, cursor, start, endWindow]);
+
+  // Poll for updates every 30 seconds
   useEffect(() => {
-    const ch = supabase
-      .channel("events-admin")
-      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => load())
-      .subscribe();
-    return () => supabase.removeChannel(ch);
-  }, [cursor]);
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
+  }, [load, cursor, start, endWindow]);
  
   const mapByDay = useMemo(() => {
     const map = new Map();
@@ -101,32 +106,60 @@ export default function ManageEvents() {
  
   /* Save / Update / Delete */
   const saveEvent = async () => {
-    if (!name.trim()) return showToast("Event name is required.","warning");
-    if (!draftDate) return showToast("Please select a date.","warning");
-    if (toStartOfDay(new Date(draftDate)) < toStartOfDay(new Date())) return showToast("Date cannot be in the past.","warning");
-    const [sH,sM] = startTime.split(":").map(Number), [eH,eM] = endTime.split(":").map(Number);
-    if (eH*60+eM <= sH*60+sM) return showToast("End time must be after start time.","warning");
- 
+    if (!name.trim()) return showToast("Event name is required.", "warning");
+    if (!draftDate) return showToast("Please select a date.", "warning");
+    if (toStartOfDay(new Date(draftDate)) < toStartOfDay(new Date())) return showToast("Date cannot be in the past.", "warning");
+    const [sH, sM] = startTime.split(":").map(Number), [eH, eM] = endTime.split(":").map(Number);
+    if (eH * 60 + eM <= sH * 60 + sM) return showToast("End time must be after start time.", "warning");
+
     setSaving(true);
-    const payload = {
-      event_date: draftDate, name: name.trim(), start_time: startTime, end_time: endTime,
-      venue: venue.trim() || null, is_published: true, created_by: localStorage.getItem("profile_id") || null,
-      updated_at: new Date().toISOString()
-    };
-    let error;
-    if (editingId) ({ error } = await supabase.from("events").update(payload).eq("id", editingId));
-    else ({ error } = await supabase.from("events").insert([payload]));
-    setSaving(false);
- 
-    if (error) return showToast("Save failed.","error");
-    await load(); showToast(editingId ? "Event updated." : "Event created.","success"); setModalOpen(false);
+    try {
+      const payload = {
+        id: editingId || Date.now(),
+        event_date: draftDate,
+        name: name.trim(),
+        start_time: startTime,
+        end_time: endTime,
+        venue: venue.trim() || null,
+        is_published: true,
+        created_by: localStorage.getItem("profile_id") || null,
+        updated_at: new Date().toISOString()
+      };
+
+      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+      let updatedEvents;
+
+      if (editingId) {
+        updatedEvents = storedEvents.map(ev => ev.id === editingId ? payload : ev);
+      } else {
+        updatedEvents = [...storedEvents, payload];
+      }
+
+      localStorage.setItem("events", JSON.stringify(updatedEvents));
+      load();
+      showToast(editingId ? "Event updated." : "Event created.", "success");
+      setModalOpen(false);
+    } catch (error) {
+      console.error("Error saving event:", error);
+      showToast("Save failed.", "error");
+    } finally {
+      setSaving(false);
+    }
   };
- 
-  const deleteEvent = async () => {
+
+  const deleteEvent = () => {
     if (!editingId) return;
-    const { error } = await supabase.from("events").delete().eq("id", editingId);
-    if (error) return showToast("Delete failed.","error");
-    await load(); showToast("Event deleted.","success"); setModalOpen(false);
+    try {
+      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
+      const updatedEvents = storedEvents.filter(ev => ev.id !== editingId);
+      localStorage.setItem("events", JSON.stringify(updatedEvents));
+      load();
+      showToast("Event deleted.", "success");
+      setModalOpen(false);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      showToast("Delete failed.", "error");
+    }
   };
  
   /* Render */
