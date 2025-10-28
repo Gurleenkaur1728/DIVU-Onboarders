@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import Sidebar from "../../components/Sidebar.jsx";
 import Toast from "../../components/Toast.jsx";
 import { CalendarPlus, ChevronLeft, ChevronRight, List, Grid, Clock, MapPin } from "lucide-react";
 import { useRole } from "../../../src/lib/hooks/useRole.js";
+import { supabase } from "../../../src/lib/supabaseClient.js";
  
 export default function ManageEvents() {
   /* Role */
@@ -13,6 +14,7 @@ export default function ManageEvents() {
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [events, setEvents] = useState([]);
   const [view, setView] = useState("month"); // "month" | "list"
+  const [loading, setLoading] = useState(false);
  
   // modal (create/edit)
   const [modalOpen, setModalOpen] = useState(false);
@@ -35,30 +37,51 @@ export default function ManageEvents() {
   const endWindow = useMemo(() => endOfMonth(addMonths(start, 5)), [start]); // current month + next 5
  
   /* Data */
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
+    setLoading(true);
     try {
-      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
-      const filteredEvents = storedEvents.filter(ev => {
-        const eventDate = new Date(ev.event_date);
-        return eventDate >= start && eventDate <= endWindow;
-      }).sort((a, b) => {
-        const dateCompare = a.event_date.localeCompare(b.event_date);
-        return dateCompare !== 0 ? dateCompare : a.start_time.localeCompare(b.start_time);
-      });
-      setEvents(filteredEvents);
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .gte("event_date", ymd(start))
+        .lte("event_date", ymd(endWindow))
+        .order("event_date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+      setEvents(data || []);
     } catch (error) {
       console.error("Error loading events:", error);
+      showToast("Failed to load events.", "error");
       setEvents([]);
+    } finally {
+      setLoading(false);
     }
   }, [start, endWindow]);
 
-  useEffect(() => { load(); }, [load, cursor, start, endWindow]);
-
-  // Poll for updates every 30 seconds
   useEffect(() => {
-    const interval = setInterval(load, 30000);
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      load();
+    }, 30000);
     return () => clearInterval(interval);
-  }, [load, cursor, start, endWindow]);
+  }, [load]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("events-admin")
+      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [load]);
  
   const mapByDay = useMemo(() => {
     const map = new Map();
@@ -114,8 +137,7 @@ export default function ManageEvents() {
 
     setSaving(true);
     try {
-      const payload = {
-        id: editingId || Date.now(),
+      const basePayload = {
         event_date: draftDate,
         name: name.trim(),
         start_time: startTime,
@@ -126,19 +148,26 @@ export default function ManageEvents() {
         updated_at: new Date().toISOString()
       };
 
-      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
-      let updatedEvents;
-
       if (editingId) {
-        updatedEvents = storedEvents.map(ev => ev.id === editingId ? payload : ev);
+        const { error } = await supabase
+          .from("events")
+          .update(basePayload)
+          .eq("id", editingId);
+
+        if (error) throw error;
+        showToast("Event updated.", "success");
       } else {
-        updatedEvents = [...storedEvents, payload];
+        const { error } = await supabase
+          .from("events")
+          .insert([{ ...basePayload }]);
+
+        if (error) throw error;
+        showToast("Event created.", "success");
       }
 
-      localStorage.setItem("events", JSON.stringify(updatedEvents));
-      load();
-      showToast(editingId ? "Event updated." : "Event created.", "success");
+      await load();
       setModalOpen(false);
+      setEditingId(null);
     } catch (error) {
       console.error("Error saving event:", error);
       showToast("Save failed.", "error");
@@ -147,15 +176,20 @@ export default function ManageEvents() {
     }
   };
 
-  const deleteEvent = () => {
+  const deleteEvent = async () => {
     if (!editingId) return;
     try {
-      const storedEvents = JSON.parse(localStorage.getItem("events") || "[]");
-      const updatedEvents = storedEvents.filter(ev => ev.id !== editingId);
-      localStorage.setItem("events", JSON.stringify(updatedEvents));
-      load();
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", editingId);
+
+      if (error) throw error;
+
+      await load();
       showToast("Event deleted.", "success");
       setModalOpen(false);
+      setEditingId(null);
     } catch (error) {
       console.error("Error deleting event:", error);
       showToast("Delete failed.", "error");
@@ -223,6 +257,11 @@ export default function ManageEvents() {
  
         {/* Calendar (kept at 60% width feel via md:w-3/5) */}
         {view === "month" && (
+          loading ? (
+            <div className="bg-white border rounded-xl shadow w-full md:w-3/5 p-6 text-center text-emerald-800">
+              Loading events...
+            </div>
+          ) : (
           <div className="bg-white border rounded-xl shadow w-full md:w-3/5 overflow-hidden">
             <div className="grid grid-cols-7 bg-emerald-900/95 text-emerald-50 text-[11px] font-bold uppercase">
               {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
@@ -276,38 +315,45 @@ export default function ManageEvents() {
               })}
             </div>
           </div>
+          )
         )}
  
         {/* List view: separate month cards with fixed styling */}
         {view === "list" && (
-          <div className="w-full md:w-3/5 space-y-4">
-            {monthGroups.length === 0 ? (
-              <div className="bg-white rounded-xl border shadow p-4 text-sm text-emerald-800">No upcoming events.</div>
-            ) : (
-              monthGroups.map((g, idx) => (
-                <div key={idx} className="bg-white rounded-xl border shadow overflow-hidden">
-                  <div className="px-4 py-2 bg-emerald-900/95 text-emerald-50 text-sm font-bold">
-                    {g.label}
+          loading ? (
+            <div className="bg-white border rounded-xl shadow w-full md:w-3/5 p-6 text-center text-emerald-800">
+              Loading events...
+            </div>
+          ) : (
+            <div className="w-full md:w-3/5 space-y-4">
+              {monthGroups.length === 0 ? (
+                <div className="bg-white rounded-xl border shadow p-4 text-sm text-emerald-800">No upcoming events.</div>
+              ) : (
+                monthGroups.map((g, idx) => (
+                  <div key={idx} className="bg-white rounded-xl border shadow overflow-hidden">
+                    <div className="px-4 py-2 bg-emerald-900/95 text-emerald-50 text-sm font-bold">
+                      {g.label}
+                    </div>
+                    {g.items.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-emerald-800">No events.</div>
+                    ) : (
+                      <ul className="divide-y">
+                        {g.items.map((ev) => (
+                          <li key={ev.id} className="p-3 hover:bg-emerald-50/70 cursor-pointer transition-colors" onClick={() => openEdit(ev)}>
+                            <div className="font-semibold text-emerald-900 truncate">{ev.name}</div>
+                            <div className="text-xs text-emerald-800">
+                              {formatFriendlyDate(ev.event_date)}{" • "}{formatTimeRange(ev.start_time, ev.end_time)}
+                              {ev.venue ? ` • ${ev.venue}` : ""}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  {g.items.length === 0 ? (
-                    <div className="px-4 py-3 text-sm text-emerald-800">No events.</div>
-                  ) : (
-                    <ul className="divide-y">
-                      {g.items.map((ev) => (
-                        <li key={ev.id} className="p-3 hover:bg-emerald-50/70 cursor-pointer transition-colors" onClick={() => openEdit(ev)}>
-                          <div className="font-semibold text-emerald-900 truncate">{ev.name}</div>
-                          <div className="text-xs text-emerald-800">
-                            {formatFriendlyDate(ev.event_date)}{" • "}{formatTimeRange(ev.start_time, ev.end_time)}
-                            {ev.venue ? ` • ${ev.venue}` : ""}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          )
         )}
       </div>
  
