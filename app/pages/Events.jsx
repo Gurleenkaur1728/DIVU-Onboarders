@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
+import Sidebar from "../components/Sidebar.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { ChevronLeft, ChevronRight, List, Grid, Clock, MapPin } from "lucide-react";
- 
+import { useRole } from "../../src/lib/hooks/useRole.js";
+
 export default function Events() {
-  /* Role (read-only) */
-  const [roleId, setRoleId] = useState(() => (+localStorage.getItem("role_id") || ROLES.ADMIN));
-  useEffect(() => { const r = localStorage.getItem("role_id"); r && setRoleId(+r); }, []);
+  /* Role */
+  const { roleId } = useRole();
  
   /* State */
   const today = new Date();
@@ -21,7 +21,7 @@ export default function Events() {
   const endWindow = useMemo(() => endOfMonth(addMonths(start, 5)), [start]); // current + next 5 months
  
   /* Data */
-  const load = async () => {
+  const load = useMemo(() => async () => {
     const { data, error } = await supabase
       .from("events")
       .select("*")
@@ -31,15 +31,16 @@ export default function Events() {
       .order("event_date", { ascending: true })
       .order("start_time", { ascending: true });
     if (!error) setEvents(data || []);
-  };
-  useEffect(() => { load(); }, [cursor]);
+  }, [start, endWindow]);
+
+  useEffect(() => { load(); }, [load]);
   useEffect(() => {
     const ch = supabase
       .channel("events-user")
       .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => load())
       .subscribe();
     return () => supabase.removeChannel(ch);
-  }, [cursor]);
+  }, [load]);
  
   const mapByDay = useMemo(() => {
     const m = new Map();

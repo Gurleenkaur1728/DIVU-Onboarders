@@ -1,27 +1,15 @@
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import Sidebar from "../../components/Sidebar.jsx";
 import { useEffect, useState, useMemo } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import Toast from "../../components/Toast.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
+import { useRole } from "../../../src/lib/hooks/useRole.js";
 
 import StatusPill from "../../components/modules/StatusPill.jsx";
 import ModuleBuilderModal from "../../components/modules/ModuleBuilderModal.jsx";
 
-/* id helper */
-const uid = () =>
-  globalThis.crypto?.randomUUID?.() ??
-  `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
 export default function ManageModules() {
-  const [role, setRole] = useState(() => {
-    const stored = localStorage.getItem("role_id");
-    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
-  });
-
-  useEffect(() => {
-    const stored = localStorage.getItem("role_id");
-    if (stored !== null) setRole(parseInt(stored, 10));
-  }, []);
+  const { roleId } = useRole();
 
   const [modules, setModules] = useState([]);
   const [draftModules, setDraftModules] = useState([]);
@@ -32,57 +20,56 @@ export default function ManageModules() {
   const [builderOpen, setBuilderOpen] = useState(false);
   const [draftId, setDraftId] = useState(null);
 
-  const showToast = (msg, type = "info") => setToast({ msg, type });
+  const showToast = useMemo(() => (msg, type = "info") => setToast({ msg, type }), []);
 
-  const loadModules = async () => {
-  try {
-    const profileId = localStorage.getItem("profile_id");
+  const loadModules = useMemo(() => async () => {
+    try {
+      const profileId = localStorage.getItem("profile_id");
 
-    // Fetch published modules
-    let modulesQuery = supabase
-      .from("modules")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (profileId) modulesQuery = modulesQuery.eq("created_by", profileId);
-    const { data: publishedData, error: publishedErr } = await modulesQuery;
-    if (publishedErr) throw publishedErr;
+      // Fetch published modules
+      let modulesQuery = supabase
+        .from("modules")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (profileId) modulesQuery = modulesQuery.eq("created_by", profileId);
+      const { data: publishedData, error: publishedErr } = await modulesQuery;
+      if (publishedErr) throw publishedErr;
 
-    // Fetch draft modules
-    let draftsQuery = supabase
-      .from("module_drafts")
-      .select("*")
-      .order("updated_at", { ascending: false });
-    if (profileId) draftsQuery = draftsQuery.eq("user_id", profileId);
-    const { data: draftData, error: draftErr } = await draftsQuery;
-    if (draftErr) throw draftErr;
+      // Fetch draft modules
+      let draftsQuery = supabase
+        .from("module_drafts")
+        .select("*")
+        .order("updated_at", { ascending: false });
+      if (profileId) draftsQuery = draftsQuery.eq("user_id", profileId);
+      const { data: draftData, error: draftErr } = await draftsQuery;
+      if (draftErr) throw draftErr;
 
-    // Normalize data structure for drafts
-    const formattedDrafts = (draftData || []).map((d) => ({
-      id: d.id,
-      title: d.title || "(Untitled Draft)",
-      description: d.description || "No description yet.",
-      status: "draft",
-      progress: d.progress_percent || 0,
-      estimated_time_min: 0,
-    }));
+      // Normalize data structure for drafts
+      const formattedDrafts = (draftData || []).map((d) => ({
+        id: d.id,
+        title: d.title || "(Untitled Draft)",
+        description: d.description || "No description yet.",
+        status: "draft",
+        progress: d.progress_percent || 0,
+        estimated_time_min: 0,
+      }));
 
-    // Combine
-    const allModules = [...(publishedData || []), ...formattedDrafts];
+      // Combine
+      const allModules = [...(publishedData || []), ...formattedDrafts];
 
-    // Separate
-    setModules(allModules);
-    setDraftModules(formattedDrafts);
-    setPublishedModules(publishedData || []);
-  } catch (err) {
-    console.error(err);
-    showToast("Could not load modules.", "error");
-  }
-};
-
+      // Separate
+      setModules(allModules);
+      setDraftModules(formattedDrafts);
+      setPublishedModules(publishedData || []);
+    } catch (err) {
+      console.error(err);
+      showToast("Could not load modules.", "error");
+    }
+  }, [showToast]);
 
   useEffect(() => {
     loadModules();
-  }, []);
+  }, [loadModules]);
 
   const openBuilder = async () => {
     const profileId = localStorage.getItem("profile_id");
@@ -140,7 +127,7 @@ export default function ManageModules() {
   // refresh list when builder closes
   useEffect(() => {
     if (!builderOpen) loadModules();
-  }, [builderOpen]);
+  }, [builderOpen, loadModules]);
 
   const totals = useMemo(() => {
     const count = modules.length;
@@ -211,7 +198,7 @@ export default function ManageModules() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="manage-modules" role={role} />
+      <Sidebar active="manage-modules" role={roleId} />
 
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* ribbon */}

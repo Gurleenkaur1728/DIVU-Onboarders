@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-import Sidebar, { ROLES } from "../../../components/Sidebar.jsx";
+import Sidebar from "../../../components/Sidebar.jsx";
+import { useRole } from "../../../../src/lib/hooks/useRole.js";
 import { X } from "lucide-react";
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from "../../../../src/lib/supabaseClient.js";
 
 // ✅ Shared mail template
 function divuMailTemplate({ title, body, buttonText, buttonLink }) {
@@ -218,7 +214,7 @@ export default function AccessRequests() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="employee-requests" role={ROLES.SUPER_ADMIN} />
+      <Sidebar active="employee-requests" role={useRole()} />
 
       <div className="flex-1 flex flex-col p-6 z-10">
         <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
