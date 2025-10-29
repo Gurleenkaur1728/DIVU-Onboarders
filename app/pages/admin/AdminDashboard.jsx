@@ -1,5 +1,7 @@
 // src/admin/AdminDashboard.jsx
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import Sidebar from "../../components/Sidebar.jsx";
 import {
   BarChart,
   Bar,
@@ -13,10 +15,15 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { useRole } from "../../../src/lib/hooks/useRole.js";
 
 export default function AdminDashboard() {
-  // 👇 pull role from localStorage (fallback to USER if missing)
-  const role = parseInt(localStorage.getItem("role_id")) || ROLES.USER;
+  const navigate = useNavigate();
+  const { roleId, isAdmin } = useRole();
+  
+  useEffect(() => {
+    if (!isAdmin) navigate("/");
+  }, [isAdmin, navigate]);
 
   // Dummy chart data
   const usersData = [
@@ -40,7 +47,7 @@ export default function AdminDashboard() {
       style={{ backgroundImage: "url('/bg.png')" }}
     >
       {/* Sidebar is now role-aware */}
-      <Sidebar active="admin-dashboard" role={role} />
+      <Sidebar active="admin-dashboard" role={roleId} />
 
       <main className="flex-1 p-6 space-y-6">
         {/* Header */}

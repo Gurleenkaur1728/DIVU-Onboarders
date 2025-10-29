@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import Sidebar from "../../components/Sidebar.jsx";
 import { Plus, 
   Edit, 
   Trash2, 
@@ -8,7 +8,7 @@ import { Plus,
   Circle }
 from "lucide-react";
 import { supabase } from "../../../src/lib/supabaseClient.js";
-
+import { useRole } from "../../../src/lib/hooks/useRole.js";
 
 const TABLES = {
   groups: "checklist_groups",
@@ -17,17 +17,8 @@ const TABLES = {
 };
 
 export default function ManageChecklist() {
-  const [roleId, setRoleId] = useState(() => {
-    const r = localStorage.getItem("role_id");
-    return r ? parseInt(r, 10) : ROLES.ADMIN;
-  });
-
-  
-  useEffect(() => {
-    const r = localStorage.getItem("role_id");
-    if (r) setRoleId(parseInt(r, 10));
-  }, []);
-  const isSuperAdmin = roleId === ROLES.SUPER_ADMIN || roleId === 2;
+  const { roleId, role } = useRole();
+  const isSuperAdmin = role === "SUPER_ADMIN";
 
   const me = useMemo(
     () => ({

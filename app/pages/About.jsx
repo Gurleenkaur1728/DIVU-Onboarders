@@ -2,53 +2,34 @@ import { useEffect, useMemo, useState } from "react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
-import { supabase } from "../../src/lib/supabaseClient";
+import { useRole } from "../../src/lib/hooks/useRole.js";
  
 export default function About() {
-  const [role, setRole] = useState(() => localStorage.getItem("profile.role") || "user");
- 
+  const { roleId, role } = useRole();
+  const [name, setName] = useState(() => localStorage.getItem("user_name") || "");
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
  
   const hero = useMemo(() => sections[0], [sections]);
   const rest = useMemo(() => sections.slice(1), [sections]);
  
-  // Ribbon name/role (same pattern as Home/Culture)
+  // Load name from localStorage (managed by login)
   useEffect(() => {
-    const pid = localStorage.getItem("profile_id");
-    if (!pid) return;
-    (async () => {
-      const { data: rows, error } = await supabase
-        .from("users")
-        .select("name, role")
-        .eq("id", pid)
-        .limit(1);
-      if (!error && rows?.length) {
-        const row = rows[0];
-        const displayName = row?.name?.trim() || "Employee";
-        setName(displayName);
-        setRole(row?.role || "user");
-        localStorage.setItem("profile_name", displayName);
-        localStorage.setItem("profile.role", row?.role || "user");
-      }
-    })();
+    const storedName = localStorage.getItem("user_name");
+    if (storedName) {
+      setName(storedName);
+    }
   }, []);
  
   // Load all active 'about' sections
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("home_content")
-        .select("id, title, subtitle, description, media_url, cta_label, cta_href, sort_order, is_active")
-        .eq("section", "about")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
- 
-      if (!error && Array.isArray(data) && data.length) {
-        setSections(data);
+    setLoading(true);
+    try {
+      const storedSections = JSON.parse(localStorage.getItem("about_sections") || "[]");
+      if (Array.isArray(storedSections) && storedSections.length) {
+        setSections(storedSections);
       } else {
-        // Fallback if no rows exist
+        // Fallback if no sections exist
         setSections([{
           id: "fallback",
           title: "About DIVU",
@@ -61,13 +42,28 @@ export default function About() {
           is_active: true,
         }]);
       }
+    } catch (error) {
+      console.error("Error loading about sections:", error);
+      // Use fallback if local storage data is invalid
+      setSections([{
+        id: "fallback",
+        title: "About DIVU",
+        subtitle: "Learn about our mission and how we onboard with care.",
+        description: "",
+        media_url: "/aboutdivu.jpg",
+        cta_label: "",
+        cta_href: "",
+        sort_order: 0,
+        is_active: true,
+      }]);
+    } finally {
       setLoading(false);
-    })();
+    }
   }, []);
  
   return (
     <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar role={ROLES.USER} active="about" />
+      <Sidebar role={roleId} active="about" />
  
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}

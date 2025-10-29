@@ -1,19 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Sidebar from "../../components/Sidebar.jsx";
 import Toast from "../../components/Toast.jsx";
-import { supabase } from "../../../src/lib/supabaseClient.js";
 import { CalendarPlus, ChevronLeft, ChevronRight, List, Grid, Clock, MapPin } from "lucide-react";
+import { useRole } from "../../../src/lib/hooks/useRole.js";
+import { supabase } from "../../../src/lib/supabaseClient.js";
  
 export default function ManageEvents() {
-  /* Role (condensed) */
-  const [roleId, setRoleId] = useState(() => (+localStorage.getItem("role_id") || ROLES.ADMIN));
-  useEffect(() => { const r = localStorage.getItem("role_id"); r && setRoleId(+r); }, []);
+  /* Role */
+  const { roleId } = useRole();
  
   /* State */
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [events, setEvents] = useState([]);
   const [view, setView] = useState("month"); // "month" | "list"
+  const [loading, setLoading] = useState(false);
  
   // modal (create/edit)
   const [modalOpen, setModalOpen] = useState(false);
@@ -36,24 +37,51 @@ export default function ManageEvents() {
   const endWindow = useMemo(() => endOfMonth(addMonths(start, 5)), [start]); // current month + next 5
  
   /* Data */
-  const load = async () => {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .gte("event_date", ymd(start))
-      .lte("event_date", ymd(endWindow))
-      .order("event_date", { ascending: true })
-      .order("start_time", { ascending: true });
-    if (!error) setEvents(data || []);
-  };
-  useEffect(() => { load(); }, [cursor]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .gte("event_date", ymd(start))
+        .lte("event_date", ymd(endWindow))
+        .order("event_date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) throw error;
+      setEvents(data || []);
+    } catch (error) {
+      console.error("Error loading events:", error);
+      showToast("Failed to load events.", "error");
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [start, endWindow]);
+
   useEffect(() => {
-    const ch = supabase
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      load();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [load]);
+
+  useEffect(() => {
+    const channel = supabase
       .channel("events-admin")
-      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "events" }, () => {
+        load();
+      })
       .subscribe();
-    return () => supabase.removeChannel(ch);
-  }, [cursor]);
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [load]);
  
   const mapByDay = useMemo(() => {
     const map = new Map();
@@ -101,32 +129,71 @@ export default function ManageEvents() {
  
   /* Save / Update / Delete */
   const saveEvent = async () => {
-    if (!name.trim()) return showToast("Event name is required.","warning");
-    if (!draftDate) return showToast("Please select a date.","warning");
-    if (toStartOfDay(new Date(draftDate)) < toStartOfDay(new Date())) return showToast("Date cannot be in the past.","warning");
-    const [sH,sM] = startTime.split(":").map(Number), [eH,eM] = endTime.split(":").map(Number);
-    if (eH*60+eM <= sH*60+sM) return showToast("End time must be after start time.","warning");
- 
+    if (!name.trim()) return showToast("Event name is required.", "warning");
+    if (!draftDate) return showToast("Please select a date.", "warning");
+    if (toStartOfDay(new Date(draftDate)) < toStartOfDay(new Date())) return showToast("Date cannot be in the past.", "warning");
+    const [sH, sM] = startTime.split(":").map(Number), [eH, eM] = endTime.split(":").map(Number);
+    if (eH * 60 + eM <= sH * 60 + sM) return showToast("End time must be after start time.", "warning");
+
     setSaving(true);
-    const payload = {
-      event_date: draftDate, name: name.trim(), start_time: startTime, end_time: endTime,
-      venue: venue.trim() || null, is_published: true, created_by: localStorage.getItem("profile_id") || null,
-      updated_at: new Date().toISOString()
-    };
-    let error;
-    if (editingId) ({ error } = await supabase.from("events").update(payload).eq("id", editingId));
-    else ({ error } = await supabase.from("events").insert([payload]));
-    setSaving(false);
- 
-    if (error) return showToast("Save failed.","error");
-    await load(); showToast(editingId ? "Event updated." : "Event created.","success"); setModalOpen(false);
+    try {
+      const basePayload = {
+        event_date: draftDate,
+        name: name.trim(),
+        start_time: startTime,
+        end_time: endTime,
+        venue: venue.trim() || null,
+        is_published: true,
+        created_by: localStorage.getItem("profile_id") || null,
+        updated_at: new Date().toISOString()
+      };
+
+      if (editingId) {
+        const { error } = await supabase
+          .from("events")
+          .update(basePayload)
+          .eq("id", editingId);
+
+        if (error) throw error;
+        showToast("Event updated.", "success");
+      } else {
+        const { error } = await supabase
+          .from("events")
+          .insert([{ ...basePayload }]);
+
+        if (error) throw error;
+        showToast("Event created.", "success");
+      }
+
+      await load();
+      setModalOpen(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error("Error saving event:", error);
+      showToast("Save failed.", "error");
+    } finally {
+      setSaving(false);
+    }
   };
- 
+
   const deleteEvent = async () => {
     if (!editingId) return;
-    const { error } = await supabase.from("events").delete().eq("id", editingId);
-    if (error) return showToast("Delete failed.","error");
-    await load(); showToast("Event deleted.","success"); setModalOpen(false);
+    try {
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", editingId);
+
+      if (error) throw error;
+
+      await load();
+      showToast("Event deleted.", "success");
+      setModalOpen(false);
+      setEditingId(null);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      showToast("Delete failed.", "error");
+    }
   };
  
   /* Render */
@@ -190,6 +257,11 @@ export default function ManageEvents() {
  
         {/* Calendar (kept at 60% width feel via md:w-3/5) */}
         {view === "month" && (
+          loading ? (
+            <div className="bg-white border rounded-xl shadow w-full md:w-3/5 p-6 text-center text-emerald-800">
+              Loading events...
+            </div>
+          ) : (
           <div className="bg-white border rounded-xl shadow w-full md:w-3/5 overflow-hidden">
             <div className="grid grid-cols-7 bg-emerald-900/95 text-emerald-50 text-[11px] font-bold uppercase">
               {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
@@ -243,38 +315,45 @@ export default function ManageEvents() {
               })}
             </div>
           </div>
+          )
         )}
  
         {/* List view: separate month cards with fixed styling */}
         {view === "list" && (
-          <div className="w-full md:w-3/5 space-y-4">
-            {monthGroups.length === 0 ? (
-              <div className="bg-white rounded-xl border shadow p-4 text-sm text-emerald-800">No upcoming events.</div>
-            ) : (
-              monthGroups.map((g, idx) => (
-                <div key={idx} className="bg-white rounded-xl border shadow overflow-hidden">
-                  <div className="px-4 py-2 bg-emerald-900/95 text-emerald-50 text-sm font-bold">
-                    {g.label}
+          loading ? (
+            <div className="bg-white border rounded-xl shadow w-full md:w-3/5 p-6 text-center text-emerald-800">
+              Loading events...
+            </div>
+          ) : (
+            <div className="w-full md:w-3/5 space-y-4">
+              {monthGroups.length === 0 ? (
+                <div className="bg-white rounded-xl border shadow p-4 text-sm text-emerald-800">No upcoming events.</div>
+              ) : (
+                monthGroups.map((g, idx) => (
+                  <div key={idx} className="bg-white rounded-xl border shadow overflow-hidden">
+                    <div className="px-4 py-2 bg-emerald-900/95 text-emerald-50 text-sm font-bold">
+                      {g.label}
+                    </div>
+                    {g.items.length === 0 ? (
+                      <div className="px-4 py-3 text-sm text-emerald-800">No events.</div>
+                    ) : (
+                      <ul className="divide-y">
+                        {g.items.map((ev) => (
+                          <li key={ev.id} className="p-3 hover:bg-emerald-50/70 cursor-pointer transition-colors" onClick={() => openEdit(ev)}>
+                            <div className="font-semibold text-emerald-900 truncate">{ev.name}</div>
+                            <div className="text-xs text-emerald-800">
+                              {formatFriendlyDate(ev.event_date)}{" • "}{formatTimeRange(ev.start_time, ev.end_time)}
+                              {ev.venue ? ` • ${ev.venue}` : ""}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
-                  {g.items.length === 0 ? (
-                    <div className="px-4 py-3 text-sm text-emerald-800">No events.</div>
-                  ) : (
-                    <ul className="divide-y">
-                      {g.items.map((ev) => (
-                        <li key={ev.id} className="p-3 hover:bg-emerald-50/70 cursor-pointer transition-colors" onClick={() => openEdit(ev)}>
-                          <div className="font-semibold text-emerald-900 truncate">{ev.name}</div>
-                          <div className="text-xs text-emerald-800">
-                            {formatFriendlyDate(ev.event_date)}{" • "}{formatTimeRange(ev.start_time, ev.end_time)}
-                            {ev.venue ? ` • ${ev.venue}` : ""}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+                ))
+              )}
+            </div>
+          )
         )}
       </div>
  

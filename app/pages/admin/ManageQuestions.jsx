@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import Sidebar from "../../components/Sidebar.jsx";
 import {
   Pencil,
   Trash2,
@@ -12,17 +12,10 @@ import {
   Archive,
 } from "lucide-react";
 import { supabase } from "../../../src/lib/supabaseClient";
+import { useRole } from "../../../src/lib/hooks/useRole.js";
 
 export default function ManageQuestions() {
-  // Detect role (fallback ADMIN)
-  const [role, setRole] = useState(() => {
-    const stored = localStorage.getItem("role_id");
-    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
-  });
-  useEffect(() => {
-    const stored = localStorage.getItem("role_id");
-    if (stored !== null) setRole(parseInt(stored, 10));
-  }, []);
+  const { roleId } = useRole();
 
   const [tab, setTab] = useState("employee"); // "faqs" | "employee" | "archive"
 
@@ -274,7 +267,7 @@ export default function ManageQuestions() {
   /* ---------- Render ---------- */
   return (
     <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar role={role} active="manage-questions" />
+      <Sidebar role={roleId} active="manage-questions" />
 
       <div className="flex-1 flex flex-col p-6">
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
