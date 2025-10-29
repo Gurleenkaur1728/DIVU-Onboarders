@@ -1,13 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../../components/Sidebar.jsx";
+import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import { Plus, Trash2, Save, Lock } from "lucide-react";
 import { useRole } from "../../../src/lib/hooks/useRole.js";
-import { supabase } from "../../../src/lib/supabaseClient.js";
  
 export default function ManageContent() {
   const navigate = useNavigate();
-  const { roleId, isAdmin } = useRole();
   const [activeTab, setActiveTab] = useState("welcome");
   const [sections, setSections] = useState([]); // [{id, section, title, subtitle, description, media_url, cta_label, cta_href, sort_order, is_active}]
   const [loading, setLoading] = useState(false);
@@ -24,72 +22,65 @@ export default function ManageContent() {
     cta_label: "",
     cta_href: "",
   });
-
+ 
   // Role check
+  const { roleId, isAdmin } = useRole();
+
   useEffect(() => {
     if (!isAdmin) navigate("/");
   }, [isAdmin, navigate]);
  
-  const tabToSection = useCallback((tab) => {
+  // Load all sections for current tab
+  useEffect(() => {
+    if (activeTab) fetchSections(activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+ 
+  function tabToSection(tab) {
+    // You mapped "welcome" => "hero" earlier; keeping that for the first panel.
     return tab === "welcome" ? "hero" : tab === "culture" ? "culture" : "about";
-  }, []);
-
-  /* Load Data */
-  const fetchSections = useCallback(async (tab) => {
+  }
+ 
+  function fetchSections(tab) {
     setLoading(true);
     setMessage("");
     const section = tabToSection(tab);
-
+    
     try {
-      const { data, error } = await supabase
-        .from("home_content")
-        .select("*")
-        .eq("section", section)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-
-      let rows = data || [];
-
-      if (rows.length === 0) {
-        const { data: inserted, error: insertError } = await supabase
-          .from("home_content")
-          .insert([
-            {
-              section,
-              sort_order: 0,
-              title: section === "hero" ? "Welcome" : "Section Title",
-              subtitle: "",
-              description: "",
-              media_url: "",
-              cta_label: "",
-              cta_href: "",
-              is_active: true,
-            },
-          ])
-          .select("*")
-          .maybeSingle();
-
-        if (insertError) throw insertError;
-        rows = inserted ? [inserted] : [];
+      const storedContent = JSON.parse(localStorage.getItem("home_content") || "[]");
+      let data = storedContent.filter(item => item.section === section)
+                             .sort((a, b) => a.sort_order - b.sort_order);
+      
+      // Ensure first section exists (sort_order = 0)
+      if (!data || data.length === 0) {
+        const newSection = {
+          id: Date.now(),
+          section,
+          sort_order: 0,
+          title: section === "hero" ? "Welcome" : "Section Title",
+          subtitle: "",
+          description: "",
+          media_url: "",
+          cta_label: "",
+          cta_href: "",
+          is_active: true,
+        };
+        
+        storedContent.push(newSection);
+        localStorage.setItem("home_content", JSON.stringify(storedContent));
+        setSections([newSection]);
+      } else {
+        setSections(data);
       }
-
-      setSections(rows);
     } catch (error) {
-      console.error("Error loading content sections:", error);
+      console.error(error);
       setMessage("⚠️ Failed to load content.");
       setSections([]);
     } finally {
       setLoading(false);
     }
-  }, [tabToSection]);
-
-  // Load all sections for current tab
-  useEffect(() => {
-    if (activeTab) fetchSections(activeTab);
-  }, [activeTab, fetchSections]);
-
+  }
+ 
   function updateLocal(index, patch) {
     setSections((prev) => {
       const next = [...prev];
@@ -97,43 +88,66 @@ export default function ManageContent() {
       return next;
     });
   }
-
+ 
+  // Upload handler per section index
   async function handleUpload(e, index) {
     const file = e.target.files?.[0];
     if (!file) return;
-
+ 
     const sectionName = sections[index]?.section || tabToSection(activeTab);
     const fileExt = file.name.split(".").pop();
     const filePath = `${sectionName}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
-
+ 
     const { error: uploadError } = await supabase.storage
       .from("assets")
       .upload(filePath, file, { upsert: false });
-
+ 
     if (uploadError) {
       console.error(uploadError);
       setMessage("⚠️ Upload failed.");
       return;
     }
-
+ 
     const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
     updateLocal(index, { media_url: data.publicUrl });
     setMessage("✅ Media uploaded!");
   }
-
-  // Save section
+ 
+  // Save (insert or update) a section
   async function saveSection(index) {
     setLoading(true);
     setMessage("");
     const row = sections[index];
-
-    try {
-      let result;
-
-      if (row.id) {
-        result = await supabase
-          .from("home_content")
-          .update({
+ 
+    // Simple inference for content category (text/photo/video) if you need it later (not stored)
+    // const inferred = row.media_url
+    //   ? row.media_url.match(/\.(mp4|webm|mov|m4v)$/i) ? "video" : "photo"
+    //   : "text";
+ 
+    let result;
+    if (row.id) {
+      result = await supabase
+        .from("home_content")
+        .update({
+          title: row.title ?? "",
+          subtitle: row.subtitle ?? "",
+          description: row.description ?? "",
+          media_url: row.media_url ?? "",
+          cta_label: row.cta_label ?? "",
+          cta_href: row.cta_href ?? "",
+          is_active: row.is_active ?? true,
+          sort_order: row.sort_order ?? 0,
+          // 🔐 TODO (Divu audit): record audit log for "update section"
+        })
+        .eq("id", row.id)
+        .select("*")
+        .maybeSingle();
+    } else {
+      result = await supabase
+        .from("home_content")
+        .insert([
+          {
+            section: tabToSection(activeTab),
             title: row.title ?? "",
             subtitle: row.subtitle ?? "",
             description: row.description ?? "",
@@ -141,110 +155,81 @@ export default function ManageContent() {
             cta_label: row.cta_label ?? "",
             cta_href: row.cta_href ?? "",
             is_active: row.is_active ?? true,
-            sort_order: row.sort_order ?? 0,
-          })
-          .eq("id", row.id)
-          .select("*")
-          .maybeSingle();
-      } else {
-        result = await supabase
-          .from("home_content")
-          .insert([
-            {
-              section: tabToSection(activeTab),
-              title: row.title ?? "",
-              subtitle: row.subtitle ?? "",
-              description: row.description ?? "",
-              media_url: row.media_url ?? "",
-              cta_label: row.cta_label ?? "",
-              cta_href: row.cta_href ?? "",
-              is_active: row.is_active ?? true,
-              sort_order: row.sort_order ?? sections.length,
-            },
-          ])
-          .select("*")
-          .maybeSingle();
-      }
-
-      if (result.error) throw result.error;
-
-      setMessage("✅ Section saved.");
-      await fetchSections(activeTab);
-    } catch (error) {
-      console.error("Error saving content section:", error);
-      setMessage("⚠️ Failed to save changes.");
-    } finally {
-      setLoading(false);
+            sort_order: row.sort_order ?? sections.length, // append at end by default
+            // 🔐 TODO (Divu audit): record audit log for "create section"
+          },
+        ])
+        .select("*")
+        .maybeSingle();
     }
+ 
+    if (result.error) {
+      console.error(result.error);
+      setMessage("⚠️ Failed to save changes.");
+    } else {
+      setMessage("✅ Section saved.");
+      // Refresh to get consistent IDs / ordering
+      await fetchSections(activeTab);
+    }
+    setLoading(false);
   }
-
-  // Delete section
+ 
+  // Delete a section (except the first one)
   async function deleteSection(index) {
     const row = sections[index];
     if (!row) return;
-
+ 
     // First section protection: either id === first, or sort_order === 0
     const isFirst = row.sort_order === 0;
     if (isFirst) {
       setMessage("⚠️ You cannot delete the first section.");
       return;
     }
-
+ 
     if (!row.id) {
+      // Local-only row not saved yet; just remove locally
       setSections((prev) => prev.filter((_, i) => i !== index));
       return;
     }
-
+ 
     setLoading(true);
     setMessage("");
-
-    try {
-      const { error } = await supabase
-        .from("home_content")
-        .delete()
-        .eq("id", row.id);
-
-      if (error) throw error;
-
+ 
+    const { error } = await supabase
+      .from("home_content")
+      .delete()
+      .eq("id", row.id);
+ 
+    if (error) {
+      console.error(error);
+      setMessage("⚠️ Failed to delete section.");
+    } else {
       setMessage("🗑️ Section deleted.");
+      // 🔐 TODO (Divu audit): record audit log for "delete section"
+      // Re-sequence sort_order so they are contiguous (optional)
       await resequenceSortOrder();
       await fetchSections(activeTab);
-    } catch (error) {
-      console.error("Error deleting content section:", error);
-      setMessage("⚠️ Failed to delete section.");
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }
-
-  // Resequence sort order
+ 
+  // Optional: resequence sort_order after deletions to keep it tidy
   async function resequenceSortOrder() {
-    try {
-      const section = tabToSection(activeTab);
-      const { data, error } = await supabase
-        .from("home_content")
-        .select("id")
-        .eq("section", section)
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-      if (!data) return;
-
-      const updates = data.map((row, idx) => ({ id: row.id, sort_order: idx }));
-      if (updates.length === 0) return;
-
-      const { error: upsertError } = await supabase
-        .from("home_content")
-        .upsert(updates, { onConflict: "id" });
-
-      if (upsertError) throw upsertError;
-    } catch (error) {
-      console.error("Error resequencing sort order:", error);
-    }
+    const section = tabToSection(activeTab);
+    const { data } = await supabase
+      .from("home_content")
+      .select("id")
+      .eq("section", section)
+      .order("sort_order", { ascending: true });
+ 
+    if (!data) return;
+ 
+    const updates = data.map((row, idx) => ({ id: row.id, sort_order: idx }));
+    // Batch updates (Supabase can handle via upsert on pk)
+    await supabase.from("home_content").upsert(updates);
   }
-
-  // Add Section flow
+ 
+  // Add Section flow (creates a local draft, user clicks Save on it)
   function addDraftSection() {
     const section = tabToSection(activeTab);
     const nextOrder = sections.length; // append
@@ -273,13 +258,13 @@ export default function ManageContent() {
     setNewType("text");
     setAddOpen(false);
   }
-
+ 
   return (
     <div
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="manage-content" role={roleId} />
+      <Sidebar active="manage-content" role={roleId ?? ROLES.ADMIN} />
  
       <div className="flex-1 flex flex-col p-6">
         {/* Ribbon */}

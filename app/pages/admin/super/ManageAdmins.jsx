@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../../../components/Sidebar.jsx";
+import Sidebar from "../../../components/Sidebar.jsx";
+import { useRole } from "../../../../src/lib/hooks/useRole.js";
 import { Trash2, Plus, Loader2 } from "lucide-react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
 
 export default function ManageAdmins() {
+  const { roleId } = useRole();
   const [admins, setAdmins] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,7 +109,7 @@ export default function ManageAdmins() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="manage-admins" role={ROLES.SUPER_ADMIN} />
+  <Sidebar active="manage-admins" role={roleId} />
 
       <div className="flex-1 flex flex-col p-6">
         {/* Header */}

@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
+import ProtectedRoute from "../app/components/ProtectedRoutes.jsx";
  
 // Auth pages
 import Login from "../app/(auth)/Login.jsx";
@@ -39,47 +40,49 @@ import AdminRequests from "../app/pages/admin/super/AdminRequests.jsx";
 import AccessRequests from "../app/pages/admin/super/EmployeeRequests.jsx";
 import Records from "../app/pages/admin/super/Records.jsx";
  
+import PublicRoute from "../app/components/PublicRoute.jsx";
+
 export const router = createBrowserRouter([
-  // ✅ Auth pages
-  { path: "/", element: <Login /> },
-  { path: "/forgot", element: <ForgotPassword /> },
+  // ✅ Auth pages (wrapped in PublicRoute)
+  { path: "/", element: <PublicRoute><Login /></PublicRoute> },
+  { path: "/forgot", element: <PublicRoute><ForgotPassword /></PublicRoute> },
  
   // ✅ Main user pages
-  { path: "/home", element: <Home /> },
-  { path: "/checklist", element: <Checklist /> },
-  { path: "/events", element: <Events /> },
-  { path: "/account", element: <Account /> },
-  { path: "/modules", element: <Modules /> },
-  { path: "/modules/:id", element: <ModuleDetail /> },
-  { path: "/modules/:id/complete", element: <ModuleComplete /> },
+  { path: "/home", element: <ProtectedRoute><Home /></ProtectedRoute> },
+  { path: "/checklist", element: <ProtectedRoute><Checklist /></ProtectedRoute> },
+  { path: "/events", element: <ProtectedRoute><Events /></ProtectedRoute> },
+  { path: "/account", element: <ProtectedRoute><Account /></ProtectedRoute> },
+  { path: "/modules", element: <ProtectedRoute><Modules /></ProtectedRoute> },
+  { path: "/modules/:id", element: <ProtectedRoute><ModuleDetail /></ProtectedRoute> },
+  { path: "/modules/:id/complete", element: <ProtectedRoute><ModuleComplete /></ProtectedRoute> },
  
   // ✅ Feedback routes
-  { path: "/feedback", element: <Feedback /> }, // Feedback dashboard
-  { path: "/feedback/:id", element: <FeedbackForm /> }, // Create/View feedback form
+  { path: "/feedback", element: <ProtectedRoute><Feedback /></ProtectedRoute> }, // Feedback dashboard
+  { path: "/feedback/:id", element: <ProtectedRoute><FeedbackForm /></ProtectedRoute> }, // Create/View feedback form
  
   // ✅ Other user pages
-  { path: "/progress", element: <Progress /> },
-  { path: "/certificate/:id", element: <Certificate /> },
-  { path: "/culture", element: <Culture /> },
-  { path: "/about", element: <About /> },
-  { path: "/questions", element: <Questions /> },
+  { path: "/progress", element: <ProtectedRoute><Progress /></ProtectedRoute> },
+  { path: "/certificate/:id", element: <ProtectedRoute><Certificate /></ProtectedRoute> },
+  { path: "/culture", element: <ProtectedRoute><Culture /></ProtectedRoute> },
+  { path: "/about", element: <ProtectedRoute><About /></ProtectedRoute> },
+  { path: "/questions", element: <ProtectedRoute><Questions /></ProtectedRoute> },
  
   // ✅ Admin pages
-  { path: "/admin/dashboard", element: <AdminDashboard /> },
-  { path: "/admin/content", element: <ManageContent /> },
-  { path: "/admin/checklist", element: <ManageChecklist /> },
-  { path: "/admin/modules", element: <ManageModules /> },
-  { path: "/admin/feedback", element: <ViewFeedback /> },
-  { path: "/admin/progress", element: <ViewProgress /> },
-  { path: "/admin/manage-questions", element: <ManageQuestions /> },
-  { path: "/admin/assign-templates", element: <AssignTemplates /> },
-  { path: "/admin/manage-events", element: <ManageEvents /> },
+  { path: "/admin/dashboard", element: <ProtectedRoute roles={[1, 2]}><AdminDashboard /></ProtectedRoute> },
+  { path: "/admin/content", element: <ProtectedRoute roles={[1, 2]}><ManageContent /></ProtectedRoute> },
+  { path: "/admin/checklist", element: <ProtectedRoute roles={[1, 2]}><ManageChecklist /></ProtectedRoute> },
+  { path: "/admin/modules", element: <ProtectedRoute roles={[1, 2]}><ManageModules /></ProtectedRoute> },
+  { path: "/admin/feedback", element: <ProtectedRoute roles={[1, 2]}><ViewFeedback /></ProtectedRoute> },
+  { path: "/admin/progress", element: <ProtectedRoute roles={[1, 2]}><ViewProgress /></ProtectedRoute> },
+  { path: "/admin/manage-questions", element: <ProtectedRoute roles={[1, 2]}><ManageQuestions /></ProtectedRoute> },
+  { path: "/admin/assign-templates", element: <ProtectedRoute roles={[1, 2]}><AssignTemplates /></ProtectedRoute> },
+  { path: "/admin/manage-events", element: <ProtectedRoute roles={[1, 2]}><ManageEvents /></ProtectedRoute> },
  
   // ✅ Super Admin pages
-  { path: "/admin/super/manage-employees", element: <ManageEmployees /> },
-  { path: "/admin/super/add-employee", element: <AddEmployee /> },
-  { path: "/admin/super/manage-admins", element: <ManageAdmins /> },
-  { path: "/admin/super/admin-requests", element: <AdminRequests /> },
-  { path: "/admin/super/access-requests", element: <AccessRequests /> },
-  { path: "/admin/super/records", element: <Records /> },
+  { path: "/admin/super/manage-employees", element: <ProtectedRoute roles={[2]}><ManageEmployees /></ProtectedRoute> },
+  { path: "/admin/super/add-employee", element: <ProtectedRoute roles={[2]}><AddEmployee /></ProtectedRoute> },
+  { path: "/admin/super/manage-admins", element: <ProtectedRoute roles={[2]}><ManageAdmins /></ProtectedRoute> },
+  { path: "/admin/super/admin-requests", element: <ProtectedRoute roles={[2]}><AdminRequests /></ProtectedRoute> },
+  { path: "/admin/super/access-requests", element: <ProtectedRoute roles={[2]}><AccessRequests /></ProtectedRoute> },
+  { path: "/admin/super/records", element: <ProtectedRoute roles={[2]}><Records /></ProtectedRoute> },
 ]);

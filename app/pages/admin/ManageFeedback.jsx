@@ -1,18 +1,10 @@
-import { useEffect, useState } from "react";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import { useState } from "react";
+import Sidebar from "../../components/Sidebar.jsx";
 import { Trash2, Star } from "lucide-react";
+import { useRole } from "../../../src/lib/hooks/useRole.js";
 
 export default function ManageFeedback() {
-  // Dynamically detect role from localStorage (fallback to ADMIN)
-  const [role, setRole] = useState(() => {
-    const stored = localStorage.getItem("role_id");
-    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
-  });
-
-  useEffect(() => {
-    const stored = localStorage.getItem("role_id");
-    if (stored !== null) setRole(parseInt(stored, 10));
-  }, []);
+  const { roleId } = useRole();
 
   const [feedbacks, setFeedbacks] = useState([
     {
@@ -48,7 +40,7 @@ export default function ManageFeedback() {
   return (
     <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
       {/* Sidebar now uses detected role */}
-      <Sidebar active="manage-feedback" role={role} />
+      <Sidebar active="manage-feedback" role={roleId} />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col p-6 z-10">

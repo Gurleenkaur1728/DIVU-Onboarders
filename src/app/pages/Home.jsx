@@ -2,63 +2,44 @@ import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
-import { supabase } from "../../supabaseClient"; 
+import { useRole } from "../../lib/hooks/useRole.js";
 
 export default function Home() {
 
-  const [name, setName] = useState(() => localStorage.getItem("profile.name") || "");
-  const [role, setRole] = useState(() => localStorage.getItem("profile.role") || "user");
+  const { roleId, role } = useRole();
+  const [name, setName] = useState(() => localStorage.getItem("user_name") || "");
 
   useEffect(() => {
+    const storedName = localStorage.getItem("user_name");
+    if (storedName) {
+      setName(storedName);
+    }
+  }, []);
 
-    const pid = localStorage.getItem("profile_id");
-    if (!pid) return;
-
-    (async () => {
-      const { data: rows, error } = await supabase
-        .from("users")
-        .select("name", "role")
-        .eq("id", pid)
-        .limit(1);          
-
-      if (!error && rows?.length) {
-        const row = rows[0];
-        const display = row?.name?.trim() || (row?.role?.toUpperCase());
-        setName(display);
-        setRole(row?.role || "user");
-        localStorage.setItem("profile_name", display);
-        localStorage.setItem("profile.role", row?.role);
-      }
-    })();
-  }, [name]);
-
-  const [hero, setHero] = useState({
+  const defaultHero = {
     title: "Welcome to DIVU",
     subtitle: "Your onboarding journey starts here.",
     media_url: "/bg.png",
-  });
+  };
+  const [hero, setHero] = useState(defaultHero);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await supabase
-        .from("home_content")
-        .select("title, subtitle, media_url")
-        .eq("section", "hero")
-        .eq("sort_order", 0)
-        .maybeSingle();
-
-      if (!cancelled) {
-        if (!error && data) setHero({
-          title: data.title ?? hero.title,
-          subtitle: data.subtitle ?? hero.subtitle,
-          media_url: data.media_url ?? hero.media_url,
-        });
-        setLoading(false);
+    setLoading(true);
+    try {
+      const storedHero = JSON.parse(localStorage.getItem("hero_content"));
+      if (storedHero) {
+        setHero((prev) => ({
+          title: storedHero.title ?? prev.title,
+          subtitle: storedHero.subtitle ?? prev.subtitle,
+          media_url: storedHero.media_url ?? prev.media_url,
+        }));
       }
-    })();
-    return () => { cancelled = true; };
+    } catch (error) {
+      console.error("Error loading hero content:", error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   return (
@@ -66,7 +47,7 @@ export default function Home() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: `url('${hero.media_url || "/bg.png"}')` }}
     >
-      <Sidebar role={ROLES.USER} />
+      <Sidebar role={roleId} />
 
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}

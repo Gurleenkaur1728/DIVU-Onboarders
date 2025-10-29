@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../src/lib/supabaseClient.js";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import Sidebar from "../../components/Sidebar.jsx";
+import { useRole } from "../../../src/lib/hooks/useRole.js";
 
 export default function AssignTemplates() {
   const [users, setUsers] = useState([]);
@@ -18,10 +19,7 @@ export default function AssignTemplates() {
   const [modalAssignedGroupIds, setModalAssignedGroupIds] = useState([]);
   const [modalLoading, setModalLoading] = useState(false);
 
-  const [roleId] = useState(() => {
-    const r = localStorage.getItem("role_id");
-    return r ? parseInt(r, 10) : ROLES.ADMIN;
-  });
+  const { roleId } = useRole();
 
   useEffect(() => {
     (async () => {

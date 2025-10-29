@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import Sidebar from "../../components/Sidebar.jsx";
 import {
   BarChart,
   Bar,
@@ -12,17 +11,10 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { useRole } from "../../../src/lib/hooks/useRole.js";
 
 export default function ManageProgress() {
-  // Dynamically detect role from localStorage (fallback to ADMIN)
-  const [role, setRole] = useState(() => {
-    const stored = localStorage.getItem("role_id");
-    return stored !== null ? parseInt(stored, 10) : ROLES.ADMIN;
-  });
-  useEffect(() => {
-    const stored = localStorage.getItem("role_id");
-    if (stored !== null) setRole(parseInt(stored, 10));
-  }, []);
+  const { roleId } = useRole();
 
   const summary = {
     totalModules: 6,
@@ -49,7 +41,7 @@ export default function ManageProgress() {
   return (
     <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
       {/* Sidebar now uses detected role */}
-      <Sidebar active="manage-progress" role={role} />
+      <Sidebar active="manage-progress" role={roleId} />
 
       {/* Main */}
       <div className="flex-1 flex flex-col p-6 space-y-6">
