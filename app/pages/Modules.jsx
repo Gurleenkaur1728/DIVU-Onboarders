@@ -2,17 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { AppWindow, CheckCircle2, Circle, Clock } from "lucide-react";
-import modulesData from "../../src/lib/modulesData";
-import { supabase } from "../../src/lib/supabaseClient.js";
-
-export default function Modules() {
-  const [modules, setModules] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
-import { AppWindow, CheckCircle2, Circle, Clock } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 
@@ -26,52 +15,11 @@ export default function Modules() {
     loadModules();
   }, []);
 
-  async function loadModules() {
-    try {
-      const userId = localStorage.getItem("profile_id");
-
-      // ✅ Get all certificates for this user (including assigned_on)
-      const { data: certs, error } = await supabase
-        .from("certificates")
-        .select("title, issue_date, assigned_on")
-        .eq("user_id", userId);
-
-      if (error) console.error("Error loading certificates:", error);
-
-      // ✅ Merge local module data with Supabase info
-      const merged = modulesData.map((m, index) => {
-        const cert = certs?.find(
-          (c) => c.title === m.title || c.title === `Module ${m.id}`
-        );
-        return {
-          ...m,
-          assigned: cert
-            ? new Date(cert.assigned_on).toISOString().slice(0, 10)
-            : "00-00-0000", // fallback
-          completed: cert
-            ? new Date(cert.issue_date).toISOString().slice(0, 10)
-            : "-", // completion date
-          feedback: cert ? "Yes" : "-",
-          status: cert
-            ? "completed"
-            : index === 0
-            ? "in-progress"
-            : "pending",
-        };
-      });
-
-      setModules(merged);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
   const loadModules = async () => {
     try {
       setLoading(true);
       
-      // Fetch all published modules (remove status filter since status column might not exist)
+      // Fetch all published modules
       const { data: modulesData, error: modulesError } = await supabase
         .from("modules")
         .select("*")
@@ -131,12 +79,8 @@ export default function Modules() {
             <div className="text-emerald-700 text-lg">Loading modules...</div>
           </div>
         ) : (
-          <>
-        {/* Table */}
-        <div className="overflow-x-auto rounded-2xl shadow-lg bg-white/95 border border-emerald-200">
-          {loading ? (
-            <p className="p-4 text-emerald-800 italic">Loading modules...</p>
-          ) : (
+          /* Table */
+          <div className="overflow-x-auto rounded-2xl shadow-lg bg-white/95 border border-emerald-200">
             <table className="min-w-[700px] w-full text-left border-collapse text-sm md:text-base">
               <thead className="bg-emerald-800 text-white">
                 <tr>
@@ -148,94 +92,63 @@ export default function Modules() {
                 </tr>
               </thead>
               <tbody>
-                {modules.map((m, idx) => (
-                  <tr
-                    key={m.id}
-                    className={`transition-colors duration-200 ${
-                      idx % 2 === 0
-                        ? "bg-emerald-50/90 hover:bg-emerald-100/80"
-                        : "bg-emerald-100/70 hover:bg-emerald-200/70"
-                    }`}
-                  >
-                    {/* Status */}
-                    <td className="p-3 text-center">
-                      {m.status === "completed" ? (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                      ) : m.status === "in-progress" ? (
-                        <Clock className="w-5 h-5 text-amber-500" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-gray-400" />
-                      )}
-                    </td>
-          <table className="min-w-[700px] w-full text-left border-collapse text-sm md:text-base">
-            <thead className="bg-emerald-800 text-white">
-              <tr>
-                <th className="p-4 font-semibold">Status</th>
-                <th className="p-4 font-semibold">Module</th>
-                <th className="p-4 font-semibold">Date Assigned</th>
-                <th className="p-4 font-semibold">Date Completed</th>
-                <th className="p-4 font-semibold">Feedback</th>
-              </tr>
-            </thead>
-            <tbody>
-              {modules.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="p-8 text-center text-gray-500 italic">
-                    No modules available yet. Check back later!
-                  </td>
-                </tr>
-              ) : (
-                modules.map((m, idx) => (
-                <tr
-                  key={m.id}
-                  className={`transition-colors duration-200 ${
-                    idx % 2 === 0
-                      ? "bg-emerald-50/90 hover:bg-emerald-100/80"
-                      : "bg-emerald-100/70 hover:bg-emerald-200/70"
-                  }`}
-                >
-                  {/* Status */}
-                  <td className="p-3 text-center">
-                    {m.status === "completed" ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    ) : m.status === "in-progress" ? (
-                      <Clock className="w-5 h-5 text-amber-500" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-gray-400" />
-                    )}
-                  </td>
-
-                    {/* Title */}
-                    <td className="p-3 font-medium text-emerald-900">
-                      <Link
-                        to={`/modules/${m.id}`}
-                        className="text-emerald-700 hover:text-emerald-900 hover:underline transition-colors duration-200"
-                      >
-                        {m.title}
-                      </Link>
-                    </td>
-
-                    {/* Dates */}
-                    <td className="p-3 text-sm text-emerald-800">{m.assigned}</td>
-                    <td className="p-3 text-sm text-emerald-800">{m.completed}</td>
-
-                    {/* Feedback */}
-                    <td
-                      className={`p-3 text-sm font-semibold ${
-                        m.feedback === "Yes"
-                          ? "text-emerald-600"
-                          : "text-gray-500 italic"
-                      }`}
-                    >
-                      {m.feedback}
+                {modules.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="p-8 text-center text-gray-500 italic">
+                      No modules available yet. Check back later!
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  modules.map((m, idx) => (
+                    <tr
+                      key={m.id}
+                      className={`transition-colors duration-200 ${
+                        idx % 2 === 0
+                          ? "bg-emerald-50/90 hover:bg-emerald-100/80"
+                          : "bg-emerald-100/70 hover:bg-emerald-200/70"
+                      }`}
+                    >
+                      {/* Status */}
+                      <td className="p-3 text-center">
+                        {m.status === "completed" ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        ) : m.status === "in-progress" ? (
+                          <Clock className="w-5 h-5 text-amber-500" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-gray-400" />
+                        )}
+                      </td>
+
+                      {/* Title */}
+                      <td className="p-3 font-medium text-emerald-900">
+                        <Link
+                          to={`/modules/${m.id}`}
+                          className="text-emerald-700 hover:text-emerald-900 hover:underline transition-colors duration-200"
+                        >
+                          {m.title}
+                        </Link>
+                      </td>
+
+                      {/* Dates */}
+                      <td className="p-3 text-sm text-emerald-800">{m.assigned}</td>
+                      <td className="p-3 text-sm text-emerald-800">{m.completed}</td>
+
+                      {/* Feedback */}
+                      <td
+                        className={`p-3 text-sm font-semibold ${
+                          m.feedback === "Yes"
+                            ? "text-emerald-600"
+                            : "text-gray-500 italic"
+                        }`}
+                      >
+                        {m.feedback}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          )}
-        </div>
-          </>
+          </div>
         )}
       </div>
     </div>

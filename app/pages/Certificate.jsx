@@ -9,66 +9,70 @@ export default function Certificate() {
   const { user } = useAuth();
   const [module, setModule] = useState(null);
   const [completionData, setCompletionData] = useState(null);
+  const [feedbackData, setFeedbackData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadCertificateData();
-  }, [id, user]);
+    console.log('Certificate component mounted/changed:', { id, userId: user?.profile_id });
+    loadAllData();
+  }, [id, user?.profile_id]);
 
-  const loadCertificateData = async () => {
-    if (!user?.profile_id || !id) return;
+  const loadAllData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    if (!user?.profile_id || !id) {
+      console.log('Missing user or module ID');
+      setError('Missing user authentication or module ID');
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Load module details
-      const { data: moduleData, error: moduleError } = await supabase
-        .from('modules')
-        .select('*')
-        .eq('id', id)
-        .single();
+      console.log('🔄 Loading certificate data...');
+      
+      // Load all data in parallel
+      const [moduleResult, progressResult, feedbackResult] = await Promise.allSettled([
+        supabase.from('modules').select('*').eq('id', id).single(),
+        supabase.from('user_module_progress').select('*').eq('user_id', user.profile_id).eq('module_id', id).maybeSingle(),
+        supabase.from('module_feedback').select('*').eq('user_id', user.profile_id).eq('module_id', id).maybeSingle()
+      ]);
 
-      if (moduleError) throw moduleError;
-      setModule(moduleData);
-
-      // Load completion data
-      const { data: progressData, error: progressError } = await supabase
-        .from('user_module_progress')
-        .select('*')
-        .eq('user_id', user.profile_id)
-        .eq('module_id', id)
-        .single();
-
-      if (progressError && progressError.code !== 'PGRST116') {
-        throw progressError;
+      // Handle module data
+      if (moduleResult.status === 'fulfilled' && moduleResult.value.data) {
+        setModule(moduleResult.value.data);
+        console.log('✅ Module loaded:', moduleResult.value.data.title);
+      } else {
+        console.error('❌ Module not found');
+        setError('Module not found');
+        return;
       }
 
-      // Load feedback data to ensure feedback was submitted
-      const { data: feedbackData, error: feedbackError } = await supabase
-        .from('module_feedback')
-        .select('*')
-        .eq('user_id', user.profile_id)
-        .eq('module_id', id)
-        .single();
+      // Handle progress data
+      const progressData = progressResult.status === 'fulfilled' ? progressResult.value.data : null;
+      setCompletionData(progressData);
+      console.log('📊 Progress data:', progressData);
 
-      if (feedbackError && feedbackError.code !== 'PGRST116') {
-        console.log('No feedback found, but not an error');
-      }
+      // Handle feedback data
+      const feedback = feedbackResult.status === 'fulfilled' ? feedbackResult.value.data : null;
+      setFeedbackData(feedback);
+      console.log('⭐ Feedback data:', feedback);
 
-      console.log('Certificate data loaded:', {
-        progressData,
-        feedbackData,
-        isCompleted: progressData?.is_completed,
-        hasFeedback: !!feedbackData
+      // Log final validation
+      const isCompleted = progressData?.is_completed;
+      const hasFeedback = !!feedback;
+      
+      console.log('🎯 Final validation:', {
+        isCompleted,
+        hasFeedback,
+        canShowCertificate: isCompleted && hasFeedback
       });
 
-      // Set completion data if both module is completed AND feedback exists
-      if (progressData && progressData.is_completed && feedbackData) {
-        setCompletionData(progressData);
-      } else {
-        setCompletionData(null);
-      }
     } catch (error) {
-      console.error('Error loading certificate data:', error);
+      console.error('💥 Error loading data:', error);
+      setError('Failed to load certificate data');
     } finally {
       setLoading(false);
     }
@@ -207,6 +211,9 @@ export default function Certificate() {
     }
   };
 
+  // Simple validation - just check if we have both completion and feedback
+  const canShowCertificate = completionData?.is_completed && feedbackData;
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -218,7 +225,25 @@ export default function Certificate() {
     );
   }
 
-  if (!completionData) {
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-red-100">
+        <div className="bg-white p-8 rounded-xl shadow-lg text-center">
+          <div className="text-red-500 text-6xl mb-4">💥</div>
+          <h2 className="text-2xl font-bold text-red-700 mb-4">Error Loading Certificate</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={loadAllData}
+            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canShowCertificate) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-red-100">
         <div className="bg-white p-8 rounded-xl shadow-lg text-center">
@@ -231,12 +256,23 @@ export default function Certificate() {
             <br />
             2. Submit feedback with a rating
           </p>
-          <button
-            onClick={() => navigate(`/modules/${id}`)}
-            className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold"
-          >
-            Go to Module
-          </button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => navigate(`/modules/${id}`)}
+              className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold"
+            >
+              Go to Module
+            </button>
+            <button
+              onClick={() => {
+                setLoading(true);
+                loadCertificateData();
+              }}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
+            >
+              🔄 Refresh
+            </button>
+          </div>
         </div>
       </div>
     );
