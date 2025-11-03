@@ -1,0 +1,800 @@
+import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import Sidebar from "./Sidebar.jsx";
+import { supabase } from "../../src/lib/supabaseClient.js";
+import { useRole } from "../../src/lib/hooks/useRole.js";
+
+// Progress tracking hook
+function useModuleProgress(userId, moduleId) {
+  const [progress, setProgress] = useState({
+    currentPage: 0,
+    completedSections: [],
+    answers: {},
+    completionPercentage: 0,
+    isCompleted: false
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadProgress();
+  }, [userId, moduleId]);
+
+  const loadProgress = async () => {
+    if (!userId || !moduleId) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_module_progress')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('module_id', moduleId)
+        .single();
+
+      if (data) {
+        setProgress({
+          currentPage: data.current_page || 0,
+          completedSections: data.completed_sections || [],
+          answers: data.answers || {},
+          completionPercentage: data.completion_percentage || 0,
+          isCompleted: data.is_completed || false
+        });
+      }
+    } catch (error) {
+      console.log('No existing progress found, starting fresh');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateProgress = async (updates) => {
+    if (!userId || !moduleId) return;
+
+    const newProgress = { ...progress, ...updates };
+    setProgress(newProgress);
+
+    try {
+      await supabase
+        .from('user_module_progress')
+        .upsert({
+          user_id: userId,
+          module_id: moduleId,
+          current_page: newProgress.currentPage,
+          completed_sections: newProgress.completedSections,
+          answers: newProgress.answers,
+          completion_percentage: newProgress.completionPercentage,
+          is_completed: newProgress.isCompleted,
+          updated_at: new Date().toISOString()
+        });
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
+  };
+
+  return { progress, updateProgress, loading };
+}
+
+// Smart image component
+import { useAuth } from '../context/AuthContext';
+
+// Photo display component with smart path resolution
+function PhotoDisplay({ photoPath, moduleId, pageIndex, caption }) {
+  const [currentSrc, setCurrentSrc] = useState('');
+  const [hasError, setHasError] = useState(false);
+  const [tryIndex, setTryIndex] = useState(0);
+
+  const getPossiblePaths = (originalPath) => {
+    if (!originalPath) return [];
+    const filename = originalPath.split(/[/\\]/).pop();
+    return [
+      supabase.storage.from("modules_assets").getPublicUrl(originalPath).data.publicUrl,
+      originalPath,
+      `/${originalPath}`,
+      `/assets/images/${filename}`,
+      `/${filename}`,
+    ].filter(Boolean);
+  };
+
+  useEffect(() => {
+    const paths = getPossiblePaths(photoPath);
+    if (paths.length > 0) {
+      setCurrentSrc(paths[0]);
+      setTryIndex(0);
+      setHasError(false);
+    }
+  }, [photoPath]);
+
+  const handleImageError = () => {
+    const paths = getPossiblePaths(photoPath);
+    const nextIndex = tryIndex + 1;
+    if (nextIndex < paths.length) {
+      setCurrentSrc(paths[nextIndex]);
+      setTryIndex(nextIndex);
+    } else {
+      setHasError(true);
+    }
+  };
+
+  if (hasError) {
+    return (
+      <div className="flex justify-center">
+        <div className="max-w-md p-4 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-500">
+          <div className="text-sm">Image not found</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-center">
+      <img 
+        src={currentSrc}
+        alt={caption || "Module image"} 
+        className="max-w-full h-auto rounded-lg shadow-md"
+        onError={handleImageError}
+      />
+    </div>
+  );
+}
+
+// Progress bar component
+function ProgressBar({ percentage, className = "" }) {
+  return (
+    <div className={`w-full bg-gray-200 rounded-full h-3 ${className}`}>
+      <div 
+        className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-out"
+        style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
+      />
+    </div>
+  );
+}
+
+// Section completion badge
+function CompletionBadge({ isCompleted, isLocked }) {
+  if (isLocked) {
+    return (
+      <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center">
+        <svg className="w-3 h-3 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+      isCompleted ? 'bg-emerald-500' : 'bg-gray-300'
+    }`}>
+      {isCompleted ? (
+        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      ) : (
+        <div className="w-3 h-3 rounded-full bg-white"></div>
+      )}
+    </div>
+  );
+}
+
+export default function EnhancedModuleDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { roleId } = useRole();
+  const { user } = useAuth();
+  const [module, setModule] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [flippedCards, setFlippedCards] = useState(new Set());
+  const [answers, setAnswers] = useState({});
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedback, setFeedback] = useState({
+    rating: 0,
+    feedback_text: '',
+    suggestions: '',
+    difficulty_level: 0
+  });
+  const [existingFeedback, setExistingFeedback] = useState(null);
+  
+  // Get user ID from auth context
+  const userId = user?.profile_id;
+  
+  // Use progress tracking
+  const { progress, updateProgress, loading: progressLoading } = useModuleProgress(userId, id);
+
+  useEffect(() => {
+    loadModule();
+    if (userId) {
+      loadExistingFeedback();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, userId]);
+
+  useEffect(() => {
+    setCurrentPage(progress.currentPage);
+    setAnswers(progress.answers);
+  }, [progress]);
+
+  const loadModule = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("modules")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        setModule(data);
+      }
+    } catch (error) {
+      console.error("Error loading module:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadExistingFeedback = async () => {
+    if (!userId || !id) return;
+    
+    try {
+      const { data } = await supabase
+        .from('module_feedback')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('module_id', id)
+        .single();
+
+      if (data) {
+        setExistingFeedback(data);
+      }
+    } catch (error) {
+      console.log('No existing feedback found:', error);
+    }
+  };
+
+  const submitFeedback = async () => {
+    if (!userId || !id) {
+      alert('User not authenticated. Please log in again.');
+      return;
+    }
+    
+    if (feedback.rating === 0) {
+      alert('Please provide a rating!');
+      return;
+    }
+
+    try {
+      console.log('Submitting feedback with userId:', userId, 'moduleId:', id);
+      
+      const { data, error } = await supabase
+        .from('module_feedback')
+        .insert({
+          user_id: userId,
+          module_id: id,
+          rating: feedback.rating,
+          feedback_text: feedback.feedback_text,
+          suggestions: feedback.suggestions,
+          difficulty_level: feedback.difficulty_level === 0 ? null : feedback.difficulty_level
+        })
+        .select();
+
+      if (error) {
+        console.error('Database error:', error);
+        alert('Error submitting feedback: ' + error.message);
+        return;
+      }
+
+      console.log('Feedback submitted successfully:', data);
+
+      setShowFeedbackModal(false);
+      setExistingFeedback({ ...feedback, created_at: new Date().toISOString() });
+      alert('Thank you for your feedback!');
+    } catch (err) {
+      console.error('Error submitting feedback:', err);
+      alert('Error submitting feedback. Please try again.');
+    }
+  };
+
+  const calculateProgress = (pages, completedSections) => {
+    if (!pages || pages.length === 0) return 0;
+    
+    const totalSections = pages.reduce((total, page) => total + (page.sections?.length || 0), 0);
+    const completedCount = completedSections.length;
+    
+    return totalSections > 0 ? Math.round((completedCount / totalSections) * 100) : 0;
+  };
+
+  const markSectionComplete = async (sectionId) => {
+    const newCompletedSections = [...progress.completedSections];
+    if (!newCompletedSections.includes(sectionId)) {
+      newCompletedSections.push(sectionId);
+    }
+
+    const newProgress = calculateProgress(pages, newCompletedSections);
+    const isModuleComplete = newProgress >= 100;
+
+    await updateProgress({
+      completedSections: newCompletedSections,
+      completionPercentage: newProgress,
+      isCompleted: isModuleComplete,
+      ...(isModuleComplete && { completed_at: new Date().toISOString() })
+    });
+  };
+
+  const saveAnswer = async (questionId, answer) => {
+    const newAnswers = { ...answers, [questionId]: answer };
+    setAnswers(newAnswers);
+    await updateProgress({ answers: newAnswers });
+  };
+
+  const goToPage = async (pageIndex) => {
+    // Check if page is unlocked
+    if (pageIndex > 0) {
+      const previousPageSections = pages[pageIndex - 1]?.sections || [];
+      const allPreviousCompleted = previousPageSections.every(section => 
+        progress.completedSections.includes(section.id)
+      );
+      
+      if (!allPreviousCompleted) {
+        alert("Please complete the previous page before proceeding.");
+        return;
+      }
+    }
+
+    setCurrentPage(pageIndex);
+    await updateProgress({ currentPage: pageIndex });
+  };
+
+  if (loading || progressLoading) {
+    return (
+      <div className="flex min-h-dvh justify-center items-center">
+        <div className="text-emerald-700 text-lg">Loading module...</div>
+      </div>
+    );
+  }
+
+  if (!module) {
+    return (
+      <div className="flex min-h-dvh justify-center items-center">
+        <div className="text-gray-500 text-lg">Module not found</div>
+      </div>
+    );
+  }
+
+  // Handle module content structure
+  const modulePages = module.pages || [];
+  const pages = modulePages.length > 0 
+    ? modulePages 
+    : [{ 
+        id: 'default', 
+        name: module.title, 
+        sections: [{
+          id: 'default-section',
+          type: 'text',
+          title: module.title,
+          body: module.description || "No content available"
+        }]
+      }];
+
+  const currentPageData = pages[currentPage] || pages[0];
+  const totalPages = pages.length;
+
+  // Check if sections are locked
+  const isSectionLocked = (sectionIndex, pageIndex) => {
+    if (pageIndex === 0 && sectionIndex === 0) return false; // First section is always unlocked
+    
+    // Check if previous sections in current page are completed
+    const currentPageSections = pages[pageIndex]?.sections || [];
+    for (let i = 0; i < sectionIndex; i++) {
+      const sectionId = currentPageSections[i]?.id;
+      if (!progress.completedSections.includes(sectionId)) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  const renderSection = (section, sectionIndex) => {
+    const isCompleted = progress.completedSections.includes(section.id);
+    const isLocked = isSectionLocked(sectionIndex, currentPage);
+
+    return (
+      <div key={section.id} className={`bg-white rounded-xl shadow-lg p-6 border-l-4 ${
+        isCompleted ? 'border-emerald-500 bg-emerald-50' : 
+        isLocked ? 'border-gray-300 bg-gray-50' : 'border-blue-500'
+      } transition-all duration-300`}>
+        
+        {/* Section Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <CompletionBadge isCompleted={isCompleted} isLocked={isLocked} />
+            <h3 className={`font-semibold text-lg ${
+              isLocked ? 'text-gray-500' : 'text-gray-800'
+            }`}>
+              {section.title || `Section ${sectionIndex + 1}`}
+            </h3>
+          </div>
+          
+          {isLocked && (
+            <div className="text-sm text-gray-500 italic">
+              Complete previous sections to unlock
+            </div>
+          )}
+        </div>
+
+        {/* Section Content */}
+        {isLocked ? (
+          <div className="text-gray-500 italic p-4 text-center">
+            🔒 This section is locked. Complete the previous sections to continue.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {renderSectionContent(section, isCompleted)}
+            
+            {/* Complete Section Button */}
+            {!isCompleted && (
+              <div className="flex justify-end mt-6">
+                <button
+                  onClick={() => markSectionComplete(section.id)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
+                >
+                  Mark Complete ✓
+                </button>
+              </div>
+            )}
+
+            {isCompleted && (
+              <div className="flex items-center justify-end mt-4 text-emerald-600">
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                ✅ Completed
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderSectionContent = (section, isCompleted) => {
+    switch (section.type) {
+      case 'text':
+        return (
+          <div className="space-y-4">
+            {section.body && (
+              <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                {section.body}
+              </div>
+            )}
+          </div>
+        );
+      
+      case 'photo':
+        return (
+          <div className="space-y-4">
+            {section.media_path && (
+              <PhotoDisplay photoPath={section.media_path} caption={section.caption} moduleId={id} pageIndex={currentPage} />
+            )}
+            {section.caption && (
+              <p className="text-gray-600 text-center italic">{section.caption}</p>
+            )}
+          </div>
+        );
+
+      case 'questionnaire':
+        return (
+          <div className="space-y-4">
+            <div className="space-y-4">
+              {(section.questions || []).map((question, idx) => (
+                <div key={question.id || idx} className="space-y-2">
+                  <label className="block text-gray-700 font-medium">
+                    {question.text}
+                    {question.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  
+                  {question.type === 'text' && (
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="Your answer..."
+                      value={answers[question.id] || ''}
+                      onChange={(e) => saveAnswer(question.id, e.target.value)}
+                      disabled={isCompleted}
+                    />
+                  )}
+                  
+                  {question.type === 'radio' && (
+                    <div className="space-y-2">
+                      {(question.options || []).map((option, optIdx) => (
+                        <label key={optIdx} className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            name={`question-${question.id}`}
+                            value={option}
+                            checked={answers[question.id] === option}
+                            onChange={(e) => saveAnswer(question.id, e.target.value)}
+                            disabled={isCompleted}
+                            className="text-emerald-600 focus:ring-emerald-500"
+                          />
+                          <span className="text-gray-700">{option}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'flashcards':
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              {(section.cards || []).map((card, idx) => {
+                const cardKey = `${section.id}-${idx}`;
+                const isFlipped = flippedCards.has(cardKey);
+                
+                return (
+                  <div 
+                    key={card.id || idx} 
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer min-h-[100px] bg-white"
+                    onClick={() => {
+                      const newFlipped = new Set(flippedCards);
+                      if (isFlipped) {
+                        newFlipped.delete(cardKey);
+                      } else {
+                        newFlipped.add(cardKey);
+                      }
+                      setFlippedCards(newFlipped);
+                    }}
+                  >
+                    <div className="font-medium text-emerald-800 mb-2">
+                      {card.front || `Card ${idx + 1}`}
+                    </div>
+                    {isFlipped ? (
+                      <div className="text-gray-700 mt-3 p-3 bg-emerald-50 rounded border-l-4 border-emerald-500">
+                        <div className="text-sm text-emerald-600 font-medium mb-1">Answer:</div>
+                        {card.back || "No answer provided"}
+                      </div>
+                    ) : (
+                      <div className="text-gray-500 text-sm italic">
+                        Click to reveal answer
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="text-gray-500 italic">
+            Section type "{section.type}" not supported yet.
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div
+      className="flex min-h-dvh"
+      style={{
+        backgroundImage: "url('/bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <Sidebar role={roleId} />
+
+      <div className="flex-1 p-6">
+        {/* Header Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">{module.title}</h1>
+              <p className="text-gray-600">{module.description}</p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-emerald-600">
+                {progress.completionPercentage}%
+              </div>
+              <div className="text-sm text-gray-500">Complete</div>
+            </div>
+          </div>
+          
+          <ProgressBar percentage={progress.completionPercentage} className="mb-4" />
+          
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <span>Page {currentPage + 1} of {totalPages}</span>
+            <span>{progress.completedSections.length} sections completed</span>
+          </div>
+        </div>
+
+        {/* Page Navigation */}
+        <div className="bg-white rounded-xl shadow-lg p-4 mb-6">
+          <div className="flex space-x-2 overflow-x-auto">
+            {pages.map((page, index) => {
+              const isCurrentPage = index === currentPage;
+              const isPageUnlocked = index === 0 || (index > 0 && 
+                pages[index - 1]?.sections?.every(s => progress.completedSections.includes(s.id))
+              );
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => goToPage(index)}
+                  disabled={!isPageUnlocked}
+                  className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${
+                    isCurrentPage 
+                      ? 'bg-emerald-600 text-white' 
+                      : isPageUnlocked
+                        ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isPageUnlocked ? '' : '🔒'} {page.name || `Page ${index + 1}`}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Current Page Content */}
+        <div className="space-y-6">
+          {currentPageData.sections?.map((section, sectionIndex) => 
+            renderSection(section, sectionIndex)
+          )}
+        </div>
+
+        {/* Module Complete Section */}
+        {progress.isCompleted && (
+          <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl p-6 mt-6 text-center">
+            <div className="text-2xl font-bold mb-2">🎉 Module Completed!</div>
+            <div className="text-emerald-100 mb-4">
+              Congratulations! You've successfully completed this module.
+            </div>
+            
+            {/* Show feedback status */}
+            {existingFeedback ? (
+              <div className="bg-white/20 rounded-lg p-4 mb-4">
+                <div className="text-sm text-emerald-100 mb-2">✅ Feedback Submitted</div>
+                <div className="text-xs text-emerald-200">
+                  Rating: {existingFeedback.rating}/5 stars
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/20 rounded-lg p-4 mb-4">
+                <div className="text-sm text-emerald-100 mb-2">⭐ Feedback Required</div>
+                <div className="text-xs text-emerald-200">
+                  Please provide feedback to get your certificate
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-center space-x-4">
+              {!existingFeedback && (
+                <button 
+                  className="bg-white text-emerald-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                  onClick={() => setShowFeedbackModal(true)}
+                >
+                  Give Feedback ⭐
+                </button>
+              )}
+              
+              {existingFeedback && (
+                <button 
+                  className="bg-white text-emerald-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                  onClick={() => navigate('/certificate')}
+                >
+                  Get Certificate 🏆
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Feedback Modal */}
+        {showFeedbackModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">📝 Module Feedback</h3>
+              
+              {/* Rating */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Overall Rating * {feedback.rating === 0 && <span className="text-red-500">(Required)</span>}
+                </label>
+                <div className="flex space-x-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedback(prev => ({ ...prev, rating: star }))}
+                      className={`text-2xl hover:scale-110 transition-transform ${
+                        star <= feedback.rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-200'
+                      }`}
+                    >
+                      ⭐
+                    </button>
+                  ))}
+                </div>
+                {feedback.rating > 0 && (
+                  <div className="text-sm text-gray-600 mt-1">
+                    {feedback.rating} out of 5 stars
+                  </div>
+                )}
+              </div>
+
+              {/* Difficulty */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Difficulty Level
+                </label>
+                <select 
+                  value={feedback.difficulty_level}
+                  onChange={(e) => setFeedback(prev => ({ ...prev, difficulty_level: parseInt(e.target.value) }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                >
+                  <option value={0}>Select difficulty</option>
+                  <option value={1}>Very Easy</option>
+                  <option value={2}>Easy</option>
+                  <option value={3}>Medium</option>
+                  <option value={4}>Hard</option>
+                  <option value={5}>Very Hard</option>
+                </select>
+              </div>
+
+              {/* Feedback Text */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  What did you think of this module?
+                </label>
+                <textarea
+                  value={feedback.feedback_text}
+                  onChange={(e) => setFeedback(prev => ({ ...prev, feedback_text: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 h-20"
+                  placeholder="Share your thoughts..."
+                />
+              </div>
+
+              {/* Suggestions */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Suggestions for improvement
+                </label>
+                <textarea
+                  value={feedback.suggestions}
+                  onChange={(e) => setFeedback(prev => ({ ...prev, suggestions: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 h-20"
+                  placeholder="How can we make this better?"
+                />
+              </div>
+
+              {/* Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowFeedbackModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitFeedback}
+                  className="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700"
+                >
+                  Submit Feedback
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

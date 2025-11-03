@@ -279,7 +279,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
     persistDraft({ current_step: ns });
   };
 
-  /* publish to modules + module_sections (same schema) */
+  /* publish to modules table with pages data */
   const completeModule = async () => {
     if (!title.trim() || !description.trim() || pages.length === 0) {
       showToast("Complete Title, Description and at least one Page.", "warning");
@@ -290,60 +290,54 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
     setSaving(true);
     const profileId = localStorage.getItem("profile_id");
 
-    const { data: module, error: modErr } = await supabase
-      .from("modules")
-      .insert({
-        title: title.trim(),
-        description: description.trim(),
-        created_by: profileId,
-        estimated_time_min: 10,
-        status: "published", // ✅ mark as published
-      })
-      .select("*")
-      .single();
-
-    if (modErr) {
-      console.error(modErr);
-      showToast("Error creating module.", "error");
-      setSaving(false);
-      return;
-    }
-
-    const sectionsPayload = [];
-    pages.forEach((page, pIndex) => {
-      const pName = page.name || `Page ${pIndex + 1}`;
-      const secArr = Array.isArray(page.sections) ? page.sections : [];
-      secArr.forEach((section, sIndex) => {
-        sectionsPayload.push({
-          module_id: module.id,
-          title: pName,
-          content_type: section.type,
-          content_text: section.body || section.caption || "",
-          media_path: section.media_path || null,
-          quiz_data: section.questions || section.cards || section.items || null,
-          order_index: pIndex * 100 + sIndex,
-          is_mandatory: true,
-        });
-      });
+    console.log("Creating module with data:", {
+      title: title.trim(),
+      description: description.trim(),
+      created_by: profileId,
+      pages: pages,
+      pagesCount: pages.length
     });
 
-    const { error: secErr } = await supabase.from("module_sections").insert(sectionsPayload);
-    if (secErr) {
-      console.error(secErr);
-      showToast("Failed to save module sections.", "error");
+    try {
+      // Create the module with pages data directly in the pages column
+      const { data: moduleData, error: modErr } = await supabase
+        .from("modules")
+        .insert({
+          title: title.trim(),
+          description: description.trim(),
+          created_by: profileId,
+          estimated_time_min: 10,
+          pages: pages // Store pages data directly in the pages column
+        })
+        .select()
+        .single();
+
+      if (modErr) {
+        console.error("Module creation error:", modErr);
+        showToast(`Error creating module: ${modErr.message}`, "error");
+        setSaving(false);
+        return;
+      }
+
+      console.log("Module created successfully with pages data:", moduleData);
+
+      console.log("Module creation process completed, deleting draft...");
+
+      // Delete the draft since we've successfully published
+      await supabase.from("module_drafts").delete().eq("id", draftId);
       setSaving(false);
-      return;
-    }
+      showToast("Module created successfully!", "success");
 
-    await supabase.from("module_drafts").delete().eq("id", draftId);
-    setSaving(false);
-    showToast("Module created successfully!", "success");
-
-    // ✅ Notify parent to refresh and close modal
-    if (typeof onModuleCreated === "function") {
-      onModuleCreated();
+      // ✅ Notify parent to refresh and close modal
+      if (typeof onModuleCreated === "function") {
+        onModuleCreated();
+      }
+      onClose();
+    } catch (error) {
+      console.error("Unexpected error during module creation:", error);
+      showToast("Unexpected error creating module.", "error");
+      setSaving(false);
     }
-    onClose();
   };
 
   /* abandon draft */
@@ -366,9 +360,9 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
     if (!file) return null;
     const ext = file.name.split(".").pop() || "bin";
     const path = `uploads/${Date.now()}-${uid()}.${ext}`;
-    const { error } = await supabase.storage.from("modules_assets").upload(path, file);
+    const { error } = await supabase.storage.from("assets").upload(path, file);
     if (error) {
-      console.error(error);
+      console.error("Upload error:", error);
       showToast("Upload failed.", "error");
       return null;
     }

@@ -13,6 +13,7 @@ import Modules from "../app/pages/Modules.jsx";
 import Culture from "../app/pages/Culture.jsx";
 import About from "../app/pages/About.jsx";
 import ModuleDetail from "../app/pages/ModuleDetail.jsx";
+import EnhancedModuleDetail from "../app/components/EnhancedModuleDetail.jsx";
 import ModuleComplete from "../app/pages/ModuleComplete.jsx";
 import Feedback from "../app/pages/Feedback.jsx";
 import FeedbackForm from "../app/pages/FeedbackForm.jsx";
@@ -53,7 +54,7 @@ export const router = createBrowserRouter([
   { path: "/events", element: <ProtectedRoute><Events /></ProtectedRoute> },
   { path: "/account", element: <ProtectedRoute><Account /></ProtectedRoute> },
   { path: "/modules", element: <ProtectedRoute><Modules /></ProtectedRoute> },
-  { path: "/modules/:id", element: <ProtectedRoute><ModuleDetail /></ProtectedRoute> },
+  { path: "/modules/:id", element: <ProtectedRoute><EnhancedModuleDetail /></ProtectedRoute> },
   { path: "/modules/:id/complete", element: <ProtectedRoute><ModuleComplete /></ProtectedRoute> },
  
   // ✅ Feedback routes
