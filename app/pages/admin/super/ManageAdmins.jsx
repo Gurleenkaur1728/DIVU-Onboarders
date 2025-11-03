@@ -3,6 +3,8 @@ import Sidebar from "../../../components/Sidebar.jsx";
 import { useRole } from "../../../../src/lib/hooks/useRole.js";
 import { Trash2, Plus, Loader2 } from "lucide-react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
+import Swal from "sweetalert2";
+import "sweetalert2/dist/sweetalert2.min.css";
 
 export default function ManageAdmins() {
   const { roleId } = useRole();
@@ -12,10 +14,15 @@ export default function ManageAdmins() {
   const [banner, setBanner] = useState("");
 
   // ✅ Current logged-in Super Admin info
-  const me = useMemo(() => ({
-    name: localStorage.getItem("profile_name") || "Super Admin",
-    email: JSON.parse(localStorage.getItem("user") || "{}").email || "superadmin@divu.com",
-  }), []);
+  const me = useMemo(
+    () => ({
+      name: localStorage.getItem("profile_name") || "Super Admin",
+      email:
+        JSON.parse(localStorage.getItem("user") || "{}").email ||
+        "superadmin@divu.com",
+    }),
+    []
+  );
 
   // ✅ Load data on mount
   useEffect(() => {
@@ -56,8 +63,22 @@ export default function ManageAdmins() {
     if (error) console.error("Audit log insert error:", error);
   }
 
-  // ✅ Promote a user to Admin
+  // ✅ Promote a user to Admin (with SweetAlert confirmation)
   async function promote(user) {
+    const confirm = await Swal.fire({
+      title: `Promote ${user.name}?`,
+      text: `Are you sure you want to make ${user.name} an Admin?`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, promote",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#059669",
+      cancelButtonColor: "#d33",
+      background: "#fefefc",
+    });
+
+    if (!confirm.isConfirmed) return;
+
     try {
       const { error } = await supabase
         .from("users")
@@ -72,16 +93,42 @@ export default function ManageAdmins() {
         action: `${me.name} promoted ${user.name} to Admin`,
       });
 
-      setBanner(`${user.name} is now an Admin.`);
       await loadUsers();
+
+      Swal.fire({
+        title: "Promoted Successfully!",
+        text: `${user.name} is now an Admin.`,
+        icon: "success",
+        confirmButtonColor: "#059669",
+        background: "#fefefc",
+      });
     } catch (err) {
       console.error(err);
-      setBanner("Failed to promote user.");
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to promote user.",
+        icon: "error",
+        confirmButtonColor: "#d33",
+      });
     }
   }
 
-  // ✅ Demote an Admin to User
+  // ✅ Demote an Admin to User (with confirmation)
   async function demote(user) {
+    const confirm = await Swal.fire({
+      title: `Remove ${user.name}?`,
+      text: `Are you sure you want to remove ${user.name} from the Admin role?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, remove",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#6b7280",
+      background: "#fffefb",
+    });
+
+    if (!confirm.isConfirmed) return;
+
     try {
       const { error } = await supabase
         .from("users")
@@ -96,11 +143,22 @@ export default function ManageAdmins() {
         action: `${me.name} removed ${user.name} from Admin role`,
       });
 
-      setBanner(`${user.name} removed from Admin role.`);
       await loadUsers();
+
+      Swal.fire({
+        title: "Removed Successfully!",
+        text: `${user.name} has been removed from the Admin role.`,
+        icon: "success",
+        confirmButtonColor: "#059669",
+      });
     } catch (err) {
       console.error(err);
-      setBanner("Failed to remove admin.");
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to remove admin.",
+        icon: "error",
+        confirmButtonColor: "#d33",
+      });
     }
   }
 
@@ -109,7 +167,7 @@ export default function ManageAdmins() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-  <Sidebar active="manage-admins" role={roleId} />
+      <Sidebar active="manage-admins" role={roleId} />
 
       <div className="flex-1 flex flex-col p-6">
         {/* Header */}
@@ -124,12 +182,7 @@ export default function ManageAdmins() {
           MANAGE ADMINS
         </div>
 
-        {/* Banner */}
-        {banner && (
-          <div className="mb-4 px-4 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded">
-            {banner}
-          </div>
-        )}
+        {/* ✅ Removed banner since SweetAlert handles notifications */}
 
         {/* Content */}
         {loading ? (
@@ -175,19 +228,15 @@ export default function ManageAdmins() {
                         <tr
                           key={a.id}
                           className={`border-b border-emerald-100 ${
-                            i % 2 === 0 ? "bg-emerald-50/80" : "bg-emerald-100/70"
+                            i % 2 === 0
+                              ? "bg-emerald-50/80"
+                              : "bg-emerald-100/70"
                           } hover:bg-emerald-200/60 transition`}
                         >
-                          <td
-                            className="px-4 py-3 text-sm font-medium text-emerald-900 truncate max-w-[180px]"
-                            title={a.name}
-                          >
+                          <td className="px-4 py-3 text-sm font-medium text-emerald-900 truncate max-w-[180px]">
                             {a.name || "—"}
                           </td>
-                          <td
-                            className="px-4 py-3 text-sm text-gray-700 break-words max-w-[220px]"
-                            title={a.email}
-                          >
+                          <td className="px-4 py-3 text-sm text-gray-700 break-words max-w-[220px]">
                             {a.email || "—"}
                           </td>
                           <td className="px-4 py-3 text-center">
@@ -243,19 +292,15 @@ export default function ManageAdmins() {
                         <tr
                           key={u.id}
                           className={`border-b border-emerald-100 ${
-                            i % 2 === 0 ? "bg-emerald-50/80" : "bg-emerald-100/70"
+                            i % 2 === 0
+                              ? "bg-emerald-50/80"
+                              : "bg-emerald-100/70"
                           } hover:bg-emerald-200/60 transition`}
                         >
-                          <td
-                            className="px-4 py-3 text-sm font-medium text-emerald-900 truncate max-w-[180px]"
-                            title={u.name}
-                          >
+                          <td className="px-4 py-3 text-sm font-medium text-emerald-900 truncate max-w-[180px]">
                             {u.name || "—"}
                           </td>
-                          <td
-                            className="px-4 py-3 text-sm text-gray-700 break-words max-w-[220px]"
-                            title={u.email}
-                          >
+                          <td className="px-4 py-3 text-sm text-gray-700 break-words max-w-[220px]">
                             {u.email || "—"}
                           </td>
                           <td className="px-4 py-3 text-center">

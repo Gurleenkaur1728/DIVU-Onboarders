@@ -234,6 +234,21 @@ export default function Modules() {
               </tbody>
             </table>
           )}
+                  {/* Feedback */}
+                  <td
+                    className={`p-3 text-sm font-semibold ${
+                      m.feedback === "Yes"
+                        ? "text-emerald-600"
+                        : "text-gray-500 italic"
+                    }`}
+                  >
+                    {m.feedback}
+                  </td>
+                </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
           </>
         )}
