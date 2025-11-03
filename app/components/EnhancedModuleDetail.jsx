@@ -690,7 +690,7 @@ export default function EnhancedModuleDetail() {
               {existingFeedback && (
                 <button 
                   className="bg-white text-emerald-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-                  onClick={() => navigate('/certificate')}
+                  onClick={() => navigate(`/certificate/${id}`)}
                 >
                   Get Certificate 🏆
                 </button>
