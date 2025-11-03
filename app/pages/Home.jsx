@@ -1,10 +1,12 @@
+//ChatGPT helped me understand my Home.jsx code by explaining each line clearly — including React Hooks (useState, useEffect, useMemo), Supabase data fetching, and page rendering flow. It also simplified complex concepts like async/await and [] dependencies
 import { useEffect, useState, useMemo } from "react";
 import Sidebar from "../components/Sidebar";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
+import { supabase } from "../../src/lib/supabaseClient";
+import DivuChatbot from "../components/DivuChatbot";
 import { useRole } from "../../src/lib/hooks/useRole.js";
-import { supabase } from "../../src/lib/supabaseClient.js";
- 
+
 export default function Home() {
   const { roleId, role } = useRole();
   const [name, setName] = useState(() => localStorage.getItem("user_name") || "");
@@ -99,6 +101,8 @@ export default function Home() {
           <Tab label="Welcome" to="/home" active />
           <Tab label="Culture" to="/culture" />
           <Tab label="About" to="/about" />
+          <DivuChatbot />
+
         </div>
  
         {/* HERO (first section) */}

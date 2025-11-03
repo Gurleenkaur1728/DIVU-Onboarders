@@ -103,25 +103,40 @@ export default function Questions() {
     }
 
     try {
-      // Create a new question object
-      const newQuestion = {
-        id: Date.now(), // temporary ID
-        question: text,
-        answer: null,
-        status: "open"
-      };
+      // Insert question into database
+      const { data, error } = await supabase
+        .from("user_questions")
+        .insert({
+          user_id: profileId,
+          question_text: text,
+          status: "open"
+        })
+        .select("id, question_text, answer_text, status, created_at")
+        .single();
 
-      // Update local storage with the new question
-      const existingQuestions = JSON.parse(localStorage.getItem("my_questions") || "[]");
-      const updatedQuestions = [newQuestion, ...existingQuestions];
-      localStorage.setItem("my_questions", JSON.stringify(updatedQuestions));
-
-      // Update state
-      setMyQuestions(updatedQuestions);
-      setNewQ("");
+      if (error) {
+        console.error("Insert Error:", error);
+        setNotice("Failed to save question. Please try again.");
+      } else {
+        // Add to local state
+        const newQuestion = {
+          id: data.id,
+          question: data.question_text,
+          answer: data.answer_text,
+          status: data.status,
+          created_at: data.created_at
+        };
+        
+        setMyQuestions(prev => [newQuestion, ...prev]);
+        setNewQ("");
+        setNotice("Question submitted successfully!");
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setNotice(""), 3000);
+      }
     } catch (error) {
-      console.error(error);
-      setNotice("Failed to save question");
+      console.error("Error submitting question:", error);
+      setNotice("Failed to save question. Please try again.");
     } finally {
       setLoading(false);
     }
