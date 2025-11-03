@@ -32,6 +32,7 @@ import ViewProgress from "../app/pages/admin/ManageProgress.jsx";
 import ManageQuestions from "../app/pages/admin/ManageQuestions.jsx";
 import AssignTemplates from "../app/pages/admin/AssignTemplates.jsx";
 import ManageEvents from "../app/pages/admin/ManageEvents.jsx";
+import ManageCertificates from "../app/pages/admin/ManageCertificates.jsx";
  
 // Super Admin pages
 import ManageEmployees from "../app/pages/admin/super/ManageEmployees.jsx";
@@ -78,6 +79,7 @@ export const router = createBrowserRouter([
   { path: "/admin/manage-questions", element: <ProtectedRoute roles={[1, 2]}><ManageQuestions /></ProtectedRoute> },
   { path: "/admin/assign-templates", element: <ProtectedRoute roles={[1, 2]}><AssignTemplates /></ProtectedRoute> },
   { path: "/admin/manage-events", element: <ProtectedRoute roles={[1, 2]}><ManageEvents /></ProtectedRoute> },
+  { path: "/admin/certificates", element: <ProtectedRoute roles={[1, 2]}><ManageCertificates /></ProtectedRoute> },
  
   // ✅ Super Admin pages
   { path: "/admin/super/manage-employees", element: <ProtectedRoute roles={[2]}><ManageEmployees /></ProtectedRoute> },
