@@ -3,18 +3,21 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Circle, ChevronDown, ChevronRight } from "lucide-react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 // Small helper to format dates
 const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "-");
 
 export default function Checklist() {
+  const { user, loading: authLoading } = useAuth();
+  
   // Current user identity used for filtering
   const me = useMemo(
     () => ({
-      profileId: localStorage.getItem("profile_id") || null,
-      name: localStorage.getItem("profile_name") || "",
+      profileId: user?.profile_id || null,
+      name: user?.name || "",
     }),
-    []
+    [user]
   );
 
   const [loading, setLoading] = useState(true);
@@ -23,9 +26,23 @@ export default function Checklist() {
   const [expanded, setExpanded] = useState({});
 
   useEffect(() => {
-    load();
+    if (user) {
+      load();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
+
+  // Wait for auth to load before showing content
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   async function load() {
     setLoading(true);

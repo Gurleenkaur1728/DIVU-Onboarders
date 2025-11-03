@@ -62,6 +62,7 @@ export default function Login() {
       };
       localStorage.setItem("user", JSON.stringify(userData));
       localStorage.setItem("profile_id", user.id);
+      localStorage.setItem("profile_name", user.name || ""); // Add this line!
       localStorage.setItem("role_id", roleId);
       localStorage.setItem("role_name", roleName);
       localStorage.setItem("user_name", user.name || "");
