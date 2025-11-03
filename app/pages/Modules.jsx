@@ -1,20 +1,51 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { AppWindow, CheckCircle2, Circle, Clock } from "lucide-react";
-import modulesData from "../../src/lib/modulesData";
+import { supabase } from "../../src/lib/supabaseClient.js";
+import { useRole } from "../../src/lib/hooks/useRole.js";
 
 export default function Modules() {
-  // initialize modules with dummy assigned dates etc.
-  const [modules] = useState(
-    modulesData.map((m, index) => ({
-      ...m,
-      assigned: "00-00-0000",
-      completed: index === 0 ? "00-00-0000" : "-", // mock one completed
-      feedback: index === 0 ? "Yes" : "-",
-      status: index === 0 ? "completed" : index === 1 ? "in-progress" : "pending",
-    }))
-  );
+  const { roleId } = useRole();
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load published modules from Supabase
+  useEffect(() => {
+    loadModules();
+  }, []);
+
+  const loadModules = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch all published modules (remove status filter since status column might not exist)
+      const { data: modulesData, error: modulesError } = await supabase
+        .from("modules")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (modulesError) throw modulesError;
+
+      // For now, set all modules as pending until we implement user progress tracking
+      const modulesWithStatus = (modulesData || []).map((module) => ({
+        ...module,
+        assigned: "-",
+        completed: "-",
+        feedback: "-",
+        status: "pending", // Default status until progress tracking is implemented
+        progress_percent: 0
+      }));
+
+      setModules(modulesWithStatus);
+    } catch (error) {
+      console.error("Error loading modules:", error);
+      // Fallback to empty array if error
+      setModules([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div
@@ -26,7 +57,7 @@ export default function Modules() {
       }}
     >
       {/* Sidebar */}
-      <Sidebar role={ROLES.USER} />
+      <Sidebar role={roleId} />
 
       {/* Main */}
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
@@ -43,6 +74,12 @@ export default function Modules() {
           CULTURE MODULES
         </h1>
 
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="text-emerald-700 text-lg">Loading modules...</div>
+          </div>
+        ) : (
+          <>
         {/* Table */}
         <div className="overflow-x-auto rounded-2xl shadow-lg bg-white/95 border border-emerald-200">
           <table className="min-w-[700px] w-full text-left border-collapse text-sm md:text-base">
@@ -56,7 +93,14 @@ export default function Modules() {
               </tr>
             </thead>
             <tbody>
-              {modules.map((m, idx) => (
+              {modules.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="p-8 text-center text-gray-500 italic">
+                    No modules available yet. Check back later!
+                  </td>
+                </tr>
+              ) : (
+                modules.map((m, idx) => (
                 <tr
                   key={m.id}
                   className={`transition-colors duration-200 ${
@@ -101,10 +145,13 @@ export default function Modules() {
                     {m.feedback}
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
