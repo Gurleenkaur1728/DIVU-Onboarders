@@ -1,3 +1,4 @@
+//ChatGPT helped me understand my ManageContent.jsx (Admin Panel) code by explaining how each part works — from fetching, saving, and deleting data in Supabase to handling uploads and React state management.
 import { useState, useEffect } from "react";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
