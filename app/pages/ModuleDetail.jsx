@@ -17,7 +17,9 @@ function PhotoDisplay({ mediaPath, caption }) {
     const filename = originalPath.split(/[/\\]/).pop(); // Get just the filename
     
     return [
-      originalPath, // Try original path first
+      // Try Supabase Storage URL first (this is likely the correct one)
+      supabase.storage.from("modules_assets").getPublicUrl(originalPath).data.publicUrl,
+      originalPath, // Try original path
       `/${originalPath}`, // Add leading slash
       `/assets/images/${filename}`, // Assets folder
       `/src/assets/images/${filename}`, // Src assets folder  
