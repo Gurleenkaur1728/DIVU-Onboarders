@@ -2,8 +2,12 @@ import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { HelpCircle, Send, MessageSquare } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { supabase } from "../../src/lib/supabaseClient.js";
 
 export default function Questions() {
+  const { user, loading: authLoading } = useAuth();
+  const { roleId } = useRole();
   const [tab, setTab] = useState("faqs");
   const [faqs, setFaqs] = useState([]);
   const [myQuestions, setMyQuestions] = useState([]);
@@ -13,32 +17,75 @@ export default function Questions() {
 
   // Load FAQs (published) + my questions
   useEffect(() => {
-    const load = () => {
+    const load = async () => {
       setNotice("");
-      // For now, we'll load from localStorage or another data source
-      // This would typically be replaced with an API call to your backend
       
-      const storedFaqs = JSON.parse(localStorage.getItem("faqs") || "[]");
-      setFaqs(storedFaqs);
+      // Load FAQs from database
+      try {
+        const { data: faqData, error: faqError } = await supabase
+          .from("faqs")
+          .select("id, question, answer")
+          .eq("is_published", true)
+          .order("created_at", { ascending: false });
 
-      const profileId = localStorage.getItem("profile_id");
+        if (faqError) {
+          console.error("FAQ Error:", faqError);
+        } else {
+          setFaqs(faqData || []);
+        }
+      } catch (error) {
+        console.error("Error loading FAQs:", error);
+      }
+
+      // Load my questions from database
+      const profileId = user?.profile_id;
       if (!profileId) {
         setNotice("You must be signed in to view your questions.");
         return;
       }
 
-      const storedQuestions = JSON.parse(localStorage.getItem("my_questions") || "[]");
-      setMyQuestions(storedQuestions);
+      try {
+        const { data: questionData, error: questionError } = await supabase
+          .from("user_questions")
+          .select("id, question_text, answer_text, status, created_at")
+          .eq("user_id", profileId)
+          .order("created_at", { ascending: false });
+
+        if (questionError) {
+          console.error("Questions Error:", questionError);
+          setNotice("Failed to load your questions.");
+        } else {
+          const formattedQuestions = (questionData || []).map(q => ({
+            id: q.id,
+            question: q.question_text,
+            answer: q.answer_text,
+            status: q.status,
+            created_at: q.created_at
+          }));
+          setMyQuestions(formattedQuestions);
+        }
+      } catch (error) {
+        console.error("Error loading questions:", error);
+        setNotice("Failed to load your questions.");
+      }
     };
 
-    load();
-    // Set up an interval to check for updates periodically
-    const interval = setInterval(load, 30000);
+    if (user) {
+      load();
+    }
+  }, [user]);
 
-    return () => {
-      clearInterval(interval);
-    };
-  }, []);
+  // Wait for auth to load before showing content
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Create a new question
   const askQuestion = async () => {
@@ -48,7 +95,7 @@ export default function Questions() {
     setLoading(true);
     setNotice("");
 
-    const profileId = localStorage.getItem("profile_id");
+    const profileId = user?.profile_id;
     if (!profileId) {
       setLoading(false);
       setNotice("You must be signed in to ask a question.");
@@ -85,7 +132,7 @@ export default function Questions() {
       className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar role={useRole().roleId} active="questions" />
+      <Sidebar role={roleId} active="questions" />
 
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
