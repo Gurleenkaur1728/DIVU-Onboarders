@@ -109,6 +109,36 @@ export default function Checklist() {
     }
   }
 
+  // ✅ NEW: Generate certificate in Supabase
+  async function generateCertificate(userId, title) {
+    try {
+      // Check if one already exists
+      const { data: existing } = await supabase
+        .from("certificates")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("title", title)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("certificates")
+          .update({ issue_date: new Date().toISOString() })
+          .eq("id", existing.id);
+      } else {
+        await supabase.from("certificates").insert([
+          {
+            user_id: userId,
+            title,
+            issue_date: new Date().toISOString(),
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error("Certificate generation failed:", err);
+    }
+  }
+
   async function toggleDone(item) {
     // Optimistic UI update
     setGroups((prev) =>
@@ -139,6 +169,9 @@ export default function Checklist() {
       console.error(error);
       setNotice("Could not update item status.");
       await load();
+    } else if (!item.done) {
+      // ✅ When marking complete, create certificate
+      await generateCertificate(me.profileId, item.title);
     }
   }
 
