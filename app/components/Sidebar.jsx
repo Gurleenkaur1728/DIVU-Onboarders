@@ -126,9 +126,11 @@ export default function Sidebar({ role }) {
             <Item icon={CalendarDays} label="Events" route="/events" isActive={location.pathname === "/events"} collapsed={collapsed}/>
             <Item icon={MessageSquare} label="Feedback" route="/feedback" isActive={location.pathname === "/feedback"} collapsed={collapsed}/>
             <Item icon={BarChart2} label="Progress" route="/progress" isActive={location.pathname === "/progress"} collapsed={collapsed}/>
+
             <Item icon={HelpCircle} label="Questions" route="/questions" isActive={location.pathname === "/questions"} collapsed={collapsed}/>
             <div className="flex-grow" />
             <Item icon={User} label="Account" route="/account" isActive={location.pathname === "/account"} collapsed={collapsed}/>
+
           </>
         )}
  
