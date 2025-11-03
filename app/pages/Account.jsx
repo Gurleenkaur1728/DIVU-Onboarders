@@ -1,77 +1,36 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
-import { supabase } from "../../src/lib/supabaseClient.js";
+import { useRole } from "../../src/lib/hooks/useRole.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Account() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [employeeId, setEmployeeId] = useState("");
-  const [userId, setUserId] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const [activeTab, setActiveTab] = useState("employment");
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
-
   const nav = useNavigate();
-  const isSmall = typeof window !== "undefined" ? window.innerWidth < 900 : false;
 
-  const [role, setRole] = useState(() => {
-    const stored = localStorage.getItem("role_id");
-    return stored !== null ? parseInt(stored, 10) : ROLES.USER;
-  });
+  const { roleId } = useRole();
+  const { user, loading: authLoading, logout } = useAuth();
 
   useEffect(() => {
-    fetchUserData();
-    const stored = localStorage.getItem("role_id");
-    if (stored !== null) setRole(parseInt(stored, 10));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (authLoading) return;
 
-  const fetchUserData = async () => {
-    try {
-      setLoading(true);
-
-      const {
-        data: { user: authUser },
-        error: auErr,
-      } = await supabase.auth.getUser();
-      if (auErr || !authUser) throw new Error("Not signed in");
-
-      const { data: profile, error: profErr } = await supabase
-        .from("users")
-        .select("id, name, email, employee_id")
-        .eq("email", authUser.email)
-        .maybeSingle();
-      if (profErr) throw profErr;
-
-      if (profile) {
-        setUserId(profile.id);
-        setName(profile.name || "");
-        setEmail(profile.email || "");
-        setEmployeeId(profile.employee_id || "");
-      }
-
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("role_id, role")
-        .eq("user_id", authUser.id)
-        .maybeSingle();
-
-      const rid = Number(
-        roleRow?.role_id ?? Number(localStorage.getItem("role_id") ?? 0)
-      );
-      setRole(
-        rid === 2 ? ROLES.SUPER_ADMIN : rid === 1 ? ROLES.ADMIN : ROLES.USER
-      );
-    } catch (e) {
-      alert("Error fetching user data: " + e.message);
-    } finally {
-      setLoading(false);
+    if (!user) {
+      nav("/", { replace: true });
+      return;
     }
-  };
+
+    setName(user.name || "");
+    setEmail(user.email || "");
+    setEmployeeId(localStorage.getItem("employee_id") || "");
+    setLoading(false);
+  }, [authLoading, user, nav]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -85,7 +44,6 @@ export default function Account() {
   const save = async () => {
     try {
       setBusy(true);
-      console.log("Save clicked");
       alert("Changes saved (stub). Add your Supabase update here.");
     } catch (e) {
       alert("Failed to save: " + e.message);
@@ -95,10 +53,11 @@ export default function Account() {
   };
 
   const signOut = () => {
-    nav("/"); // redirect to login
+    logout();
+    nav("/", { replace: true });
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
         <p className="text-emerald-100 text-lg animate-pulse">Loading...</p>
@@ -115,7 +74,7 @@ export default function Account() {
         backgroundPosition: "center",
       }}
     >
-      <Sidebar role={role} />
+      <Sidebar role={roleId} />
 
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
@@ -157,7 +116,7 @@ export default function Account() {
 
         {/* Content Card */}
         <div className="bg-white/95 rounded-2xl p-6 sm:p-8 shadow-lg border border-emerald-200">
-          {/* SETTINGS (editable) */}
+          {/* SETTINGS */}
           {activeTab === "settings" && (
             <div className="flex flex-col gap-8 max-w-3xl">
               {/* Profile Image */}
@@ -229,9 +188,9 @@ export default function Account() {
                   <input
                     type="text"
                     value={
-                      role === ROLES.ADMIN
+                      roleId === ROLES.ADMIN
                         ? "Admin"
-                        : role === ROLES.SUPER_ADMIN
+                        : roleId === ROLES.SUPER_ADMIN
                         ? "Super Admin"
                         : "User"
                     }
@@ -268,9 +227,9 @@ export default function Account() {
               </p>
               <p>
                 <span className="font-semibold">Employment Role:</span>{" "}
-                {role === ROLES.ADMIN
+                {roleId === ROLES.ADMIN
                   ? "Admin"
-                  : role === ROLES.SUPER_ADMIN
+                  : roleId === ROLES.SUPER_ADMIN
                   ? "Super Admin"
                   : "User"}
               </p>

@@ -1,209 +1,212 @@
 import { useEffect, useState } from "react";
-import Sidebar, { ROLES } from "../../../components/Sidebar.jsx";
+import Sidebar from "../../../components/Sidebar.jsx";
+import { useRole } from "../../../../src/lib/hooks/useRole.js";
+import { supabase } from "../../../../src/lib/supabaseClient.js";
+import { ChevronDown, ChevronRight, RefreshCcw } from "lucide-react";
 
 export default function Records() {
-  const [activeTab, setActiveTab] = useState("invitations");
-  const [invitations, setInvitations] = useState([]);
-  const [selectedInvite, setSelectedInvite] = useState(null); // for modal
+  const { roleId } = useRole();
   const [logs, setLogs] = useState([]);
+  const [expanded, setExpanded] = useState({});
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filteredLogs, setFilteredLogs] = useState([]);
 
-  // Load invitations (simulated for now)
+  // ✅ Load logs & enable realtime
   useEffect(() => {
-    // TODO: replace with backend fetch → /api/audit-logs?entity_type=invitation
-    setTimeout(() => {
-      setInvitations([
-        {
-          entity_id: "abc-123",
-          entity_label: "newuser@divu.com",
-          performed_by_email: "hr@divu.com",
-          created_at: "2025-09-26 09:15",
-          details: { position: "Designer" },
-        },
-        {
-          entity_id: "def-456",
-          entity_label: "another@divu.com",
-          performed_by_email: "hr@divu.com",
-          created_at: "2025-09-26 09:45",
-          details: { position: "Engineer" },
-        },
-      ]);
-      setLoading(false);
-    }, 500);
+    loadAllLogs();
+
+    // 🔁 Realtime listener for new audit log inserts
+    const channel = supabase
+      .channel("audit-logs-changes")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "audit_logs" },
+        (payload) => {
+          const newLog = payload.new;
+          setLogs((prev) => [newLog, ...prev]);
+          setFilteredLogs((prev) => [newLog, ...prev]);
+        }
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, []);
 
-  const handleOpenModal = (invite) => {
-    setSelectedInvite(invite);
-    setLogs([]); // reset logs
-    // TODO: replace with backend fetch → /api/audit-logs?entity_id=abc-123
-    setTimeout(() => {
-      setLogs([
-        {
-          id: 1,
-          created_at: "2025-09-26 09:15",
-          performed_by_email: "hr@divu.com",
-          details: { event: "Invitation created" },
-        },
-        {
-          id: 2,
-          created_at: "2025-09-26 09:30",
-          performed_by_email: "system",
-          details: { event: "Invitation email sent" },
-        },
-        {
-          id: 3,
-          created_at: "2025-09-26 10:00",
-          performed_by_email: "superadmin@divu.com",
-          details: { event: "Invitation approved" },
-        },
-      ]);
-    }, 300);
-  };
+  // ✅ Search filter
+  useEffect(() => {
+    if (!search.trim()) setFilteredLogs(logs);
+    else {
+      const q = search.toLowerCase();
+      setFilteredLogs(
+        logs.filter(
+          (l) =>
+            l.employee_name?.toLowerCase().includes(q) ||
+            l.employee_email?.toLowerCase().includes(q) ||
+            l.action?.toLowerCase().includes(q) ||
+            l.performed_by?.toLowerCase().includes(q)
+        )
+      );
+    }
+  }, [search, logs]);
 
-  const handleCloseModal = () => {
-    setSelectedInvite(null);
-    setLogs([]);
-  };
+  // ✅ Fetch logs from all sources
+  async function loadAllLogs() {
+    setLoading(true);
+    try {
+      const { data: auditLogs } = await supabase.from("audit_logs").select("*");
+
+      const { data: invites } = await supabase
+        .from("employee_invitations")
+        .select("email, position, status, created_at, first_name, last_name");
+
+      const inviteLogs = (invites || []).map((i) => ({
+        employee_email: i.email,
+        employee_name: `${i.first_name || ""} ${i.last_name || ""}`.trim(),
+        action: `Invitation status: ${i.status} (${i.position || "Employee"})`,
+        performed_by: "System (Invitations)",
+        performed_at: i.created_at,
+      }));
+
+      const { data: requests } = await supabase
+        .from("v_admin_requests")
+        .select(
+          "requested_by_name, requested_by_email, status, created_at, request_type"
+        );
+
+      const requestLogs = (requests || []).map((r) => ({
+        employee_email: r.requested_by_email,
+        employee_name: r.requested_by_name,
+        action: `Admin Request: ${r.request_type} → ${r.status}`,
+        performed_by: "System (Admin Requests)",
+        performed_at: r.created_at,
+      }));
+
+      const combined = [...(auditLogs || []), ...inviteLogs, ...requestLogs].sort(
+        (a, b) =>
+          new Date(b.performed_at || b.created_at) -
+          new Date(a.performed_at || a.created_at)
+      );
+
+      setLogs(combined);
+      setFilteredLogs(combined);
+    } catch (err) {
+      console.error("Error loading logs:", err);
+    }
+    setLoading(false);
+  }
+
+  // ✅ Group logs by employee name/email
+  const grouped = filteredLogs.reduce((acc, log) => {
+    const key = log.employee_name?.trim() || log.employee_email?.trim() || "Unknown User";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(log);
+    return acc;
+  }, {});
 
   return (
     <div
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="records" role={ROLES.SUPER_ADMIN} />
+  <Sidebar active="records" role={roleId} />
 
-      <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Ribbon */}
+      <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+        {/* Header */}
         <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
           <span className="font-semibold text-emerald-950">
-            Super Admin – Records
+            Super Admin – Audit Records
           </span>
+          <button
+            onClick={loadAllLogs}
+            className="flex items-center gap-2 text-emerald-800 hover:text-emerald-950 text-sm font-semibold"
+            title="Refresh Logs"
+          >
+            <RefreshCcw size={16} /> Refresh
+          </button>
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
-          AUDIT RECORDS
+        <div className="bg-emerald-900 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
+          USER ACTIVITY RECORDS
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-4">
+        {/* Search */}
+        <div className="flex items-center gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Search by name, email, or action..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 px-4 py-2 border border-emerald-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          />
           <button
-            onClick={() => setActiveTab("invitations")}
-            className={`px-4 py-2 rounded-md font-medium ${
-              activeTab === "invitations"
-                ? "bg-emerald-700 text-white"
-                : "bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
-            }`}
+            onClick={() => setSearch("")}
+            className="px-4 py-2 bg-emerald-700 text-white rounded-md hover:bg-emerald-800"
           >
-            Invitations
-          </button>
-          {/* Future tabs */}
-          <button
-            onClick={() => setActiveTab("employees")}
-            className={`px-4 py-2 rounded-md font-medium ${
-              activeTab === "employees"
-                ? "bg-emerald-700 text-white"
-                : "bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
-            }`}
-          >
-            Employees
-          </button>
-          <button
-            onClick={() => setActiveTab("admins")}
-            className={`px-4 py-2 rounded-md font-medium ${
-              activeTab === "admins"
-                ? "bg-emerald-700 text-white"
-                : "bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
-            }`}
-          >
-            Admins
+            Clear
           </button>
         </div>
 
-        {/* Invitations Tab Content */}
-        {activeTab === "invitations" && (
-          <div className="overflow-x-auto rounded-lg border border-emerald-400/70 shadow-lg bg-white">
-            {loading ? (
-              <p className="p-4">Loading...</p>
-            ) : invitations.length === 0 ? (
-              <p className="p-4">No invitations found.</p>
-            ) : (
-              <table className="min-w-[900px] w-full border-collapse">
-                <thead>
-                  <tr className="bg-emerald-900/95 text-emerald-100">
-                    <Th>Email</Th>
-                    <Th>Sent By</Th>
-                    <Th>Time</Th>
-                    <Th>Position</Th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invitations.map((inv, idx) => (
-                    <tr
-                      key={inv.entity_id}
-                      className={`cursor-pointer ${
-                        idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"
-                      } hover:bg-emerald-200/70`}
-                      onClick={() => handleOpenModal(inv)}
-                    >
-                      <td className="px-4 py-3">{inv.entity_label}</td>
-                      <td className="px-4 py-3">{inv.performed_by_email}</td>
-                      <td className="px-4 py-3">{inv.created_at}</td>
-                      <td className="px-4 py-3">
-                        {inv.details.position || "-"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-
-        {/* Modal for invite logs */}
-        {selectedInvite && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 relative">
-              <button
-                onClick={handleCloseModal}
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+        {/* Logs */}
+        <div className="bg-white rounded-2xl shadow-xl p-4 border border-emerald-200/60">
+          {loading ? (
+            <p className="text-gray-600 text-center py-6">Loading logs…</p>
+          ) : Object.keys(grouped).length === 0 ? (
+            <p className="text-gray-600 text-center py-6">No logs found.</p>
+          ) : (
+            Object.entries(grouped).map(([name, entries]) => (
+              <div
+                key={name}
+                className="mb-3 border border-emerald-200 rounded-lg overflow-hidden transition-all duration-300"
               >
-                ✕
-              </button>
-              <h2 className="text-xl font-bold mb-4">
-                Invitation Logs – {selectedInvite.entity_label}
-              </h2>
-              {logs.length === 0 ? (
-                <p>Loading logs...</p>
-              ) : (
-                <ul className="space-y-3">
-                  {logs.map((log) => (
-                    <li
-                      key={log.id}
-                      className="border-b border-gray-200 pb-2 text-sm"
-                    >
-                      <div className="font-medium text-emerald-700">
-                        {log.details.event}
+                <button
+                  onClick={() =>
+                    setExpanded((prev) => ({ ...prev, [name]: !prev[name] }))
+                  }
+                  className={`w-full flex justify-between items-center px-4 py-3 font-semibold text-emerald-900 ${
+                    expanded[name]
+                      ? "bg-emerald-300/70"
+                      : "bg-emerald-100 hover:bg-emerald-200"
+                  }`}
+                >
+                  <span>
+                    {name}'s Logs ({entries.length})
+                  </span>
+                  {expanded[name] ? (
+                    <ChevronDown className="w-4 h-4" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4" />
+                  )}
+                </button>
+
+                {expanded[name] && (
+                  <div className="bg-white p-3">
+                    {entries.map((log, i) => (
+                      <div
+                        key={i}
+                        className="border-b last:border-none py-2 text-sm flex justify-between items-start"
+                      >
+                        <div>
+                          <p className="font-medium text-emerald-800">
+                            {log.action}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            By: {log.performed_by || "System"}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          {new Date(log.performed_at || log.created_at).toLocaleString()}
+                        </p>
                       </div>
-                      <div className="text-gray-600">
-                        {log.created_at} – {log.performed_by_email}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        )}
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
-  );
-}
-
-function Th({ children }) {
-  return (
-    <th className="px-4 py-3 font-bold border-r border-emerald-800/50">
-      {children}
-    </th>
   );
 }

@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { Eye, EyeOff } from "lucide-react";
 import bcrypt from "bcryptjs";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
-  const navigate = useNavigate();
+  const { checkUser } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
@@ -26,10 +27,10 @@ export default function Login() {
     }
 
     try {
-      // Fetch user from USERS table
+      // ✅ Fetch user from USERS table with joined role
       const { data: user, error } = await supabase
         .from("users")
-        .select("id, email, password, role_id, name")
+        .select("id, email, password, role_id, name, employee_id, roles(name)")
         .eq("email", email)
         .maybeSingle();
 
@@ -39,7 +40,7 @@ export default function Login() {
         return;
       }
 
-      // Verify password
+      // ✅ Verify password using bcrypt
       const valid = await bcrypt.compare(password, user.password || "");
       if (!valid) {
         setErr("Invalid email or password.");
@@ -47,31 +48,33 @@ export default function Login() {
         return;
       }
 
-      // Determine role & redirect
+      // ✅ Determine role from DB
       const roleId = Number(user.role_id);
-      let role = "employee";
-      let path = "/home";
+      const roleName = user.roles?.name || "employee";
 
-      if (roleId === 1) {
-        role = "admin";
-        path = "/admin/dashboard";
-      } else if (roleId === 2) {
-        role = "superadmin";
-        path = "/admin/dashboard";
-      } else if (roleId === 0) {
-        role = "employee";
-        path = "/home";
+      // Clear any existing data first
+      localStorage.clear();
+      
+      // ✅ Store user data in localStorage
+      const userData = {
+        email,
+        isAuthenticated: true // Add authentication flag
+      };
+      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("profile_id", user.id);
+      localStorage.setItem("role_id", roleId);
+      localStorage.setItem("role_name", roleName);
+      localStorage.setItem("user_name", user.name || "");
+      localStorage.setItem("user_email", user.email || email);
+      if (user.employee_id) {
+        localStorage.setItem("employee_id", user.employee_id);
+      } else {
+        localStorage.removeItem("employee_id");
       }
 
-      // Store session
-      localStorage.setItem("user", JSON.stringify({ email }));
-      localStorage.setItem("role_id", roleId);
-      localStorage.setItem("role", role);
-      localStorage.setItem("user_name", user.name || "");
-
-      // Redirect
-      navigate(path);
-      setLoading(false)
+      // Force a fresh check of auth state
+      await checkUser();
+      setLoading(false);
     } catch (e) {
       console.error("Login error:", e);
       setErr("Unexpected error. Try again.");
@@ -169,4 +172,3 @@ export default function Login() {
     </div>
   );
 }
-//login

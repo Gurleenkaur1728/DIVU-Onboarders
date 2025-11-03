@@ -5,10 +5,19 @@ import { useAuth } from "../context/AuthContext";
 export default function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuth();
 
-  if (loading) return <p>Loading...</p>;
-  if (!user) return <Navigate to="/" replace />;
+  // During initial load, show loading state
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">
+      <p>Loading...</p>
+    </div>;
+  }
 
-  // if roles prop is provided, check it
+  // If no user or not fully authenticated, redirect to login
+  if (!user?.isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Check role-based access
   if (roles && !roles.includes(user.role_id)) {
     return <Navigate to="/home" replace />;
   }
