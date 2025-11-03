@@ -61,13 +61,20 @@ export default function ManageModules() {
           estimated_time_min: 0,
         }));
 
+        // Normalize published modules (modules table records are considered published)
+        const formattedPublished = (publishedData || []).map((m) => ({
+          ...m,
+          status: "published", // Set status explicitly since DB might not have this field
+          progress: 100, // Published modules are considered complete
+        }));
+
         // Combine all modules
-        const allModules = [...(publishedData || []), ...formattedDrafts];
+        const allModules = [...formattedPublished, ...formattedDrafts];
 
         // Update states
         setModules(allModules);
         setDraftModules(formattedDrafts);
-        setPublishedModules(publishedData || []);
+        setPublishedModules(formattedPublished);
       } catch (err) {
         console.error(err);
         showToast("Could not load modules.", "error");
@@ -157,7 +164,7 @@ export default function ManageModules() {
         <div className="flex-1 h-2 rounded-full bg-gray-200 overflow-hidden">
           <div
             className={`h-full ${
-              m.status === "completed" ? "bg-emerald-500" : "bg-emerald-700"
+              m.status === "published" ? "bg-emerald-500" : "bg-emerald-700"
             }`}
             style={{ width: `${m.progress ?? 0}%` }}
           />
