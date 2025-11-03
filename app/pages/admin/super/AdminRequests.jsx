@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../../../components/Sidebar.jsx";
+import Sidebar from "../../../components/Sidebar.jsx";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
+import { useRole } from "../../../../src/lib/hooks/useRole.js";
 
 export default function AdminRequests() {
+  const { roleId } = useRole();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [banner, setBanner] = useState("");
@@ -78,7 +80,7 @@ export default function AdminRequests() {
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar active="admin-requests" role={ROLES.SUPER_ADMIN} />
+      <Sidebar active="admin-requests" role={roleId} />
 
       <div className="flex-1 flex flex-col p-6">
         {/* Ribbon */}
