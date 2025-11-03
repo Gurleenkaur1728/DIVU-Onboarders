@@ -287,12 +287,14 @@ export default function Certificate() {
         backgroundPosition: "center",
       }}
     >
-      <div className="bg-white/95 p-10 sm:p-12 rounded-2xl shadow-2xl text-center w-[90%] max-w-3xl border-[10px] border-yellow-400 relative">
-        {/* Certificate Heading */}
+      <div
+        id="certificate-container"
+        className="bg-white/95 p-10 sm:p-12 rounded-2xl shadow-2xl text-center w-[90%] max-w-3xl border-[10px] border-yellow-400 relative"
+      >
+        {/* Title */}
         <h1 className="text-3xl sm:text-4xl font-bold text-emerald-900 mb-3 tracking-wide">
           Certificate of Achievement
         </h1>
-        <p className="mb-6 text-emerald-800 text-base sm:text-lg">This certifies that</p>
 
         {/* Employee Name */}
         <h2 className="text-2xl sm:text-3xl font-semibold text-emerald-700 mb-2">
@@ -303,6 +305,7 @@ export default function Certificate() {
           has successfully completed
         </p>
 
+        {/* Module */}
         <h3 className="text-xl sm:text-2xl font-bold text-emerald-950 mb-8">
           {module?.title || `Module ${id}`}
         </h3>
@@ -329,7 +332,9 @@ export default function Certificate() {
           </div>
           <div className="text-center">
             <p className="font-medium">Signature</p>
-            <p className="border-b border-gray-600 w-40 mx-auto mt-1">Authorized</p>
+            <p className="border-b border-gray-600 w-40 mx-auto mt-1">
+              Authorized
+            </p>
           </div>
         </div>
 
@@ -343,14 +348,14 @@ export default function Certificate() {
             {generating ? 'Generating...' : '📄 Download PDF'}
           </button>
           <button
-            onClick={() => navigate("/modules")}
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            onClick={handleDownload}
+            className="exclude-pdf px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
-            Back to Modules
+            Download PDF
           </button>
         </div>
 
-        {/* Seal */}
+        {/* Gold DIVU Seal */}
         <div className="absolute bottom-6 right-6 sm:w-24 sm:h-24 w-20 h-20 rounded-full border-4 border-yellow-500 flex items-center justify-center text-yellow-600 font-bold bg-yellow-50/70 shadow-inner">
           DIVU
         </div>

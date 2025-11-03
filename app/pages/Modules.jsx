@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { AppWindow, CheckCircle2, Circle, Clock } from "lucide-react";
@@ -19,7 +19,7 @@ export default function Modules() {
     try {
       setLoading(true);
       
-      // Fetch all published modules (remove status filter since status column might not exist)
+      // Fetch all published modules
       const { data: modulesData, error: modulesError } = await supabase
         .from("modules")
         .select("*")
@@ -64,7 +64,7 @@ export default function Modules() {
         {/* Ribbon */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 mb-6 shadow-sm border border-emerald-200/50">
           <span className="text-emerald-950 font-semibold text-base sm:text-lg">
-            Welcome &lt;name&gt; to DIVU!
+            Welcome {localStorage.getItem("profile_name") || "<name>"} to DIVU!
           </span>
           <AppWindow className="w-5 h-5 text-emerald-900" />
         </div>
@@ -79,78 +79,76 @@ export default function Modules() {
             <div className="text-emerald-700 text-lg">Loading modules...</div>
           </div>
         ) : (
-          <>
-        {/* Table */}
-        <div className="overflow-x-auto rounded-2xl shadow-lg bg-white/95 border border-emerald-200">
-          <table className="min-w-[700px] w-full text-left border-collapse text-sm md:text-base">
-            <thead className="bg-emerald-800 text-white">
-              <tr>
-                <th className="p-4 font-semibold">Status</th>
-                <th className="p-4 font-semibold">Module</th>
-                <th className="p-4 font-semibold">Date Assigned</th>
-                <th className="p-4 font-semibold">Date Completed</th>
-                <th className="p-4 font-semibold">Feedback</th>
-              </tr>
-            </thead>
-            <tbody>
-              {modules.length === 0 ? (
+          /* Table */
+          <div className="overflow-x-auto rounded-2xl shadow-lg bg-white/95 border border-emerald-200">
+            <table className="min-w-[700px] w-full text-left border-collapse text-sm md:text-base">
+              <thead className="bg-emerald-800 text-white">
                 <tr>
-                  <td colSpan="5" className="p-8 text-center text-gray-500 italic">
-                    No modules available yet. Check back later!
-                  </td>
+                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 font-semibold">Module</th>
+                  <th className="p-4 font-semibold">Date Assigned</th>
+                  <th className="p-4 font-semibold">Date Completed</th>
+                  <th className="p-4 font-semibold">Feedback</th>
                 </tr>
-              ) : (
-                modules.map((m, idx) => (
-                <tr
-                  key={m.id}
-                  className={`transition-colors duration-200 ${
-                    idx % 2 === 0
-                      ? "bg-emerald-50/90 hover:bg-emerald-100/80"
-                      : "bg-emerald-100/70 hover:bg-emerald-200/70"
-                  }`}
-                >
-                  {/* Status */}
-                  <td className="p-3 text-center">
-                    {m.status === "completed" ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                    ) : m.status === "in-progress" ? (
-                      <Clock className="w-5 h-5 text-amber-500" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-gray-400" />
-                    )}
-                  </td>
-
-                  {/* Title */}
-                  <td className="p-3 font-medium text-emerald-900">
-                    <Link
-                      to={`/modules/${m.id}`}
-                      className="text-emerald-700 hover:text-emerald-900 hover:underline transition-colors duration-200"
+              </thead>
+              <tbody>
+                {modules.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="p-8 text-center text-gray-500 italic">
+                      No modules available yet. Check back later!
+                    </td>
+                  </tr>
+                ) : (
+                  modules.map((m, idx) => (
+                    <tr
+                      key={m.id}
+                      className={`transition-colors duration-200 ${
+                        idx % 2 === 0
+                          ? "bg-emerald-50/90 hover:bg-emerald-100/80"
+                          : "bg-emerald-100/70 hover:bg-emerald-200/70"
+                      }`}
                     >
-                      {m.title}
-                    </Link>
-                  </td>
+                      {/* Status */}
+                      <td className="p-3 text-center">
+                        {m.status === "completed" ? (
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        ) : m.status === "in-progress" ? (
+                          <Clock className="w-5 h-5 text-amber-500" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-gray-400" />
+                        )}
+                      </td>
 
-                  {/* Dates */}
-                  <td className="p-3 text-sm text-emerald-800">{m.assigned}</td>
-                  <td className="p-3 text-sm text-emerald-800">{m.completed}</td>
+                      {/* Title */}
+                      <td className="p-3 font-medium text-emerald-900">
+                        <Link
+                          to={`/modules/${m.id}`}
+                          className="text-emerald-700 hover:text-emerald-900 hover:underline transition-colors duration-200"
+                        >
+                          {m.title}
+                        </Link>
+                      </td>
 
-                  {/* Feedback */}
-                  <td
-                    className={`p-3 text-sm font-semibold ${
-                      m.feedback === "Yes"
-                        ? "text-emerald-600"
-                        : "text-gray-500 italic"
-                    }`}
-                  >
-                    {m.feedback}
-                  </td>
-                </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-          </>
+                      {/* Dates */}
+                      <td className="p-3 text-sm text-emerald-800">{m.assigned}</td>
+                      <td className="p-3 text-sm text-emerald-800">{m.completed}</td>
+
+                      {/* Feedback */}
+                      <td
+                        className={`p-3 text-sm font-semibold ${
+                          m.feedback === "Yes"
+                            ? "text-emerald-600"
+                            : "text-gray-500 italic"
+                        }`}
+                      >
+                        {m.feedback}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
