@@ -89,7 +89,7 @@ function useModuleProgress(userId, moduleId) {
       const { data, error } = await supabase
         .from('user_module_progress')
         .upsert(updateData, { 
-l lets           onConflict: 'user_id,module_id'
+          onConflict: 'user_id,module_id'
         })
         .select();
 
