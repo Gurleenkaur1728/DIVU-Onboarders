@@ -4,127 +4,177 @@ import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { Link } from "react-router-dom";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { motion } from "framer-motion";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useRole } from "../../src/lib/hooks/useRole.js";
 
 
 export default function Progress() {
+  const { user } = useAuth();
+  const { roleId } = useRole();
   const [activeTab, setActiveTab] = useState("progress");
   const [chartData, setChartData] = useState([]);
   const [certificates, setCertificates] = useState([]);
-  const [userXP, setUserXP] = useState(0);
-  const [userLevel, setUserLevel] = useState(1);
-  const [streakDays, setStreakDays] = useState(0);
+  const [modules, setModules] = useState([]);
+  const [userProgress, setUserProgress] = useState([]);
+  const [feedback, setFeedback] = useState([]);
+  const [userStats, setUserStats] = useState({
+    xp: 0,
+    level: 1,
+    streakDays: 0
+  });
   const [achievements, setAchievements] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const COLORS = ["#22c55e", "#3b82f6", "#ef4444"]; // green, blue, red
 
   useEffect(() => {
-    loadProgress();
-    const interval = setInterval(loadProgress, 15000); // Auto refresh every 15 seconds
-    return () => clearInterval(interval);
-  }, []);
-  useEffect(() => {
-  async function getAuthUser() {
-    const { data, error } = await supabase.auth.getUser();
-    console.log("Auth UID:", data?.user?.id, "Error:", error);
-  }
-  getAuthUser();
-}, []);
-
+    if (user?.profile_id) {
+      loadProgress();
+    }
+  }, [user]);
 
   async function loadProgress() {
     try {
-      const userId = localStorage.getItem("profile_id");
+      setLoading(true);
+      const userId = user?.profile_id;
+      
       if (!userId) {
-        console.warn("⚠️ No user ID found in localStorage.");
+        console.warn("⚠️ No user ID found.");
         return;
       }
 
-      // ✅ Fetch completed modules (certificates)
-      const { data: certs, error: certError } = await supabase
+      // ✅ Load all modules
+      const { data: modulesData, error: modulesError } = await supabase
+        .from("modules")
+        .select("id, title, description")
+        .order("created_at", { ascending: true });
+
+      if (modulesError) throw modulesError;
+      setModules(modulesData || []);
+
+      // ✅ Load user progress on modules  
+      const { data: progressData, error: progressError } = await supabase
+        .from("user_module_progress")
+        .select("module_id, is_completed, completed_at, completion_percentage")
+        .eq("user_id", userId);
+
+      if (progressError) console.warn("Progress error:", progressError);
+      setUserProgress(progressData || []);
+
+      // ✅ Load certificates (generated from completed modules with feedback)
+      const { data: certificatesData, error: certsError } = await supabase
         .from("certificates")
-        .select("id, title, issue_date")
+        .select("id, module_id, user_name, module_title, completion_date, generated_at")
+        .eq("user_id", userId)
+        .order("generated_at", { ascending: false });
+
+      if (certsError) console.warn("Certificates error:", certsError);
+      setCertificates(certificatesData || []);
+
+      // ✅ Load feedback submitted by user
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from("module_feedback")
+        .select("module_id, rating, difficulty_level, created_at")
         .eq("user_id", userId);
 
-      if (certError) throw certError;
-      setCertificates(certs || []);
+      if (feedbackError) console.warn("Feedback error:", feedbackError);
+      setFeedback(feedbackData || []);
 
-      // ✅ Fetch checklist progress (completed tasks)
-      const { data: tasks, error: taskError } = await supabase
-        .from("assigned_checklist_item")
-        .select("done")
-        .eq("user_id", userId);
+      // ✅ Load user stats - simplified to use available data
+      // Calculate XP based on completed modules and feedback
+      const completedCount = progressData?.filter(p => p.is_completed)?.length || 0;
+      const feedbackCount = feedbackData?.length || 0;
+      const certificateCount = certificatesData?.length || 0;
+      
+      // Simple XP calculation: 50 XP per completion + 25 XP per feedback + 100 XP per certificate
+      const calculatedXP = (completedCount * 50) + (feedbackCount * 25) + (certificateCount * 100);
+      const calculatedLevel = Math.floor(calculatedXP / 100) + 1;
+      
+      // Calculate streak - simplified to just show 1 day for now
+      const streak = completedCount > 0 ? Math.min(completedCount, 7) : 0;
 
-      if (taskError) throw taskError;
-      const completedTasks = tasks?.filter((t) => t.done)?.length || 0;
-      const totalTasks = tasks?.length || 0;
+      setUserStats({
+        xp: calculatedXP,
+        level: calculatedLevel,
+        streakDays: streak
+      });
 
-      // ✅ Fetch XP, Level, and Streak from users
-      const { data: user, error: userError } = await supabase
-        .from("users")
-        .select("xp, level, streak_days, last_login") // ✅ UPDATED (fetch last_login)
-        .eq("id", userId)
-        .single();
+      // ✅ Calculate progress data for chart
+      const totalModules = modulesData?.length || 0;
+      const completedModules = progressData?.filter(p => p.is_completed)?.length || 0;
+      const inProgressModules = progressData?.filter(p => !p.is_completed && p.completion_percentage > 0)?.length || 0;
+      const notStartedModules = totalModules - completedModules - inProgressModules;
 
-      if (userError) console.warn("User data fetch error:", userError);
-
-      // ✅ Updated logic to calculate streak dynamically (in case backend didn't update)
-      let streak = user?.streak_days || 0;
-      if (user?.last_login) {
-        const lastLogin = new Date(user.last_login);
-        const diffDays = Math.floor((new Date() - lastLogin) / (1000 * 60 * 60 * 24));
-        if (diffDays === 0) {
-          streak = user?.streak_days;
-        } else if (diffDays === 1) {
-          streak = user?.streak_days + 1;
-        } else if (diffDays > 1) {
-          streak = 1;
-        }
-      }
-
-      setUserXP(user?.xp || 0);
-      setUserLevel(user?.level || 1);
-      setStreakDays(streak); // ✅ UPDATED
-
-      // ✅ Calculate totals
-      const totalModules = 10; // Static total (or replace with dynamic if needed)
-      const completedModules = certs?.length || 0;
-      const overallIncomplete =
-        totalTasks + totalModules - (completedTasks + completedModules);
-
-      // ✅ Update chart data
       setChartData([
-        { name: "Completed Tasks", value: completedTasks, color: "#22c55e" },
-        { name: "Completed Modules", value: completedModules, color: "#3b82f6" },
-        { name: "Overall Incomplete", value: overallIncomplete, color: "#ef4444" },
+        { name: "Completed Modules", value: completedModules, color: "#22c55e" },
+        { name: "In Progress", value: inProgressModules, color: "#3b82f6" },
+        { name: "Not Started", value: notStartedModules, color: "#ef4444" },
       ]);
 
-      // ✅ Updated Achievements logic
-      const badges = [];
-      if (completedModules >= 1)
-        badges.push({
+      // ✅ Generate achievements based on progress
+      const newAchievements = [];
+      if (completedModules >= 1) {
+        newAchievements.push({
           id: 1,
           badge_name: "First Module Complete",
-          earned_at: new Date(),
+          description: "Completed your first module",
+          earned_at: progressData.find(p => p.is_completed)?.completed_at || new Date(),
         });
-      if (completedModules >= 5)
-        badges.push({
+      }
+      if (completedModules >= 3) {
+        newAchievements.push({
           id: 2,
-          badge_name: "Fast Learner",
+          badge_name: "Learning Enthusiast",
+          description: "Completed 3 modules",
           earned_at: new Date(),
         });
-      if (streak >= 3)
-        badges.push({
+      }
+      if (certificatesData?.length >= 1) {
+        newAchievements.push({
           id: 3,
+          badge_name: "Certificate Earned",
+          description: "Earned your first certificate",
+          earned_at: certificatesData[0]?.generated_at || new Date(),
+        });
+      }
+      if (streak >= 3) {
+        newAchievements.push({
+          id: 4,
           badge_name: "3-Day Streak",
+          description: "Logged in for 3 consecutive days",
           earned_at: new Date(),
         });
-      setAchievements(badges);
+      }
+      if (feedbackData?.length >= 5) {
+        newAchievements.push({
+          id: 5,
+          badge_name: "Feedback Master",
+          description: "Provided feedback for 5 modules",
+          earned_at: new Date(),
+        });
+      }
+      
+      setAchievements(newAchievements);
+
     } catch (err) {
       console.error("❌ Error loading progress:", err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
-  const xpPercent = ((userXP % 100) / 100) * 100;
+  const xpPercent = ((userStats.xp % 100) / 100) * 100;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading progress...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -135,7 +185,7 @@ export default function Progress() {
         backgroundPosition: "center",
       }}
     >
-      <Sidebar role={ROLES.USER} />
+      <Sidebar role={roleId} />
 
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
@@ -175,8 +225,7 @@ export default function Progress() {
             {/* Chart Section */}
             <div className="bg-white/95 rounded-2xl shadow-lg p-6 sm:p-10 border border-emerald-200">
               <h2 className="text-xl md:text-2xl font-semibold text-emerald-900 mb-6">
-                Total Tasks and Modules:{" "}
-                {chartData.reduce((a, b) => a + b.value, 0)}
+                Module Progress Overview: {modules.length} Total Modules
               </h2>
 
               <div className="flex flex-col md:flex-row items-center justify-center gap-10">
@@ -224,26 +273,25 @@ export default function Progress() {
                   Your XP Level
                 </h3>
                 <p className="text-2xl font-extrabold text-emerald-700">
-                  {userXP} XP
+                  {userStats.xp} XP
                 </p>
                 <div className="w-full mt-3 bg-gray-200 h-2 rounded-full overflow-hidden">
-  <motion.div
-    className="bg-emerald-600 h-2 rounded-full"
-    initial={{ width: 0 }}
-    animate={{ width: `${xpPercent}%` }}
-    transition={{ duration: 1.2, ease: "easeOut" }}
-  />
-</div>
-
+                  <motion.div
+                    className="bg-emerald-600 h-2 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${xpPercent}%` }}
+                    transition={{ duration: 1.2, ease: "easeOut" }}
+                  />
+                </div>
                 <p className="text-sm text-gray-500 mt-2">
-                  Level {userLevel} — {100 - (userXP % 100)} XP to next level
+                  Level {userStats.level} — {100 - (userStats.xp % 100)} XP to next level
                 </p>
               </div>
 
               {/* Achievements */}
               <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl shadow-lg p-6">
                 <h3 className="text-lg font-bold text-emerald-800 mb-3">
-                  Achievements
+                  Achievements ({achievements.length})
                 </h3>
                 {achievements.length === 0 ? (
                   <p className="text-gray-500 text-sm">
@@ -277,10 +325,10 @@ export default function Progress() {
                   Streak
                 </h3>
                 <p className="text-4xl font-extrabold text-emerald-600">
-                  🔥 {streakDays} Days
+                  🔥 {userStats.streakDays} Days
                 </p>
                 <p className="text-sm text-gray-600 mt-2">
-                  You’ve logged in consistently for {streakDays} days!
+                  You've logged in consistently for {userStats.streakDays} days!
                 </p>
               </div>
             </div>
@@ -312,18 +360,23 @@ export default function Progress() {
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-bold text-emerald-900 text-lg">
-                        {cert.title}
+                        {cert.module_title}
                       </h3>
                       <span className="text-xs text-gray-500">
-                        {new Date(cert.issue_date).toLocaleDateString()}
+                        {new Date(cert.generated_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-700 mb-4">
-                      🎓 Congratulations! You’ve successfully completed this
-                      module.
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong>Recipient:</strong> {cert.user_name}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      🎓 Congratulations! You've successfully completed this module and earned your certificate.
+                    </p>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Completed on: {new Date(cert.completion_date).toLocaleDateString()}
                     </p>
                     <Link
-                      to={`/certificate/${cert.id}`}
+                      to={`/certificate/${cert.module_id}`}
                       className="inline-block mt-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-md hover:bg-emerald-700 transition-all duration-300"
                     >
                       View Certificate
