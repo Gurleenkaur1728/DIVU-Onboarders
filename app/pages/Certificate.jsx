@@ -214,6 +214,15 @@ export default function Certificate() {
   // Simple validation - just check if we have both completion and feedback
   const canShowCertificate = completionData?.is_completed && feedbackData;
   
+  console.log('🔍 CERTIFICATE VALIDATION DEBUG:', {
+    completionData: completionData,
+    isCompleted: completionData?.is_completed,
+    feedbackData: feedbackData,
+    canShowCertificate: canShowCertificate,
+    userId: user?.profile_id,
+    moduleId: id
+  });
+  
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -266,7 +275,7 @@ export default function Certificate() {
             <button
               onClick={() => {
                 setLoading(true);
-                loadCertificateData();
+                loadAllData();
               }}
               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
             >
@@ -346,12 +355,6 @@ export default function Certificate() {
             className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
           >
             {generating ? 'Generating...' : '📄 Download PDF'}
-          </button>
-          <button
-            onClick={handleDownload}
-            className="exclude-pdf px-6 py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-semibold shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          >
-            Download PDF
           </button>
         </div>
 

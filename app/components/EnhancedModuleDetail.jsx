@@ -20,7 +20,12 @@ function useModuleProgress(userId, moduleId) {
   }, [userId, moduleId]);
 
   const loadProgress = async () => {
-    if (!userId || !moduleId) return;
+    if (!userId || !moduleId) {
+      console.log('Missing userId or moduleId:', { userId, moduleId });
+      return;
+    }
+    
+    console.log('🔄 Loading progress for user:', userId, 'module:', moduleId);
     
     try {
       const { data, error } = await supabase
@@ -30,7 +35,12 @@ function useModuleProgress(userId, moduleId) {
         .eq('module_id', moduleId)
         .single();
 
+      if (error) {
+        console.log('Progress query error:', error);
+      }
+
       if (data) {
+        console.log('✅ Progress found:', data);
         setProgress({
           currentPage: data.current_page || 0,
           completedSections: data.completed_sections || [],
@@ -38,35 +48,68 @@ function useModuleProgress(userId, moduleId) {
           completionPercentage: data.completion_percentage || 0,
           isCompleted: data.is_completed || false
         });
+      } else {
+        console.log('No progress data found, starting fresh');
       }
     } catch (error) {
-      console.log('No existing progress found, starting fresh');
+      console.log('No existing progress found, starting fresh:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const updateProgress = async (updates) => {
-    if (!userId || !moduleId) return;
+    if (!userId || !moduleId) {
+      console.error('❌ Missing userId or moduleId:', { userId, moduleId });
+      return;
+    }
 
     const newProgress = { ...progress, ...updates };
     setProgress(newProgress);
 
     try {
-      await supabase
+      const updateData = {
+        user_id: userId,
+        module_id: moduleId,
+        current_page: newProgress.currentPage,
+        completed_sections: newProgress.completedSections,
+        answers: newProgress.answers,
+        completion_percentage: newProgress.completionPercentage,
+        is_completed: newProgress.isCompleted,
+        updated_at: new Date().toISOString()
+      };
+
+      // Add completed_at if module is completed
+      if (newProgress.isCompleted && updates.completed_at) {
+        updateData.completed_at = updates.completed_at;
+      }
+
+      console.log('🔄 Updating progress in database:', updateData);
+      
+      const { data, error } = await supabase
         .from('user_module_progress')
-        .upsert({
-          user_id: userId,
-          module_id: moduleId,
-          current_page: newProgress.currentPage,
-          completed_sections: newProgress.completedSections,
-          answers: newProgress.answers,
-          completion_percentage: newProgress.completionPercentage,
-          is_completed: newProgress.isCompleted,
-          updated_at: new Date().toISOString()
-        });
+        .upsert(updateData, { 
+l lets           onConflict: 'user_id,module_id'
+        })
+        .select();
+
+      if (error) {
+        console.error('❌ Database update error:', error);
+        alert('Error saving progress: ' + error.message);
+      } else {
+        console.log('✅ Progress saved successfully!', data);
+        
+        // If module completed, refresh the page data to update UI
+        if (newProgress.isCompleted) {
+          console.log('🎉 Module completed! Refreshing data...');
+          setTimeout(() => {
+            window.location.reload(); // Force reload to ensure fresh data
+          }, 2000);
+        }
+      }
     } catch (error) {
-      console.error('Failed to save progress:', error);
+      console.error('❌ Failed to save progress:', error);
+      alert('Failed to save progress. Please try again.');
     }
   };
 
@@ -193,6 +236,7 @@ export default function EnhancedModuleDetail() {
     difficulty_level: 0
   });
   const [existingFeedback, setExistingFeedback] = useState(null);
+  const [hasGeneratedCertificate, setHasGeneratedCertificate] = useState(false);
   
   // Get user ID from auth context
   const userId = user?.profile_id;
@@ -238,18 +282,31 @@ export default function EnhancedModuleDetail() {
     if (!userId || !id) return;
     
     try {
-      const { data } = await supabase
+      // Load feedback
+      const { data: feedbackData } = await supabase
         .from('module_feedback')
         .select('*')
         .eq('user_id', userId)
         .eq('module_id', id)
         .single();
 
-      if (data) {
-        setExistingFeedback(data);
+      if (feedbackData) {
+        setExistingFeedback(feedbackData);
+      }
+
+      // Check if certificate has been generated
+      const { data: certificateData } = await supabase
+        .from('certificates')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('module_id', id)
+        .maybeSingle();
+
+      if (certificateData) {
+        setHasGeneratedCertificate(true);
       }
     } catch (error) {
-      console.log('No existing feedback found:', error);
+      console.log('No existing feedback/certificate found:', error);
     }
   };
 
@@ -306,6 +363,9 @@ export default function EnhancedModuleDetail() {
   };
 
   const markSectionComplete = async (sectionId) => {
+    console.log('🎯 Marking section complete:', sectionId);
+    console.log('Current progress before update:', progress);
+    
     const newCompletedSections = [...progress.completedSections];
     if (!newCompletedSections.includes(sectionId)) {
       newCompletedSections.push(sectionId);
@@ -314,12 +374,31 @@ export default function EnhancedModuleDetail() {
     const newProgress = calculateProgress(pages, newCompletedSections);
     const isModuleComplete = newProgress >= 100;
 
-    await updateProgress({
+    console.log('New progress calculation:', {
+      newCompletedSections,
+      newProgress,
+      isModuleComplete,
+      allPages: pages?.length,
+      totalSections: pages?.reduce((total, page) => total + (page.sections?.length || 0), 0)
+    });
+
+    const updateData = {
       completedSections: newCompletedSections,
       completionPercentage: newProgress,
       isCompleted: isModuleComplete,
       ...(isModuleComplete && { completed_at: new Date().toISOString() })
-    });
+    };
+
+    console.log('About to update with data:', updateData);
+    await updateProgress(updateData);
+    
+    if (isModuleComplete) {
+      console.log('🎉 MODULE COMPLETED! Checking feedback status...');
+      // Reload feedback status to update button
+      setTimeout(() => {
+        if (userId && id) loadExistingFeedback();
+      }, 1000);
+    }
   };
 
   const saveAnswer = async (questionId, answer) => {
@@ -692,7 +771,7 @@ export default function EnhancedModuleDetail() {
                   className="bg-white text-emerald-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
                   onClick={() => navigate(`/certificate/${id}`)}
                 >
-                  Get Certificate 🏆
+                  {hasGeneratedCertificate ? 'View Certificate 📜' : 'Get Certificate 🏆'}
                 </button>
               )}
             </div>

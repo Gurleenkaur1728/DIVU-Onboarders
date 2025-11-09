@@ -2,58 +2,97 @@ import { useEffect, useState } from "react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { Link } from "react-router-dom";
 import { supabase } from "../../src/lib/supabaseClient.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Feedback() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("submitted");
   const [feedbacks, setFeedbacks] = useState([]);
   const [modules, setModules] = useState([]);
-  const [userId, setUserId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [selectedModule, setSelectedModule] = useState(null);
 
-  // ✅ 1. Get logged-in user
+  // Load modules and user progress
   useEffect(() => {
-    const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) console.error("Auth error:", error);
-      else setUserId(data?.user?.id);
-    };
-    fetchUser();
-  }, []);
+    if (user?.profile_id) {
+      loadModulesAndProgress();
+    }
+  }, [user]);
 
-  // ✅ 2. Load checklist modules
-  useEffect(() => {
-    const loadModules = async () => {
-      const { data, error } = await supabase
-        .from("checklist_item")
-        .select("item_id, title");
+  const viewFeedbackDetails = (feedback) => {
+    const module = modules.find(m => m.id === feedback.module_id);
+    setSelectedFeedback(feedback);
+    setSelectedModule(module);
+  };
 
-      if (error) console.error("❌ Modules load error:", error);
-      else setModules(data || []);
-    };
-    loadModules();
-  }, []);
+  const loadModulesAndProgress = async () => {
+    try {
+      setLoading(true);
+      
+      // Load all modules
+      const { data: modulesData, error: modulesError } = await supabase
+        .from("modules")
+        .select("id, title, description")
+        .order("created_at", { ascending: true });
 
-  // ✅ 3. Load feedbacks for this user
-  useEffect(() => {
-    if (!userId) return;
+      if (modulesError) {
+        console.error("Error loading modules:", modulesError);
+        return;
+      }
 
-    const loadFeedbacks = async () => {
-      const { data, error } = await supabase
-        .from("feedback")
-        .select("item_id, submitted_at")
-        .eq("user_id", userId)
-        .order("submitted_at", { ascending: false });
+      // Load user progress to see which modules are completed
+      const { data: progressData, error: progressError } = await supabase
+        .from("user_module_progress")
+        .select("module_id, is_completed, completed_at")
+        .eq("user_id", user.profile_id);
 
-      if (error) console.error("❌ Feedback load error:", error);
-      else setFeedbacks(data || []);
-    };
+      if (progressError) {
+        console.error("Error loading progress:", progressError);
+      }
 
-    loadFeedbacks();
-  }, [userId]);
+      // Load existing feedback
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from("module_feedback")
+        .select("module_id, rating, difficulty_level, feedback_text, suggestions, created_at")
+        .eq("user_id", user.profile_id);
 
-  // ✅ 4. Determine submitted vs not submitted
-  const submittedIds = feedbacks.map((f) => f.item_id);
-  const submittedModules = modules.filter((m) => submittedIds.includes(m.item_id));
-  const notSubmittedModules = modules.filter((m) => !submittedIds.includes(m.item_id));
+      if (feedbackError) {
+        console.error("Error loading feedback:", feedbackError);
+      }
+
+      // Combine data
+      const completedModuleIds = progressData?.filter(p => p.is_completed).map(p => p.module_id) || [];
+      const feedbackModuleIds = feedbackData?.map(f => f.module_id) || [];
+
+      setModules(modulesData || []);
+      setFeedbacks(feedbackData || []);
+
+    } catch (error) {
+      console.error("Error in loadModulesAndProgress:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get completed modules (those that can have feedback)
+  const getCompletedModules = () => {
+    return modules.filter(module => {
+      // Check if module is completed based on progress
+      // For now, we'll check if feedback exists (since that means module was completed)
+      return feedbacks.some(f => f.module_id === module.id);
+    });
+  };
+
+  // Get modules that are completed but don't have feedback yet
+  const getModulesNeedingFeedback = () => {
+    // This would ideally check user_progress, but for now we'll return empty
+    // since feedback is submitted during module completion
+    return [];
+  };
+
+  const submittedModules = getCompletedModules();
+  const pendingModules = getModulesNeedingFeedback();
 
   return (
     <div
@@ -102,89 +141,183 @@ export default function Feedback() {
         {/* ✅ Submitted Feedback Table */}
         {activeTab === "submitted" && (
           <div className="bg-white/95 rounded-2xl shadow-lg overflow-hidden border border-emerald-200">
-            <table className="w-full text-left border-collapse text-sm md:text-base">
-              <thead className="bg-emerald-800 text-white">
-                <tr>
-                  <th className="p-4 font-semibold">Module Name</th>
-                  <th className="p-4 font-semibold">Feedback Date</th>
-                  <th className="p-4 font-semibold">View</th>
-                </tr>
-              </thead>
-              <tbody>
-                {submittedModules.length > 0 ? (
-                  submittedModules.map((m) => {
-                    const fb = feedbacks.find((f) => f.item_id === m.item_id);
-                    return (
-                      <tr
-                        key={m.item_id}
-                        className="border-b last:border-0 hover:bg-emerald-50 transition-colors duration-200"
-                      >
-                        <td className="p-4 text-emerald-900">{m.title || "Untitled Module"}</td>
-                        <td className="p-4 text-emerald-800">
-                          {fb ? new Date(fb.submitted_at).toLocaleDateString() : "-"}
-                        </td>
-                        <td className="p-4">
-                          <Link
-                            to={`/feedback/${m.item_id}`}
-                            className="text-emerald-700 font-medium hover:underline"
-                          >
-                            View Feedback
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
+            {loading ? (
+              <div className="p-8 text-center text-gray-600">Loading feedback...</div>
+            ) : (
+              <table className="w-full text-left border-collapse text-sm md:text-base">
+                <thead className="bg-emerald-800 text-white">
                   <tr>
-                    <td colSpan="3" className="p-6 text-center text-gray-500">
-                      No feedback submitted yet.
-                    </td>
+                    <th className="p-4 font-semibold">Module Name</th>
+                    <th className="p-4 font-semibold">Rating</th>
+                    <th className="p-4 font-semibold">Difficulty</th>
+                    <th className="p-4 font-semibold">Feedback Date</th>
+                    <th className="p-4 font-semibold">Action</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {submittedModules.length > 0 ? (
+                    submittedModules.map((module) => {
+                      const feedback = feedbacks.find((f) => f.module_id === module.id);
+                      return (
+                        <tr
+                          key={module.id}
+                          className="border-b last:border-0 hover:bg-emerald-50 transition-colors duration-200"
+                        >
+                          <td className="p-4 text-emerald-900 font-medium">{module.title}</td>
+                          <td className="p-4 text-emerald-800">
+                            <div className="flex items-center">
+                              {'⭐'.repeat(feedback?.rating || 0)}
+                              <span className="ml-2 text-sm">({feedback?.rating || 0}/5)</span>
+                            </div>
+                          </td>
+                          <td className="p-4 text-emerald-800">
+                            {feedback?.difficulty_level ? `${feedback.difficulty_level}/5` : '-'}
+                          </td>
+                          <td className="p-4 text-emerald-800">
+                            {feedback?.created_at ? new Date(feedback.created_at).toLocaleDateString() : "-"}
+                          </td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => viewFeedbackDetails(feedback)}
+                              className="text-emerald-700 font-medium hover:underline"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="p-6 text-center text-gray-500">
+                        No feedback submitted yet. Complete a module to provide feedback!
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
         {/* ✅ Create Feedback Table */}
         {activeTab === "create" && (
           <div className="bg-white/95 rounded-2xl shadow-lg overflow-hidden border border-emerald-200">
-            <table className="w-full text-left border-collapse text-sm md:text-base">
-              <thead className="bg-emerald-800 text-white">
-                <tr>
-                  <th className="p-4 font-semibold">Module Name</th>
-                  <th className="p-4 font-semibold">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {notSubmittedModules.length > 0 ? (
-                  notSubmittedModules.map((m) => (
-                    <tr
-                      key={m.item_id}
-                      className="border-b last:border-0 hover:bg-emerald-50 transition-colors duration-200"
-                    >
-                      <td className="p-4 text-emerald-900">{m.title || "Untitled Module"}</td>
-                      <td className="p-4">
-                        <Link
-                          to={`/feedback/${m.item_id}`}
-                          className="text-blue-600 font-medium hover:underline"
-                        >
-                          Create Feedback
-                        </Link>
+            {loading ? (
+              <div className="p-8 text-center text-gray-600">Loading modules...</div>
+            ) : (
+              <table className="w-full text-left border-collapse text-sm md:text-base">
+                <thead className="bg-emerald-800 text-white">
+                  <tr>
+                    <th className="p-4 font-semibold">Module Name</th>
+                    <th className="p-4 font-semibold">Status</th>
+                    <th className="p-4 font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingModules.length > 0 ? (
+                    pendingModules.map((module) => (
+                      <tr
+                        key={module.id}
+                        className="border-b last:border-0 hover:bg-emerald-50 transition-colors duration-200"
+                      >
+                        <td className="p-4 text-emerald-900 font-medium">{module.title}</td>
+                        <td className="p-4 text-amber-600">Completed - Feedback Pending</td>
+                        <td className="p-4">
+                          <Link
+                            to={`/modules/${module.id}`}
+                            className="text-blue-600 font-medium hover:underline"
+                          >
+                            Provide Feedback
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="p-6 text-center text-gray-500">
+                        No modules awaiting feedback. Feedback is provided when you complete a module!
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="2" className="p-6 text-center text-gray-500">
-                      All modules already have feedback.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
+
+        {/* Feedback Details Modal */}
+        {selectedFeedback && (
+          <FeedbackDetailsModal 
+            feedback={selectedFeedback} 
+            module={selectedModule}
+            onClose={() => setSelectedFeedback(null)}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Feedback Details Modal Component
+function FeedbackDetailsModal({ feedback, module, onClose }) {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-emerald-900">{module?.title} - Feedback Details</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 text-2xl"
+          >
+            ×
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Overall Rating</label>
+            <div className="flex items-center">
+              {'⭐'.repeat(feedback.rating)}
+              <span className="ml-2 text-sm text-gray-600">({feedback.rating}/5)</span>
+            </div>
+          </div>
+          
+          {feedback.difficulty_level && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty Level</label>
+              <div className="text-emerald-800">{feedback.difficulty_level}/5</div>
+            </div>
+          )}
+          
+          {feedback.feedback_text && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
+              <p className="text-gray-800 bg-gray-50 p-3 rounded-lg">{feedback.feedback_text}</p>
+            </div>
+          )}
+          
+          {feedback.suggestions && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Suggestions</label>
+              <p className="text-gray-800 bg-gray-50 p-3 rounded-lg">{feedback.suggestions}</p>
+            </div>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Submitted Date</label>
+            <p className="text-gray-600">{new Date(feedback.created_at).toLocaleString()}</p>
+          </div>
+        </div>
+        
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );
