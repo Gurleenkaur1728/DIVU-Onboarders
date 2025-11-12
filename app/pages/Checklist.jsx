@@ -4,13 +4,13 @@ import { CheckCircle, Circle, ChevronDown, ChevronRight } from "lucide-react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
-
+ 
 // Small helper to format dates
 const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "-");
-
+ 
 export default function Checklist() {
   const { user, loading: authLoading } = useAuth();
-  
+ 
   // Current user identity used for filtering
   const me = useMemo(
     () => ({
@@ -19,19 +19,19 @@ export default function Checklist() {
     }),
     [user]
   );
-
+ 
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [groups, setGroups] = useState([]);
   const [expanded, setExpanded] = useState({});
-
+ 
   useEffect(() => {
     if (user) {
       load();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
+ 
   // Wait for auth to load before showing content
   if (authLoading) {
     return (
@@ -43,11 +43,11 @@ export default function Checklist() {
       </div>
     );
   }
-
+ 
   async function load() {
     setLoading(true);
     setNotice("");
-
+ 
     try {
       // Fallback: if profile_id is missing, try auth user id
       let userId = me.profileId;
@@ -60,7 +60,7 @@ export default function Checklist() {
         setLoading(false);
         return;
       }
-
+ 
       // Pull all assignments for this user + join template item & group
       const { data, error } = await supabase
         .from("assigned_checklist_item")
@@ -92,9 +92,9 @@ export default function Checklist() {
           ascending: true,
         })
         .order("title", { foreignTable: "checklist_item", ascending: true });
-
+ 
       if (error) throw error;
-
+ 
       // Bucket by group
       const bucket = new Map();
       (data || []).forEach((row) => {
@@ -112,7 +112,7 @@ export default function Checklist() {
           group_id: row.group_id,
         });
       });
-
+ 
       const list = Array.from(bucket.values());
       setGroups(list);
       const exp = {};
@@ -125,7 +125,7 @@ export default function Checklist() {
       setLoading(false);
     }
   }
-
+ 
   // ✅ NEW: Generate certificate in Supabase
   async function generateCertificate(userId, title) {
     try {
@@ -136,7 +136,7 @@ export default function Checklist() {
         .eq("user_id", userId)
         .eq("title", title)
         .maybeSingle();
-
+ 
       if (existing) {
         await supabase
           .from("certificates")
@@ -155,7 +155,7 @@ export default function Checklist() {
       console.error("Certificate generation failed:", err);
     }
   }
-
+ 
   async function toggleDone(item) {
     // Optimistic UI update
     setGroups((prev) =>
@@ -172,16 +172,16 @@ export default function Checklist() {
         ),
       }))
     );
-
+ 
     const payload = item.done
       ? { done: false, completed_at: null }
       : { done: true, completed_at: new Date().toISOString() };
-
+ 
     const { error } = await supabase
       .from("assigned_checklist_item")
       .update(payload)
       .eq("id", item.assignedId);
-
+ 
     if (error) {
       console.error(error);
       setNotice("Could not update item status.");
@@ -191,7 +191,7 @@ export default function Checklist() {
       await generateCertificate(me.profileId, item.title);
     }
   }
-
+ 
   return (
     <div
       className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
@@ -205,7 +205,7 @@ export default function Checklist() {
             Welcome {me.name || "Employee"}!
           </span>
         </div>
-
+ 
         {/* Header Tabs */}
         <div className="flex flex-wrap items-center justify-between bg-emerald-950/90 px-4 py-3 rounded-lg mb-6 shadow-md border border-emerald-800/70">
           <h2 className="text-lg md:text-xl font-bold text-emerald-100 tracking-wide">
@@ -216,14 +216,14 @@ export default function Checklist() {
             <Tab label="Modules" to="/modules" />
           </div>
         </div>
-
+ 
         {/* Notice */}
         {notice && (
           <div className="mb-4 px-4 py-2 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded">
             {notice}
           </div>
         )}
-
+ 
         {/* Main Content */}
         {loading ? (
           <div className="text-emerald-800 animate-pulse italic">
@@ -254,7 +254,7 @@ export default function Checklist() {
                       {g.name}
                     </button>
                   </div>
-
+ 
                   {/* Group table */}
                   {open && (
                     <div className="overflow-x-auto">
@@ -290,7 +290,7 @@ export default function Checklist() {
                                   )}
                                 </button>
                               </td>
-
+ 
                               <td className="px-4 py-3">{it.title}</td>
                               <td className="px-4 py-3">{fmt(it.assigned_on)}</td>
                               <td className="px-4 py-3">{fmt(it.completed_at)}</td>
@@ -309,7 +309,7 @@ export default function Checklist() {
     </div>
   );
 }
-
+ 
 /* ---------- UI bits for table ---------- */
 function Th({ children, className = "" }) {
   return (
@@ -320,7 +320,7 @@ function Th({ children, className = "" }) {
     </th>
   );
 }
-
+ 
 function Tab({ label, active, to }) {
   return to ? (
     <Link

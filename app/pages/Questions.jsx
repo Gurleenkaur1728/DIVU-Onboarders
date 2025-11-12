@@ -4,7 +4,7 @@ import { HelpCircle, Send, MessageSquare } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
-
+ 
 export default function Questions() {
   const { user, loading: authLoading } = useAuth();
   const { roleId } = useRole();
@@ -14,12 +14,12 @@ export default function Questions() {
   const [newQ, setNewQ] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
-
+ 
   // Load FAQs (published) + my questions
   useEffect(() => {
     const load = async () => {
       setNotice("");
-      
+     
       // Load FAQs from database
       try {
         const { data: faqData, error: faqError } = await supabase
@@ -27,7 +27,7 @@ export default function Questions() {
           .select("id, question, answer")
           .eq("is_published", true)
           .order("created_at", { ascending: false });
-
+ 
         if (faqError) {
           console.error("FAQ Error:", faqError);
         } else {
@@ -36,27 +36,27 @@ export default function Questions() {
       } catch (error) {
         console.error("Error loading FAQs:", error);
       }
-
+ 
       // Load my questions from database
       const profileId = user?.profile_id;
       if (!profileId) {
         setNotice("You must be signed in to view your questions.");
         return;
       }
-
+ 
       try {
         const { data: questionData, error: questionError } = await supabase
           .from("user_questions")
-          .select("id, question_text, answer_text, status, created_at")
-          .eq("user_id", profileId)
+          .select("employee_id, question_text, answer_text, status, created_at")
+          .eq("employee_id", profileId)
           .order("created_at", { ascending: false });
-
+ 
         if (questionError) {
           console.error("Questions Error:", questionError);
           setNotice("Failed to load your questions.");
         } else {
           const formattedQuestions = (questionData || []).map(q => ({
-            id: q.id,
+            id: q.employee_id,
             question: q.question_text,
             answer: q.answer_text,
             status: q.status,
@@ -69,12 +69,12 @@ export default function Questions() {
         setNotice("Failed to load your questions.");
       }
     };
-
+ 
     if (user) {
       load();
     }
   }, [user]);
-
+ 
   // Wait for auth to load before showing content
   if (authLoading) {
     return (
@@ -107,13 +107,13 @@ export default function Questions() {
       const { data, error } = await supabase
         .from("user_questions")
         .insert({
-          user_id: profileId,
+          employee_id: profileId,
           question_text: text,
           status: "open"
         })
-        .select("id, question_text, answer_text, status, created_at")
+        .select("employee_id, question_text, answer_text, status, created_at")
         .single();
-
+ 
       if (error) {
         console.error("Insert Error:", error);
         setNotice("Failed to save question. Please try again.");
@@ -126,11 +126,11 @@ export default function Questions() {
           status: data.status,
           created_at: data.created_at
         };
-        
+       
         setMyQuestions(prev => [newQuestion, ...prev]);
         setNewQ("");
         setNotice("Question submitted successfully!");
-        
+       
         // Clear success message after 3 seconds
         setTimeout(() => setNotice(""), 3000);
       }
@@ -141,14 +141,14 @@ export default function Questions() {
       setLoading(false);
     }
   };
-
+ 
   return (
     <div
       className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
       <Sidebar role={roleId} active="questions" />
-
+ 
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 mb-6 shadow-sm border border-emerald-200/50">
@@ -156,19 +156,19 @@ export default function Questions() {
             Questions & FAQs
           </span>
         </div>
-
+ 
         {notice && (
           <div className="mb-4 px-4 py-2 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded">
             {notice}
           </div>
         )}
-
+ 
         {/* Tabs */}
         <div className="flex flex-wrap gap-3 mb-6">
           <Tab label="FAQs" active={tab === "faqs"} onClick={() => setTab("faqs")} />
           <Tab label="Ask Question" active={tab === "ask"} onClick={() => setTab("ask")} />
         </div>
-
+ 
         {/* Tabs Content */}
         {tab === "faqs" ? (
           <FaqsTab faqs={faqs} />
@@ -185,7 +185,7 @@ export default function Questions() {
     </div>
   );
 }
-
+ 
 /* ---------- Subcomponents ---------- */
 function FaqsTab({ faqs }) {
   return (
@@ -209,7 +209,7 @@ function FaqsTab({ faqs }) {
     </div>
   );
 }
-
+ 
 function AskQuestionTab({ myQuestions, newQ, setNewQ, askQuestion, loading }) {
   return (
     <div className="space-y-6">
@@ -232,7 +232,7 @@ function AskQuestionTab({ myQuestions, newQ, setNewQ, askQuestion, loading }) {
           <Send size={16} className="inline mr-1" /> {loading ? "Submitting..." : "Submit"}
         </button>
       </div>
-
+ 
       <div className="overflow-x-auto rounded-xl border border-emerald-300 shadow-md bg-white/95">
         <table className="min-w-[500px] w-full border-collapse text-sm md:text-base" aria-label="My questions">
           <thead>
@@ -274,7 +274,7 @@ function AskQuestionTab({ myQuestions, newQ, setNewQ, askQuestion, loading }) {
     </div>
   );
 }
-
+ 
 function Tab({ label, active, onClick }) {
   return (
     <button
@@ -289,9 +289,10 @@ function Tab({ label, active, onClick }) {
     </button>
   );
 }
-
+ 
 function Th({ children }) {
   return (
     <th className="px-4 py-3 font-bold border-r border-emerald-800/50">{children}</th>
   );
 }
+ 
