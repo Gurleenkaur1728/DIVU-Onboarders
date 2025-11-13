@@ -13,12 +13,11 @@ import { useRole } from "../../../src/lib/hooks/useRole.js";
 const TABLES = {
   groups: "checklist_groups",
   items: "checklist_item",
-  adminRequests: "admin_requests",
 };
 
 export default function ManageChecklist() {
   const { roleId, role } = useRole();
-  const isSuperAdmin = role === "SUPER_ADMIN";
+  const isSuperAdmin = role === "SUPER_ADMIN" || role === 2;
 
   const me = useMemo(
     () => ({
