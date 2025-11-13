@@ -2,18 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../src/lib/supabaseClient.js";
 import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
 
-/**
- * Assumptions (per your schema):
- * - users(id, name, email)
- * - checklist_groups(id, name, sort_order)
- * - checklist_item(item_id, title, group_id, is_required)
- * - assigned_checklist_item(
- *     id, user_id, group_id, template_item_id, custom_title,
- *     due_date, done, assigned_by, assigned_on
- *   )
- *
- * NOTE: We use a null template_item_id + custom_title for ad-hoc items.
- */
 
 export default function AssignTemplates() {
   // ----- tabs for the whole page -----
