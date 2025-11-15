@@ -88,7 +88,8 @@ function useModuleProgress(userId, moduleId) {
       
       const { data, error } = await supabase
         .from('user_module_progress')
-        .upsert(updateData, {  onConflict: 'user_id,module_id'
+        .upsert(updateData, { 
+          onConflict: 'user_id,module_id'
         })
         .select();
 
@@ -322,17 +323,23 @@ export default function EnhancedModuleDetail() {
 
     try {
       console.log('Submitting feedback with userId:', userId, 'moduleId:', id);
+      console.log('userId type:', typeof userId, 'id type:', typeof id);
+      
+      // Ensure we're using the correct data types for the database
+      const feedbackData = {
+        user_id: String(userId), // user_id column is text type
+        module_id: id, // module_id column is uuid type - keep as string UUID
+        rating: parseInt(feedback.rating), // Ensure rating is integer
+        feedback_text: feedback.feedback_text || null,
+        suggestions: feedback.suggestions || null,
+        difficulty_level: feedback.difficulty_level === 0 ? null : parseInt(feedback.difficulty_level)
+      };
+      
+      console.log('Final feedback data:', feedbackData);
       
       const { data, error } = await supabase
         .from('module_feedback')
-        .insert({
-          user_id: userId,
-          module_id: id,
-          rating: feedback.rating,
-          feedback_text: feedback.feedback_text,
-          suggestions: feedback.suggestions,
-          difficulty_level: feedback.difficulty_level === 0 ? null : feedback.difficulty_level
-        })
+        .insert(feedbackData)
         .select();
 
       if (error) {
@@ -342,6 +349,18 @@ export default function EnhancedModuleDetail() {
       }
 
       console.log('Feedback submitted successfully:', data);
+
+      // Simple notification: Log to audit_logs table directly from the app
+      try {
+        await supabase.from('audit_logs').insert({
+          action: `Feedback submitted: ${feedback.rating}/5 stars for module ${id}`,
+          employee_email: user?.email || 'unknown@email.com',
+          employee_name: user?.name || 'Unknown User'
+          // Removed created_at - let database auto-generate it
+        });
+      } catch (auditError) {
+        console.log('Audit log failed (non-critical):', auditError);
+      }
 
       setShowFeedbackModal(false);
       setExistingFeedback({ ...feedback, created_at: new Date().toISOString() });
