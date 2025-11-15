@@ -97,13 +97,13 @@ export default function Sidebar({ role }) {
   return (
     <aside
       className={`
-        fixed left-0 top-0 z-50
         flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950
         ${collapsed ? "w-20" : "w-64"}
         h-screen border-r border-emerald-700/40 shadow-lg shadow-emerald-950/50
-        transition-all duration-300 overflow-y-auto
+        transition-all duration-300 overflow-y-auto custom-scrollbar
       `}
     >
+
       {/* Header with Logo + Collapse Toggle */}
       <div className="flex items-center justify-between px-4 py-6">
         <Logo size={collapsed ? "" : 140} />
