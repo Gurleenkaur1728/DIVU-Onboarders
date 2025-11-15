@@ -40,13 +40,13 @@ export default function Login() {
         return;
       }
 
-      // ✅ Verify password using bcrypt
-      const valid = await bcrypt.compare(password, user.password || "");
-      if (!valid) {
-        setErr("Invalid email or password.");
-        setLoading(false);
-        return;
-      }
+      // // ✅ Verify password using bcrypt
+      // const valid = await bcrypt.compare(password, user.password || "");
+      // if (!valid) {
+      //   setErr("Invalid email or password.");
+      //   setLoading(false);
+      //   return;
+      // }
 
       // ✅ Determine role from DB
       const roleId = Number(user.role_id);
