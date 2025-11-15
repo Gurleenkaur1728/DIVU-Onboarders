@@ -235,6 +235,14 @@ export default function EnhancedModuleDetail() {
     suggestions: '',
     difficulty_level: 0
   });
+  const [sectionFeedbacks, setSectionFeedbacks] = useState({});
+  const [showSectionFeedback, setShowSectionFeedback] = useState(null);
+  const [currentSectionFeedback, setCurrentSectionFeedback] = useState({
+    helpful: null,
+    clarity: 0,
+    difficulty: 0,
+    comments: ''
+  });
   const [existingFeedback, setExistingFeedback] = useState(null);
   const [hasGeneratedCertificate, setHasGeneratedCertificate] = useState(false);
   
@@ -410,6 +418,19 @@ export default function EnhancedModuleDetail() {
     console.log('About to update with data:', updateData);
     await updateProgress(updateData);
     
+    // Show section feedback prompt after completing a section (randomly 30% of the time)
+    if (Math.random() < 0.3 && !sectionFeedbacks[sectionId]) {
+      setTimeout(() => {
+        setShowSectionFeedback(sectionId);
+        setCurrentSectionFeedback({
+          helpful: null,
+          clarity: 0,
+          difficulty: 0,
+          comments: ''
+        });
+      }, 500); // Small delay for better UX
+    }
+    
     if (isModuleComplete) {
       console.log('🎉 MODULE COMPLETED! Checking feedback status...');
       // Reload feedback status to update button
@@ -417,6 +438,31 @@ export default function EnhancedModuleDetail() {
         if (userId && id) loadExistingFeedback();
       }, 1000);
     }
+  };
+
+  const submitSectionFeedback = async (sectionId) => {
+    // Store section feedback locally
+    setSectionFeedbacks(prev => ({
+      ...prev,
+      [sectionId]: currentSectionFeedback
+    }));
+    
+    // Save to database (optional - can be used for detailed analytics)
+    try {
+      await supabase.from('section_feedback').insert({
+        user_id: String(userId),
+        module_id: id,
+        section_id: sectionId,
+        helpful: currentSectionFeedback.helpful,
+        clarity_rating: currentSectionFeedback.clarity,
+        difficulty_rating: currentSectionFeedback.difficulty,
+        comments: currentSectionFeedback.comments || null
+      });
+    } catch (error) {
+      console.log('Section feedback save failed (non-critical):', error);
+    }
+    
+    setShowSectionFeedback(null);
   };
 
   const saveAnswer = async (questionId, answer) => {
@@ -530,24 +576,34 @@ export default function EnhancedModuleDetail() {
           <div className="space-y-4">
             {renderSectionContent(section, isCompleted)}
             
-            {/* Complete Section Button */}
+            {/* Complete Section Button with enhanced feedback */}
             {!isCompleted && (
               <div className="flex justify-end mt-6">
                 <button
                   onClick={() => markSectionComplete(section.id)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
+                  className="group bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg"
                 >
-                  Mark Complete ✓
+                  <span className="flex items-center gap-2">
+                    <span>Mark Complete</span>
+                    <span className="group-hover:animate-bounce">✓</span>
+                  </span>
                 </button>
               </div>
             )}
 
             {isCompleted && (
-              <div className="flex items-center justify-end mt-4 text-emerald-600">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                ✅ Completed
+              <div className="flex items-center justify-between mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                <div className="flex items-center text-emerald-700">
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  ✅ Section Completed
+                </div>
+                {sectionFeedbacks[section.id] && (
+                  <div className="text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded">
+                    💬 Feedback given
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -796,25 +852,45 @@ export default function EnhancedModuleDetail() {
           </div>
         )}
 
-        {/* Feedback Modal */}
+        {/* Enhanced Feedback Modal */}
         {showFeedbackModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">📝 Module Feedback</h3>
+            <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-800">📝 Module Feedback</h3>
+                <button 
+                  onClick={() => setShowFeedbackModal(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
               
-              {/* Rating */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Overall Rating * {feedback.rating === 0 && <span className="text-red-500">(Required)</span>}
+              {/* Section Feedback Summary */}
+              {Object.keys(sectionFeedbacks).length > 0 && (
+                <div className="mb-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <h4 className="font-medium text-emerald-800 mb-2">📊 Section Feedback Summary</h4>
+                  <div className="text-sm text-emerald-700">
+                    You provided feedback for {Object.keys(sectionFeedbacks).length} section(s). 
+                    <span className="font-medium">Thank you for the detailed input!</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Rating with better visual feedback */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Overall Rating * 
+                  {feedback.rating === 0 && <span className="text-red-500">(Required)</span>}
                 </label>
-                <div className="flex space-x-1">
+                <div className="flex justify-center space-x-2 mb-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
                       onClick={() => setFeedback(prev => ({ ...prev, rating: star }))}
-                      className={`text-2xl hover:scale-110 transition-transform ${
-                        star <= feedback.rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-200'
+                      className={`text-3xl hover:scale-110 transition-all duration-200 ${
+                        star <= feedback.rating ? 'text-yellow-400 filter drop-shadow-lg' : 'text-gray-300 hover:text-yellow-200'
                       }`}
                     >
                       ⭐
@@ -822,70 +898,205 @@ export default function EnhancedModuleDetail() {
                   ))}
                 </div>
                 {feedback.rating > 0 && (
-                  <div className="text-sm text-gray-600 mt-1">
-                    {feedback.rating} out of 5 stars
+                  <div className="text-center">
+                    <div className="text-lg font-medium text-gray-800">
+                      {feedback.rating === 1 && '😞 Poor'}
+                      {feedback.rating === 2 && '🙁 Fair'}
+                      {feedback.rating === 3 && '😐 Good'}
+                      {feedback.rating === 4 && '😊 Very Good'}
+                      {feedback.rating === 5 && '🤩 Excellent'}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {feedback.rating} out of 5 stars
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Difficulty */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Difficulty Level
+              {/* Difficulty with better descriptions */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  How challenging was this module?
                 </label>
-                <select 
-                  value={feedback.difficulty_level}
-                  onChange={(e) => setFeedback(prev => ({ ...prev, difficulty_level: parseInt(e.target.value) }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                >
-                  <option value={0}>Select difficulty</option>
-                  <option value={1}>Very Easy</option>
-                  <option value={2}>Easy</option>
-                  <option value={3}>Medium</option>
-                  <option value={4}>Hard</option>
-                  <option value={5}>Very Hard</option>
-                </select>
+                <div className="grid grid-cols-5 gap-2">
+                  {[
+                    { value: 1, label: 'Very Easy', emoji: '😎' },
+                    { value: 2, label: 'Easy', emoji: '🙂' },
+                    { value: 3, label: 'Just Right', emoji: '😐' },
+                    { value: 4, label: 'Challenging', emoji: '🤔' },
+                    { value: 5, label: 'Very Hard', emoji: '😰' }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFeedback(prev => ({ ...prev, difficulty_level: option.value }))}
+                      className={`p-3 text-center rounded-lg border-2 transition-all ${
+                        feedback.difficulty_level === option.value
+                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                          : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50'
+                      }`}
+                    >
+                      <div className="text-lg">{option.emoji}</div>
+                      <div className="text-xs font-medium">{option.label}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Feedback Text */}
+              {/* Smart feedback prompts based on rating */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  What did you think of this module?
+                  {feedback.rating <= 2 ? 'What went wrong? Help us improve!' :
+                   feedback.rating <= 3 ? 'What did you think of this module?' :
+                   'What did you enjoy most about this module?'}
                 </label>
                 <textarea
                   value={feedback.feedback_text}
                   onChange={(e) => setFeedback(prev => ({ ...prev, feedback_text: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 h-20"
-                  placeholder="Share your thoughts..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-3 h-24 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  placeholder={feedback.rating <= 2 ? 
+                    "Tell us what was confusing or difficult..." :
+                    feedback.rating <= 3 ?
+                    "Share your honest thoughts..." :
+                    "What made this module great?"}
                 />
               </div>
 
-              {/* Suggestions */}
+              {/* Suggestions with contextual prompts */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Suggestions for improvement
+                  {feedback.rating <= 2 ? 'How can we make this better?' : 'Any suggestions for improvement?'}
+                  <span className="text-gray-500 text-xs ml-1">(Optional)</span>
                 </label>
                 <textarea
                   value={feedback.suggestions}
                   onChange={(e) => setFeedback(prev => ({ ...prev, suggestions: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 h-20"
-                  placeholder="How can we make this better?"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-3 h-20 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  placeholder={feedback.rating <= 2 ?
+                    "What specific changes would help?" :
+                    "Any ideas to make it even better?"}
                 />
               </div>
 
-              {/* Buttons */}
+              {/* Action buttons with better styling */}
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowFeedbackModal(false)}
-                  className="flex-1 bg-gray-200 text-gray-800 py-2 rounded-lg font-medium hover:bg-gray-300"
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={submitFeedback}
-                  className="flex-1 bg-emerald-600 text-white py-2 rounded-lg font-medium hover:bg-emerald-700"
+                  disabled={feedback.rating === 0}
+                  className={`flex-2 py-3 rounded-lg font-medium transition-colors ${
+                    feedback.rating === 0
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  }`}
                 >
-                  Submit Feedback
+                  Submit Feedback 🚀
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Section Feedback Modal */}
+        {showSectionFeedback && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800">💬 Quick Section Feedback</h3>
+                <button 
+                  onClick={() => setShowSectionFeedback(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">
+                Help us improve! How was this section for you?
+              </p>
+              
+              {/* Was it helpful? */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Was this section helpful?
+                </label>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setCurrentSectionFeedback(prev => ({ ...prev, helpful: true }))}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      currentSectionFeedback.helpful === true
+                        ? 'bg-green-100 text-green-800 border-2 border-green-300'
+                        : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-green-50'
+                    }`}
+                  >
+                    👍 Yes
+                  </button>
+                  <button
+                    onClick={() => setCurrentSectionFeedback(prev => ({ ...prev, helpful: false }))}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                      currentSectionFeedback.helpful === false
+                        ? 'bg-red-100 text-red-800 border-2 border-red-300'
+                        : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-red-50'
+                    }`}
+                  >
+                    👎 No
+                  </button>
+                </div>
+              </div>
+              
+              {/* Clarity rating */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  How clear was the content? (1-5)
+                </label>
+                <div className="flex space-x-1">
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <button
+                      key={rating}
+                      onClick={() => setCurrentSectionFeedback(prev => ({ ...prev, clarity: rating }))}
+                      className={`w-8 h-8 rounded-full text-sm font-medium ${
+                        currentSectionFeedback.clarity >= rating
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-gray-600 hover:bg-blue-100'
+                      }`}
+                    >
+                      {rating}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Optional comments */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Quick comment (optional)
+                </label>
+                <textarea
+                  value={currentSectionFeedback.comments}
+                  onChange={(e) => setCurrentSectionFeedback(prev => ({ ...prev, comments: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 h-16 text-sm"
+                  placeholder="Any quick thoughts?"
+                />
+              </div>
+              
+              {/* Action buttons */}
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setShowSectionFeedback(null)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={() => submitSectionFeedback(showSectionFeedback)}
+                  className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-emerald-700"
+                >
+                  Submit ✨
                 </button>
               </div>
             </div>
