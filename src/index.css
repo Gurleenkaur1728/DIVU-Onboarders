@@ -5,3 +5,27 @@
 html, body, #root {
   height: 100%;
 }
+
+/* Custom Sidebar Scrollbar Styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* see-through track */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(4, 120, 87, 0.8); /* dark emerald thumb */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(2, 90, 65, 0.9);
+}
+
+/* Firefox support */
+.custom-scrollbar {
+  scrollbar-color: rgba(4, 120, 87, 0.8) transparent;
+  scrollbar-width: thin;
+}
