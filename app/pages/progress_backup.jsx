@@ -23,6 +23,7 @@ import {
   Cell,
 } from "recharts";
 
+
 export default function Progress() {
   const { user } = useAuth();
   const { roleId } = useRole();
@@ -44,13 +45,13 @@ export default function Progress() {
   const [moduleDetails, setModuleDetails] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const COLORS = ["#22c55e", "#3b82f6", "#ef4444", "#f59e0b"];
+  const COLORS = ["#22c55e", "#3b82f6", "#ef4444", "#f59e0b"]; // green, blue, red, amber
 
   // XP and level calculations
   const xpToNextLevel = 500 - (userStats.xp % 500);
   const xpPercent = ((userStats.xp % 500) / 500) * 100;
 
-  // Main data loading function
+  // Memoize loadProgress function - MOVED BEFORE useEffect to fix initialization error
   const loadProgress = useCallback(async () => {
     try {
       setLoading(true);
@@ -61,7 +62,7 @@ export default function Progress() {
         return;
       }
 
-      // Load all modules
+      // ✅ Load all modules
       const { data: modulesData, error: modulesError } = await supabase
         .from("modules")
         .select("id, title, description")
@@ -70,7 +71,7 @@ export default function Progress() {
       if (modulesError) throw modulesError;
       setModules(modulesData || []);
 
-      // Load user progress
+      // ✅ Load user progress on modules  
       const { data: progressData, error: progressError } = await supabase
         .from("user_module_progress")
         .select("module_id, is_completed, completed_at, completion_percentage")
@@ -79,16 +80,16 @@ export default function Progress() {
       if (progressError) throw progressError;
       setUserProgress(progressData || []);
 
-      // Load feedback data
+      // ✅ Load feedback data
       const { data: feedbackData, error: feedbackError } = await supabase
-        .from("module_feedback")
-        .select("module_id, rating, feedback_text, created_at")
-        .eq("user_id", userId);
+        .from("feedback")
+        .select("module_id, rating, comments, created_at")
+        .eq("profile_id", userId);
 
       if (feedbackError) throw feedbackError;
       setFeedback(feedbackData || []);
 
-      // Load certificates
+      // ✅ Load certificates
       const { data: certificatesData, error: certificatesError } = await supabase
         .from("certificates")
         .select("*")
@@ -97,23 +98,13 @@ export default function Progress() {
       if (certificatesError) throw certificatesError;
       setCertificates(certificatesData || []);
 
-      // Calculate user stats
+      // ✅ Calculate enhanced user stats
       const completedModules = progressData?.filter(p => p.is_completed) || [];
       const totalXP = completedModules.length * 100 + (feedbackData?.length * 10 || 0);
       const level = Math.floor(totalXP / 500) + 1;
       const avgRating = feedbackData?.length > 0 
         ? feedbackData.reduce((sum, f) => sum + f.rating, 0) / feedbackData.length
         : 0;
-      
-      // Debug logging
-      console.log("📊 Progress Data Debug:");
-      console.log("- Total modules:", modulesData?.length);
-      console.log("- User progress records:", progressData?.length);
-      console.log("- Completed modules:", completedModules.length);
-      console.log("- Feedback records:", feedbackData?.length);
-      console.log("- Certificates:", certificatesData?.length);
-      console.log("- Calculated XP:", totalXP);
-      console.log("- Average rating:", avgRating);
       
       setUserStats({
         xp: totalXP,
@@ -123,7 +114,7 @@ export default function Progress() {
         averageRating: Math.round(avgRating * 10) / 10
       });
 
-      // Prepare module details
+      // ✅ Prepare enhanced module details
       const enrichedModules = modulesData?.map(module => {
         const progress = progressData?.find(p => p.module_id === module.id) || {};
         const feedback = feedbackData?.find(f => f.module_id === module.id);
@@ -141,7 +132,7 @@ export default function Progress() {
       
       setModuleDetails(enrichedModules);
 
-      // Prepare chart data
+      // ✅ Prepare chart data
       const completed = progressData?.filter(p => p.is_completed)?.length || 0;
       const inProgress = progressData?.filter(p => !p.is_completed && p.completion_percentage > 0)?.length || 0;
       const notStarted = (modulesData?.length || 0) - completed - inProgress;
@@ -152,7 +143,7 @@ export default function Progress() {
         { name: "⏳ Not Started", value: notStarted, color: "#6b7280" },
       ]);
 
-      console.log("✅ Progress data loaded successfully!");
+      console.log("✅ Enhanced progress data loaded successfully!");
     } catch (err) {
       console.error("❌ Error loading progress:", err.message);
     } finally {
@@ -166,11 +157,11 @@ export default function Progress() {
       loadProgress();
     }
   }, [user?.profile_id, loadProgress]);
-
   // Real-time subscriptions
   useEffect(() => {
     if (!user?.profile_id) return;
 
+    // Set up real-time subscription for progress updates
     const progressSubscription = supabase
       .channel('progress_changes')
       .on('postgres_changes', 
@@ -211,52 +202,211 @@ export default function Progress() {
     }
   }, [refreshKey, user?.profile_id, loadProgress]);
 
-  // Calculate achievements
-  useEffect(() => {
-    const checkAchievements = () => {
-      const earned = [];
+  // Memoize loadProgress to fix dependency issues
+  const loadProgress = useCallback(async () => {
+    try {
+      setLoading(true);
+      const userId = user?.profile_id;
       
-      const completedModules = userProgress.filter(p => p.is_completed).length;
-      const totalFeedback = feedback.length;
-      const avgRating = userStats.averageRating;
+      if (!userId) {
+        console.warn("⚠️ No user ID found.");
+        return;
+      }
+
+      // ✅ Load all modules
+      const { data: modulesData, error: modulesError } = await supabase
+        .from("modules")
+        .select("id, title, description")
+        .order("created_at", { ascending: true });
+
+      if (modulesError) throw modulesError;
+      setModules(modulesData || []);
+
+      // ✅ Load user progress on modules  
+      const { data: progressData, error: progressError } = await supabase
+        .from("user_module_progress")
+        .select("module_id, is_completed, completed_at, completion_percentage")
+        .eq("user_id", userId);
+
+      if (progressError) console.warn("Progress error:", progressError);
+      setUserProgress(progressData || []);
+
+      // ✅ Load certificates (generated from completed modules with feedback)
+      const { data: certificatesData, error: certsError } = await supabase
+        .from("certificates")
+        .select("id, module_id, user_name, module_title, completion_date, generated_at")
+        .eq("user_id", userId)
+        .order("generated_at", { ascending: false });
+
+      if (certsError) console.warn("Certificates error:", certsError);
+      setCertificates(certificatesData || []);
+
+      // ✅ Load feedback submitted by user
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from("module_feedback")
+        .select("module_id, rating, difficulty_level, created_at")
+        .eq("user_id", userId);
+
+      if (feedbackError) console.warn("Feedback error:", feedbackError);
+      setFeedback(feedbackData || []);
+
+      // ✅ Load user stats - enhanced calculations
+      const completedCount = progressData?.filter(p => p.is_completed)?.length || 0;
+      const feedbackCount = feedbackData?.length || 0;
+      const certificateCount = certificatesData?.length || 0;
+      const avgRating = feedbackData?.length > 0 ? 
+        (feedbackData.reduce((sum, f) => sum + (f.rating || 0), 0) / feedbackData.length).toFixed(1) : 0;
+      
+      // Enhanced XP calculation: 100 XP per completion + 50 XP per feedback + 200 XP per certificate + bonus for ratings
+      const baseXP = (completedCount * 100) + (feedbackCount * 50) + (certificateCount * 200);
+      const ratingBonus = feedbackData?.reduce((sum, f) => sum + (f.rating >= 4 ? 25 : 0), 0) || 0;
+      const calculatedXP = baseXP + ratingBonus;
+      const calculatedLevel = Math.floor(calculatedXP / 500) + 1; // 500 XP per level
+      
+      // Calculate learning streak based on consecutive completion days
+      const completedDates = progressData?.filter(p => p.is_completed && p.completed_at)
+        .map(p => new Date(p.completed_at).toDateString());
+      const uniqueDates = [...new Set(completedDates)];
+      const streak = Math.min(uniqueDates.length, 30); // Cap at 30 days
+      
+      // Estimate time spent (rough calculation)
+      const estimatedTimePerModule = 45; // minutes
+      const totalTimeSpent = completedCount * estimatedTimePerModule;
+
+      setUserStats({
+        xp: calculatedXP,
+        level: calculatedLevel,
+        streakDays: streak,
+        totalTimeSpent: totalTimeSpent,
+        averageRating: parseFloat(avgRating)
+      });
+
+      // ✅ Enhanced progress data for chart with better categorization
+      const totalModules = modulesData?.length || 0;
+      const completedModules = progressData?.filter(p => p.is_completed)?.length || 0;
+      const highProgressModules = progressData?.filter(p => !p.is_completed && p.completion_percentage >= 50)?.length || 0;
+      const lowProgressModules = progressData?.filter(p => !p.is_completed && p.completion_percentage > 0 && p.completion_percentage < 50)?.length || 0;
+      const notStartedModules = totalModules - completedModules - highProgressModules - lowProgressModules;
+
+      setChartData([
+        { name: "Completed", value: completedModules, color: "#22c55e" },
+        { name: "Near Completion (50%+)", value: highProgressModules, color: "#3b82f6" },
+        { name: "In Progress", value: lowProgressModules, color: "#f59e0b" },
+        { name: "Not Started", value: notStartedModules, color: "#ef4444" },
+      ]);
+
+      // ✅ Create detailed module list for better tracking
+      const moduleDetailsData = modulesData?.map(module => {
+        const progress = progressData?.find(p => p.module_id === module.id);
+        const moduleFeedback = feedbackData?.find(f => f.module_id === module.id);
+        const certificate = certificatesData?.find(c => c.module_id === module.id);
+        
+        return {
+          ...module,
+          progress: progress || { completion_percentage: 0, is_completed: false },
+          feedback: moduleFeedback,
+          certificate: certificate,
+          status: progress?.is_completed ? 'completed' : 
+                 progress?.completion_percentage > 0 ? 'in-progress' : 'not-started'
+        };
+      }) || [];
+      
+      setModuleDetails(moduleDetailsData);
+
+      // ✅ Enhanced achievements system
+      const newAchievements = [];
       
       if (completedModules >= 1) {
-        earned.push({ id: 1, title: "First Steps", description: "Complete your first module", icon: "🎆" });
+        newAchievements.push({
+          id: 1,
+          badge_name: "🚀 First Steps",
+          description: "Completed your first module",
+          earned_at: progressData.find(p => p.is_completed)?.completed_at || new Date(),
+          type: "milestone"
+        });
+      }
+      
+      if (completedModules >= 3) {
+        newAchievements.push({
+          id: 2,
+          badge_name: "📚 Learning Enthusiast", 
+          description: "Completed 3 modules",
+          earned_at: new Date(),
+          type: "milestone"
+        });
       }
       
       if (completedModules >= 5) {
-        earned.push({ id: 2, title: "Dedicated Learner", description: "Complete 5 modules", icon: "💪" });
+        newAchievements.push({
+          id: 3,
+          badge_name: "🎯 Dedicated Learner",
+          description: "Completed 5 modules",
+          earned_at: new Date(),
+          type: "milestone"
+        });
       }
       
-      if (completedModules >= 10) {
-        earned.push({ id: 3, title: "Expert", description: "Complete 10 modules", icon: "👑" });
+      if (certificatesData?.length >= 1) {
+        newAchievements.push({
+          id: 4,
+          badge_name: "🏆 Certificate Earner",
+          description: "Earned your first certificate",
+          earned_at: certificatesData[0]?.generated_at || new Date(),
+          type: "certificate"
+        });
       }
       
-      if (avgRating >= 4) {
-        earned.push({ id: 4, title: "Quality Focused", description: "Maintain 4+ star average rating", icon: "⭐" });
+      if (streak >= 3) {
+        newAchievements.push({
+          id: 5,
+          badge_name: "🔥 3-Day Streak",
+          description: "Consistent learning for 3 days",
+          earned_at: new Date(),
+          type: "streak"
+        });
       }
       
-      if (totalFeedback >= 10) {
-        earned.push({ id: 5, title: "Feedback Champion", description: "Provide 10+ feedback entries", icon: "💬" });
+      if (feedbackData?.length >= 3) {
+        newAchievements.push({
+          id: 6,
+          badge_name: "💬 Feedback Champion",
+          description: "Provided feedback for 3+ modules",
+          earned_at: new Date(),
+          type: "engagement"
+        });
       }
       
-      if (userStats.xp >= 1000) {
-        earned.push({ id: 6, title: "XP Master", description: "Earn 1000+ XP", icon: "🔥" });
+      if (avgRating >= 4 && feedbackData?.length >= 3) {
+        newAchievements.push({
+          id: 7,
+          badge_name: "⭐ Quality Learner",
+          description: "Maintained 4+ star average rating",
+          earned_at: new Date(),
+          type: "quality"
+        });
       }
       
-      if (totalFeedback >= 5 && avgRating === 5) {
-        earned.push({ id: 7, title: "Perfect Rating", description: "Maintain 5-star rating with 5+ reviews", icon: "🎯" });
+      if (calculatedXP >= 1000) {
+        newAchievements.push({
+          id: 8,
+          badge_name: "💎 XP Master",
+          description: "Reached 1000+ XP points",
+          earned_at: new Date(),
+          type: "xp"
+        });
       }
       
-      if (modules.length > 0 && completedModules === modules.length) {
-        earned.push({ id: 8, title: "Completion Master", description: "Complete all available modules", icon: "🏆" });
-      }
-      
-      setAchievements(earned);
-    };
+      setAchievements(newAchievements);
 
-    checkAchievements();
-  }, [userProgress, feedback, userStats, modules]);
+    } catch (err) {
+      console.error("❌ Error loading progress:", err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.profile_id]);
+
+  const xpToNextLevel = 500 - (userStats.xp % 500);
+  const xpPercent = ((userStats.xp % 500) / 500) * 100;
 
   if (loading) {
     return (
@@ -269,80 +419,50 @@ export default function Progress() {
     );
   }
 
-  // Allow access for regular users (employees) - USER role = 0
-  // Only show a notice for admins, but allow access for debugging
-  if (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN) {
-    console.log("🔍 Admin accessing employee dashboard - roleId:", roleId, "ROLES:", ROLES);
-    // Allow access for now but show a notice
-    // Uncomment below to restrict access later:
-    /*
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Employee Dashboard</h1>
-          <p className="text-gray-600">This is the employee progress dashboard. Please access the admin dashboard instead.</p>
-          <Link to="/admin" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
-            Admin Dashboard
-          </Link>
-          <Link to="/" className="mt-4 inline-block px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-            Go Home
-          </Link>
-        </div>
-      </div>
-    );
-    */
-  }
-
-  console.log("🚀 Progress page loading - User:", user, "Role ID:", roleId, "ROLES:", ROLES);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-100">
+    <div
+      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 relative"
+      style={{
+        backgroundImage: "url('/bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       <Sidebar role={roleId} />
-      
-      {/* Main content with responsive margin - defaults to collapsed sidebar width */}
-      <div className="ml-20 p-6 transition-all duration-300">
-        <style jsx>{`
-          @media (min-width: 1024px) {
-            .main-content {
-              margin-left: 16rem; /* 64 * 0.25rem = 16rem for expanded sidebar */
-            }
-          }
-        `}</style>
+
+      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-emerald-900 mb-2">
-            📊 Your Learning Progress
+        <div className="flex items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 mb-6 shadow-sm border border-emerald-200/50">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-emerald-950 tracking-wide">
+            Progress Overview
           </h1>
-          <p className="text-emerald-700 text-lg">
-            Track your journey, celebrate achievements, and stay motivated!
-          </p>
         </div>
 
-        {/* Enhanced Navigation Tabs */}
-        <div className="bg-white/90 rounded-xl shadow-md p-2 mb-8 border border-emerald-200">
-          <div className="flex space-x-2">
-            {[
-              { id: "progress", label: "📊 Progress", icon: "📈" },
-              { id: "achievements", label: "🏆 Achievements", icon: "🎖️" },
-              { id: "certificates", label: "📜 Certificates", icon: "🎓" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  activeTab === tab.id
-                    ? "bg-emerald-600 text-white shadow-lg"
-                    : "text-emerald-700 hover:bg-emerald-100"
-                }`}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-3 mb-8">
+          <button
+            onClick={() => setActiveTab("progress")}
+            className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 ${
+              activeTab === "progress"
+                ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+                : "bg-white text-emerald-800 hover:bg-gray-100"
+            }`}
+          >
+            Progress Rate
+          </button>
+          <button
+            onClick={() => setActiveTab("certificates")}
+            className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 ${
+              activeTab === "certificates"
+                ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
+                : "bg-white text-emerald-800 hover:bg-gray-100"
+            }`}
+          >
+            Certificates
+          </button>
         </div>
 
-        {/* Progress Tab */}
+        {/* 🟩 Progress Tab */}
         {activeTab === "progress" && (
           <>
             {/* Enhanced Stats Cards Row */}
@@ -470,7 +590,6 @@ export default function Progress() {
                 ))}
               </div>
             </div>
-
             {/* Enhanced Charts Section */}
             <div className="bg-white/95 rounded-2xl shadow-lg p-6 sm:p-10 border border-emerald-200">
               <h2 className="text-xl md:text-2xl font-semibold text-emerald-900 mb-6">
@@ -607,119 +726,99 @@ export default function Progress() {
 
               {/* Achievements */}
               <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold text-emerald-800 mb-3 text-center">
-                  🏆 Achievements
+                <h3 className="text-lg font-bold text-emerald-800 mb-3">
+                  Achievements ({achievements.length})
                 </h3>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {achievements.length > 0 ? (
-                    achievements.map((achievement) => (
-                      <div key={achievement.id} className="flex items-center p-2 bg-white/50 rounded-lg">
-                        <span className="text-lg mr-2">{achievement.icon}</span>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-emerald-800">{achievement.title}</p>
-                          <p className="text-xs text-emerald-600">{achievement.description}</p>
+                {achievements.length === 0 ? (
+                  <p className="text-gray-500 text-sm">
+                    No badges yet. Keep going!
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
+                    {achievements.map((a) => (
+                      <div
+                        key={a.id}
+                        className="flex items-center gap-2 bg-white p-3 rounded-md border border-emerald-200 hover:shadow transition-all"
+                      >
+                        <span role="img" aria-label="badge">
+                          🏅
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold">{a.badge_name}</p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(a.earned_at).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-center text-emerald-600 text-sm">
-                      Complete modules to earn achievements! 🎯
-                    </p>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Quick Stats */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold text-blue-800 mb-3 text-center">
-                  📈 Quick Stats
+              {/* Streak */}
+              <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl shadow-lg p-6 text-center border border-emerald-200">
+                <h3 className="text-lg font-bold text-emerald-800 mb-3">
+                  Streak
                 </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Completed Modules:</span>
-                    <span className="font-semibold text-blue-800">{userProgress.filter(p => p.is_completed).length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Feedback Given:</span>
-                    <span className="font-semibold text-blue-800">{feedback.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Certificates:</span>
-                    <span className="font-semibold text-blue-800">{certificates.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Learning Streak:</span>
-                    <span className="font-semibold text-blue-800">{userStats.streakDays} days</span>
-                  </div>
-                </div>
+                <p className="text-4xl font-extrabold text-emerald-600">
+                  🔥 {userStats.streakDays} Days
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  You've logged in consistently for {userStats.streakDays} days!
+                </p>
               </div>
             </div>
           </>
         )}
 
-        {/* Achievements Tab */}
-        {activeTab === "achievements" && (
-          <div className="bg-white/95 rounded-2xl shadow-lg p-6 sm:p-10 border border-emerald-200">
-            <h2 className="text-xl md:text-2xl font-semibold text-emerald-900 mb-6">
-              🏆 Your Achievements
-            </h2>
-            
-            {achievements.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {achievements.map((achievement) => (
-                  <div key={achievement.id} className="bg-gradient-to-br from-yellow-50 to-amber-100 rounded-xl p-6 border border-yellow-200 shadow-md">
-                    <div className="text-center">
-                      <div className="text-4xl mb-3">{achievement.icon}</div>
-                      <h3 className="text-lg font-bold text-amber-800 mb-2">{achievement.title}</h3>
-                      <p className="text-sm text-amber-700">{achievement.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🎯</div>
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No achievements yet!</h3>
-                <p className="text-gray-500">Start completing modules to unlock achievements.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Certificates Tab */}
+        {/* 🟩 Certificates Tab */}
         {activeTab === "certificates" && (
-          <div className="bg-white/95 rounded-2xl shadow-lg p-6 sm:p-10 border border-emerald-200">
-            <h2 className="text-xl md:text-2xl font-semibold text-emerald-900 mb-6">
-              📜 Your Certificates
+          <div className="bg-gradient-to-br from-emerald-50 via-green-50 to-emerald-100 rounded-2xl shadow-lg p-6 sm:p-10 border border-emerald-200">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-emerald-950 mb-8 flex items-center gap-3">
+              <span>🏅</span> Certificates of Completion
             </h2>
-            
-            {certificates.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {certificates.map((certificate) => (
-                  <div key={certificate.id} className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border border-blue-200 shadow-md">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <span className="text-2xl mr-2">🎓</span>
-                          <h3 className="text-lg font-bold text-blue-800">Certificate of Completion</h3>
-                        </div>
-                        <p className="text-blue-700 font-medium mb-1">{certificate.module_title}</p>
-                        <p className="text-sm text-blue-600">
-                          Earned on: {new Date(certificate.completion_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
-                        View
-                      </button>
-                    </div>
-                  </div>
-                ))}
+
+            {certificates.length === 0 ? (
+              <div className="text-center text-gray-600 py-12">
+                <p className="text-lg font-medium">
+                  You haven’t earned any certificates yet.
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Complete your onboarding modules to unlock them!
+                </p>
               </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">📜</div>
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No certificates yet!</h3>
-                <p className="text-gray-500">Complete modules and provide feedback to earn certificates.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {certificates.map((cert) => (
+                  <div
+                    key={cert.id}
+                    className="bg-white rounded-xl border border-emerald-200 p-6 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-bold text-emerald-900 text-lg">
+                        {cert.module_title}
+                      </h3>
+                      <span className="text-xs text-gray-500">
+                        {new Date(cert.generated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700 mb-2">
+                      <strong>Recipient:</strong> {cert.user_name}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      🎓 Congratulations! You've successfully completed this module and earned your certificate.
+                    </p>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Completed on: {new Date(cert.completion_date).toLocaleDateString()}
+                    </p>
+                    <Link
+                      to={`/certificate/${cert.module_id}`}
+                      className="inline-block mt-2 px-4 py-2 bg-emerald-600 text-white font-semibold rounded-md hover:bg-emerald-700 transition-all duration-300"
+                    >
+                      View Certificate
+                    </Link>
+                  </div>
+                ))}
               </div>
             )}
           </div>
