@@ -1106,3 +1106,4 @@ export default function EnhancedModuleDetail() {
     </div>
   );
 }
+//EnhancedModuleDetail.jsx
