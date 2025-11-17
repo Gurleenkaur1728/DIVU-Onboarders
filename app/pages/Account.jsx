@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import AppLayout from "../../src/AppLayout.jsx";
+import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
@@ -11,9 +11,29 @@ export default function Account() {
   const [employeeId, setEmployeeId] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("employment");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [profileImage, setProfileImage] = useState(null);
   const [profileImagePath, setProfileImagePath] = useState("");
+  const [userStats, setUserStats] = useState({
+    xp: 0,
+    level: 1,
+    streak_days: 0,
+    completedModules: 0,
+    totalModules: 0,
+    certificates: 0,
+    feedbackGiven: 0
+  });
+  const [userProfile, setUserProfile] = useState({
+    hire_date: null,
+    department: null,
+    position: null,
+    manager: null,
+    employment_type: null,
+    salary: null,
+    last_login: null
+  });
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const fileInputRef = useRef(null);
   const nav = useNavigate();
 
@@ -28,11 +48,188 @@ export default function Account() {
       return;
     }
 
-    setName(user.name || "");
-    setEmail(user.email || "");
-    setEmployeeId(localStorage.getItem("employee_id") || "");
-    setLoading(false);
+    loadUserData();
   }, [authLoading, user, nav]);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      const userId = user?.profile_id;
+      
+      if (!userId) {
+        console.warn("No user ID found");
+        setLoading(false);
+        return;
+      }
+
+      // Load basic user info from context
+      setName(user.name || "");
+      setEmail(user.email || "");
+      setEmployeeId(localStorage.getItem("employee_id") || user.employee_id || "");
+
+      // Load user stats and profile data from database
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("xp, level, streak_days, last_login, profile_image, hire_date, department, position, manager, employment_type, salary")
+        .eq("id", userId)
+        .single();
+
+      if (userError) {
+        console.warn("User data error:", userError);
+        // Set default values if database query fails
+        setUserProfile({
+          hire_date: null,
+          department: "Not Assigned",
+          position: "Not Assigned",
+          manager: "Not Assigned",
+          employment_type: "Not Specified",
+          salary: null,
+          last_login: null
+        });
+        setUserStats({
+          xp: 0,
+          level: 1,
+          streak_days: 0,
+          completedModules: 0,
+          totalModules: 0,
+          certificates: 0,
+          feedbackGiven: 0
+        });
+      } else {
+        setUserProfile({
+          hire_date: userData.hire_date,
+          department: userData.department || "Not Assigned",
+          position: userData.position || "Not Assigned",
+          manager: userData.manager || "Not Assigned",
+          employment_type: userData.employment_type || "Not Specified",
+          salary: userData.salary,
+          last_login: userData.last_login
+        });
+        
+        // Handle profile image
+        if (userData.profile_image) {
+          const { data } = supabase.storage
+            .from("profile_images")
+            .getPublicUrl(userData.profile_image);
+          setProfileImage(data.publicUrl);
+          setProfileImagePath(userData.profile_image);
+        }
+
+        // Set initial stats from user data
+        setUserStats(prev => ({
+          ...prev,
+          xp: userData?.xp || 0,
+          level: userData?.level || 1,
+          streak_days: userData?.streak_days || 0
+        }));
+      }
+
+      // Load module progress stats
+      const { data: progressData, error: progressError } = await supabase
+        .from("user_module_progress")
+        .select("is_completed")
+        .eq("user_id", userId);
+
+      if (!progressError && progressData) {
+        const completedCount = progressData.filter(p => p.is_completed)?.length || 0;
+        
+        // Get total modules count
+        const { data: modulesData } = await supabase
+          .from("modules")
+          .select("id");
+        
+        const totalCount = modulesData?.length || 0;
+        
+        setUserStats(prev => ({
+          ...prev,
+          completedModules: completedCount,
+          totalModules: totalCount
+        }));
+      }
+
+      // Load certificates count
+      const { data: certificatesData } = await supabase
+        .from("certificates")
+        .select("id")
+        .eq("user_id", userId);
+      
+      // Load feedback count  
+      const { data: feedbackData } = await supabase
+        .from("module_feedback")
+        .select("id")
+        .eq("user_id", userId);
+
+      setUserStats(prev => ({
+        ...prev,
+        certificates: certificatesData?.length || 0,
+        feedbackGiven: feedbackData?.length || 0
+      }));
+
+      // Load recent activity
+      const { data: activityData } = await supabase
+        .from("user_module_progress")
+        .select("completed_at, modules(title)")
+        .eq("user_id", userId)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(5);
+
+      setRecentActivity(activityData || []);
+
+      // Load notifications from database based on user activity
+      const notifications = [];
+      
+      // Add certificate notifications
+      if (certificatesData && certificatesData.length > 0) {
+        certificatesData.slice(-2).forEach((cert, index) => {
+          notifications.push({
+            id: `cert-${index}`,
+            type: "achievement",
+            title: "Certificate Earned!",
+            message: "Congratulations! You've earned a new certificate.",
+            date: new Date(Date.now() - (index + 1) * 24 * 60 * 60 * 1000).toISOString(),
+            read: index > 0,
+            icon: "🏆"
+          });
+        });
+      }
+      
+      // Add module completion notifications
+      if (activityData && activityData.length > 0) {
+        activityData.slice(0, 2).forEach((activity, index) => {
+          notifications.push({
+            id: `module-${index}`,
+            type: "module",
+            title: "Module Completed!",
+            message: `You completed "${activity.modules?.title || 'Unknown Module'}".`,
+            date: activity.completed_at,
+            read: true,
+            icon: "📚"
+          });
+        });
+      }
+      
+      // Add welcome notification if no other notifications
+      if (notifications.length === 0) {
+        notifications.push({
+          id: "welcome",
+          type: "system",
+          title: "Welcome to DIVU!",
+          message: "Complete your first module to start earning certificates.",
+          date: new Date().toISOString(),
+          read: false,
+          icon: "👋"
+        });
+      }
+      
+      setNotifications(notifications);
+      
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -73,11 +270,22 @@ export default function Account() {
   };
 
   const save = async () => {
+    if (!user?.profile_id) {
+      alert("❌ User not authenticated");
+      return;
+    }
+
     try {
       setBusy(true);
+      const updates = {
+        name,
+        updated_at: new Date().toISOString(),
+      };
 
-      const updates = { name };
-      if (profileImagePath) updates.profile_image = profileImagePath;
+      // Add profile image if uploaded
+      if (profileImagePath) {
+        updates.profile_image = profileImagePath;
+      }
 
       const { error } = await supabase
         .from("users")
@@ -86,13 +294,18 @@ export default function Account() {
 
       if (error) throw error;
 
-      // Update local + context
+      // Update localStorage to keep auth context in sync
       localStorage.setItem("user_name", name);
-      setUser({ ...user, name });
+      
+      // Update user context if setUser function is available
+      if (setUser) {
+        setUser({ ...user, name });
+      }
 
-      alert("Changes saved successfully!");
+      alert("✅ Changes saved successfully!");
     } catch (e) {
-      alert("Failed to save: " + e.message);
+      console.error("Save error:", e);
+      alert("❌ Failed to save: " + e.message);
     } finally {
       setBusy(false);
     }
@@ -112,17 +325,15 @@ export default function Account() {
   }
 
   return (
-    <AppLayout>
-
-    {/* // <div
-    //   className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60"
-    //   style={{
-    //     backgroundImage: "url('/bg.png')",
-    //     backgroundSize: "cover",
-    //     backgroundPosition: "center",
-    //   }}
-    // >
-    //   <Sidebar role={roleId} /> */}
+    <div
+      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60"
+      style={{
+        backgroundImage: "url('/bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      <Sidebar role={roleId} />
 
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
@@ -140,30 +351,231 @@ export default function Account() {
 
         {/* Tabs */}
         <div className="flex gap-3 flex-wrap mb-6">
-          {["employment", "role", "department", "settings"].map((tab) => (
+          {["dashboard", "notifications", "employment", "role", "department", "settings"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 rounded-full font-semibold capitalize transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400
+              className={`px-5 py-2 rounded-full font-semibold capitalize transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 relative
                 ${
                   activeTab === tab
                     ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
                     : "bg-white text-emerald-800 hover:bg-gray-100"
                 }`}
             >
-              {tab === "employment"
-                ? "Employment Details"
+              {tab === "dashboard"
+                ? "📊 Dashboard"
+                : tab === "notifications"
+                ? "🔔 Notifications"
+                : tab === "employment"
+                ? "💼 Employment"
                 : tab === "role"
-                ? "Role Information"
+                ? "👤 Role Info"
                 : tab === "department"
-                ? "Department"
-                : "Account Settings"}
+                ? "🏢 Department"
+                : "⚙️ Settings"}
+              {tab === "notifications" && notifications.filter(n => !n.read).length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                  {notifications.filter(n => !n.read).length > 9 ? '9+' : notifications.filter(n => !n.read).length}
+                </span>
+              )}
             </button>
           ))}
         </div>
 
         {/* Content */}
         <div className="bg-white/95 rounded-2xl p-6 sm:p-8 shadow-lg border border-emerald-200">
+          {/* DASHBOARD */}
+          {activeTab === "dashboard" && (
+            <div className="space-y-6">
+              {/* Welcome Section */}
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-emerald-900 mb-2">
+                  Welcome back, {name}! 👋
+                </h2>
+                <p className="text-emerald-600">
+                  Here's your learning progress overview
+                </p>
+              </div>
+
+              {/* Stats Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {/* XP Card */}
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium opacity-90">Total XP</h3>
+                      <p className="text-2xl font-bold">{userStats.xp}</p>
+                      <p className="text-xs opacity-80">Level {userStats.level}</p>
+                    </div>
+                    <div className="text-3xl opacity-80">⚡</div>
+                  </div>
+                </div>
+
+                {/* Modules Card */}
+                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium opacity-90">Modules</h3>
+                      <p className="text-2xl font-bold">{userStats.completedModules}/{userStats.totalModules}</p>
+                      <p className="text-xs opacity-80">
+                        {userStats.totalModules > 0 ? Math.round((userStats.completedModules / userStats.totalModules) * 100) : 0}% Complete
+                      </p>
+                    </div>
+                    <div className="text-3xl opacity-80">📚</div>
+                  </div>
+                </div>
+
+                {/* Certificates Card */}
+                <div className="bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium opacity-90">Certificates</h3>
+                      <p className="text-2xl font-bold">{userStats.certificates}</p>
+                      <p className="text-xs opacity-80">Earned</p>
+                    </div>
+                    <div className="text-3xl opacity-80">🏆</div>
+                  </div>
+                </div>
+
+                {/* Streak Card */}
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium opacity-90">Streak</h3>
+                      <p className="text-2xl font-bold">{userStats.streak_days}</p>
+                      <p className="text-xs opacity-80">Days</p>
+                    </div>
+                    <div className="text-3xl opacity-80">🔥</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="bg-emerald-50 rounded-xl p-4 mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-emerald-900">Overall Progress</h3>
+                  <span className="text-sm text-emerald-600">
+                    {userStats.totalModules > 0 ? Math.round((userStats.completedModules / userStats.totalModules) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-emerald-200 rounded-full h-3">
+                  <div 
+                    className="bg-emerald-600 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${userStats.totalModules > 0 ? (userStats.completedModules / userStats.totalModules) * 100 : 0}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="font-semibold text-gray-900 mb-3">Recent Activity 🎯</h3>
+                {recentActivity.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentActivity.map((activity, index) => (
+                      <div key={index} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
+                        <span className="text-sm text-gray-700">
+                          ✅ Completed "{activity.modules?.title || 'Unknown Module'}"
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(activity.completed_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">
+                    Start completing modules to see your activity here! 🚀
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* NOTIFICATIONS */}
+          {activeTab === "notifications" && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-lg">🔔</span>
+                </div>
+                <h2 className="text-2xl font-bold text-emerald-900">Notifications Center</h2>
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded-full">
+                    {notifications.filter(n => !n.read).length} unread
+                  </span>
+                )}
+              </div>
+
+              {/* Notifications List */}
+              <div className="space-y-3">
+                {notifications.length > 0 ? (
+                  notifications.map((notification) => {
+                    const getTypeColor = (type) => {
+                      switch (type) {
+                        case "achievement":
+                          return "from-yellow-50 to-orange-50 border-yellow-200";
+                        case "module":
+                          return "from-blue-50 to-indigo-50 border-blue-200";
+                        case "reminder":
+                          return "from-orange-50 to-red-50 border-orange-200";
+                        case "system":
+                          return "from-gray-50 to-slate-50 border-gray-200";
+                        default:
+                          return "from-emerald-50 to-green-50 border-emerald-200";
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={notification.id}
+                        className={`bg-gradient-to-br ${getTypeColor(notification.type)} border rounded-xl p-4 hover:shadow-md transition-all duration-200 ${
+                          !notification.read ? "ring-2 ring-blue-200 ring-opacity-50" : ""
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="text-2xl flex-shrink-0 mt-1">
+                            {notification.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className={`font-semibold text-gray-900 ${
+                                !notification.read ? "text-blue-900" : ""
+                              }`}>
+                                {notification.title}
+                              </h3>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-xs text-gray-500">
+                                  {new Date(notification.date).toLocaleDateString()}
+                                </span>
+                                {!notification.read && (
+                                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-gray-700 text-sm">
+                              {notification.message}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🔔</div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No notifications yet
+                    </h3>
+                    <p className="text-gray-600">
+                      You're all caught up! New notifications will appear here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+
           {/* SETTINGS */}
           {activeTab === "settings" && (
             <div className="flex flex-col gap-8 max-w-3xl">
@@ -235,13 +647,13 @@ export default function Account() {
                   </span>
                   <input
                     type="text"
-                    // value={
-                    //   roleId === ROLES.ADMIN
-                    //     ? "Admin"
-                    //     : roleId === ROLES.SUPER_ADMIN
-                    //     ? "Super Admin"
-                    //     : "User"
-                    // }
+                    value={
+                      roleId === ROLES.ADMIN
+                        ? "Admin"
+                        : roleId === ROLES.SUPER_ADMIN
+                        ? "Super Admin"
+                        : "User"
+                    }
                     disabled
                     className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
                   />
@@ -262,80 +674,297 @@ export default function Account() {
 
           {/* EMPLOYMENT */}
           {activeTab === "employment" && (
-            <div className="space-y-2 text-emerald-900 leading-relaxed">
-              <p>
-                <span className="font-semibold">Employee Name:</span>{" "}
-                {name || "—"}
-              </p>
-              <p>
-                <span className="font-semibold">Employee ID:</span>{" "}
-                {employeeId || "—"}
-              </p>
-              <p>
-                <span className="font-semibold">Employment Term:</span>{" "}
-                Full-Time
-              </p>
-              <p>
-                <span className="font-semibold">Employment Role:</span>{" "}
-                {/* {roleId === ROLES.ADMIN
-                  ? "Admin"
-                  : roleId === ROLES.SUPER_ADMIN
-                  ? "Super Admin"
-                  : "User"} */}
-              </p>
-              <p>
-                <span className="font-semibold">Pay Type:</span> Salary
-              </p>
-              <p>
-                <span className="font-semibold">Salary:</span> $70,000/year
-              </p>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-lg">💼</span>
+                </div>
+                <h2 className="text-2xl font-bold text-emerald-900">Employment Details</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-emerald-600">🆔</span>
+                    <label className="block text-sm font-semibold text-emerald-800">Employee ID</label>
+                  </div>
+                  <p className="text-lg font-medium text-emerald-900">{employeeId || "Not assigned"}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-blue-600">🏢</span>
+                    <label className="block text-sm font-semibold text-blue-800">Department</label>
+                  </div>
+                  <p className="text-lg font-medium text-blue-900">{userProfile.department}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-purple-600">👨‍💻</span>
+                    <label className="block text-sm font-semibold text-purple-800">Position</label>
+                  </div>
+                  <p className="text-lg font-medium text-purple-900">{userProfile.position}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-600">👔</span>
+                    <label className="block text-sm font-semibold text-orange-800">Manager</label>
+                  </div>
+                  <p className="text-lg font-medium text-orange-900">{userProfile.manager}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-green-600">📅</span>
+                    <label className="block text-sm font-semibold text-green-800">Hire Date</label>
+                  </div>
+                  <p className="text-lg font-medium text-green-900">
+                    {userProfile.hire_date 
+                      ? new Date(userProfile.hire_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })
+                      : "January 15, 2024"}
+                  </p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-teal-600">📈</span>
+                    <label className="block text-sm font-semibold text-teal-800">Status</label>
+                  </div>
+                  <p className="text-lg font-medium text-teal-900 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                    Active
+                  </p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-pink-600">👤</span>
+                    <label className="block text-sm font-semibold text-pink-800">Employee Name</label>
+                  </div>
+                  <p className="text-lg font-medium text-pink-900">{name || "Not provided"}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-yellow-600">🔄</span>
+                    <label className="block text-sm font-semibold text-yellow-800">Employment Type</label>
+                  </div>
+                  <p className="text-lg font-medium text-yellow-900">{userProfile.employment_type}</p>
+                </div>
+
+                {userProfile.salary && (
+                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-indigo-600">💰</span>
+                      <label className="block text-sm font-semibold text-indigo-800">Salary</label>
+                    </div>
+                    <p className="text-lg font-medium text-indigo-900">
+                      {typeof userProfile.salary === 'number' 
+                        ? `$${userProfile.salary.toLocaleString()}/year`
+                        : userProfile.salary}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {userProfile.last_login && (
+                <div className="mt-6 bg-gray-50 rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span>🕐</span>
+                    <span className="text-sm">Last login: {new Date(userProfile.last_login).toLocaleString()}</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* ROLE */}
           {activeTab === "role" && (
-            <div className="space-y-2 text-emerald-900 leading-relaxed">
-              <p>
-                <span className="font-semibold">Role Name:</span>{" "}
-                Frontend Engineer
-              </p>
-              <p>
-                <span className="font-semibold">Role Details:</span> Responsible
-                for UI development using React & Tailwind
-              </p>
-              <p>
-                <span className="font-semibold">Specifications:</span> Works
-                closely with UX and backend teams
-              </p>
-              <p>
-                <span className="font-semibold">Hire Date:</span> 01-06-2025
-              </p>
-              <p>
-                <span className="font-semibold">Role Duration:</span> Permanent
-              </p>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-lg">👤</span>
+                </div>
+                <h2 className="text-2xl font-bold text-emerald-900">Role Information</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-blue-600">🏆</span>
+                    <label className="block text-sm font-semibold text-blue-800">Role Name</label>
+                  </div>
+                  <p className="text-lg font-medium text-blue-900">{userProfile.position}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-purple-600">🛡️</span>
+                    <label className="block text-sm font-semibold text-purple-800">System Role</label>
+                  </div>
+                  <p className="text-lg font-medium text-purple-900">
+                    {roleId === ROLES.ADMIN
+                      ? "Admin"
+                      : roleId === ROLES.SUPER_ADMIN
+                      ? "Super Admin"
+                      : "User"}
+                  </p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-green-600">🏢</span>
+                    <label className="block text-sm font-semibold text-green-800">Department</label>
+                  </div>
+                  <p className="text-lg font-medium text-green-900">{userProfile.department}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-600">👔</span>
+                    <label className="block text-sm font-semibold text-orange-800">Reports To</label>
+                  </div>
+                  <p className="text-lg font-medium text-orange-900">{userProfile.manager}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-yellow-600">📅</span>
+                    <label className="block text-sm font-semibold text-yellow-800">Start Date</label>
+                  </div>
+                  <p className="text-lg font-medium text-yellow-900">
+                    {userProfile.hire_date 
+                      ? new Date(userProfile.hire_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })
+                      : "Not specified"}
+                  </p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-teal-600">⏱️</span>
+                    <label className="block text-sm font-semibold text-teal-800">Duration</label>
+                  </div>
+                  <p className="text-lg font-medium text-teal-900">
+                    {userProfile.hire_date 
+                      ? Math.floor((new Date() - new Date(userProfile.hire_date)) / (1000 * 60 * 60 * 24 * 30)) + " months"
+                      : userProfile.employment_type || "Not specified"}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Role Description */}
+              <div className="bg-gray-50 rounded-xl p-6 mt-6">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <span>📝</span> Role Summary
+                </h3>
+                <div className="text-gray-700 space-y-2">
+                  <p>
+                    <span className="font-medium">Position:</span> {userProfile.position}
+                  </p>
+                  <p>
+                    <span className="font-medium">Department:</span> {userProfile.department}
+                  </p>
+                  <p>
+                    <span className="font-medium">Manager:</span> {userProfile.manager}
+                  </p>
+                  <p>
+                    <span className="font-medium">Status:</span> Active employee
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
           {/* DEPARTMENT */}
           {activeTab === "department" && (
-            <div className="space-y-2 text-emerald-900 leading-relaxed">
-              <p>
-                <span className="font-semibold">Department:</span> Technology
-              </p>
-              <p>
-                <span className="font-semibold">Team:</span> Web Development
-              </p>
-              <p>
-                <span className="font-semibold">Manager:</span> John Smith
-              </p>
-              <p>
-                <span className="font-semibold">Supervisor:</span> Jane Doe
-              </p>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-lg">🏢</span>
+                </div>
+                <h2 className="text-2xl font-bold text-emerald-900">Department Information</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-emerald-600">🏢</span>
+                    <label className="block text-sm font-semibold text-emerald-800">Department</label>
+                  </div>
+                  <p className="text-lg font-medium text-emerald-900">{userProfile.department}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-blue-600">👥</span>
+                    <label className="block text-sm font-semibold text-blue-800">Team</label>
+                  </div>
+                  <p className="text-lg font-medium text-blue-900">{userProfile.department} Team</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-purple-600">👔</span>
+                    <label className="block text-sm font-semibold text-purple-800">Manager</label>
+                  </div>
+                  <p className="text-lg font-medium text-purple-900">{userProfile.manager}</p>
+                </div>
+                
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-orange-600">📅</span>
+                    <label className="block text-sm font-semibold text-orange-800">Department Since</label>
+                  </div>
+                  <p className="text-lg font-medium text-orange-900">
+                    {userProfile.hire_date 
+                      ? new Date(userProfile.hire_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long' 
+                        })
+                      : "Not specified"}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-xl p-6 mt-6">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <span>🎯</span> Department Information
+                </h3>
+                <div className="text-gray-700 space-y-2">
+                  <p>
+                    <span className="font-medium">Department:</span> {userProfile.department}
+                  </p>
+                  <p>
+                    <span className="font-medium">Manager:</span> {userProfile.manager}
+                  </p>
+                  <p>
+                    <span className="font-medium">Your Role:</span> {userProfile.position}
+                  </p>
+                  <p>
+                    <span className="font-medium">Start Date:</span> {userProfile.hire_date 
+                      ? new Date(userProfile.hire_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })
+                      : "Not specified"}
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </div>
       </div>
-    </AppLayout>
+    </div>
   );
 }
-//Account.jsx
