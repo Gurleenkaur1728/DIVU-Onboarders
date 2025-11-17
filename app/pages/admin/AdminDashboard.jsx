@@ -1,7 +1,6 @@
 // src/admin/AdminDashboard.jsx
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
-import Sidebar from "../../components/Sidebar.jsx";
+// import { useNavigate } from "react-router-dom";
+import AppLayout from "../../../src/AppLayout.jsx";
 import {
   BarChart,
   Bar,
@@ -15,15 +14,9 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { useRole } from "../../../src/lib/hooks/useRole.js";
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const { roleId, isAdmin } = useRole();
-  
-  useEffect(() => {
-    if (!isAdmin) navigate("/");
-  }, [isAdmin, navigate]);
+  // const navigate = useNavigate();
 
   // Dummy chart data
   const usersData = [
@@ -39,19 +32,18 @@ export default function AdminDashboard() {
     { name: "In Progress", value: 25 },
     { name: "Pending", value: 10 },
   ];
+
   const COLORS = ["#34d399", "#fbbf24", "#ef4444"];
 
   return (
-    <div
-      className="flex min-h-dvh bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-      {/* Sidebar is now role-aware */}
-      <Sidebar active="admin-dashboard" role={roleId} />
-
-      <main className="flex-1 p-6 space-y-6">
+    <AppLayout>
+      <main
+        className="flex-1 min-h-dvh p-6 space-y-6 bg-gradient-to-br 
+        from-emerald-50 to-green-100/60 bg-cover bg-center"
+        style={{ backgroundImage: "url('/bg.png')" }}
+      >
         {/* Header */}
-        <h1 className="text-3xl font-extrabold text-white bg-emerald-900/95 border border-emerald-400/70 rounded-xl px-6 py-4 shadow-lg mb-2 tracking-wide drop-shadow-lg">
+        <h1 className="text-3xl font-extrabold text-white bg-emerald-900/95 border border-emerald-400/70 rounded-xl px-6 py-4 shadow-lg tracking-wide">
           Admin Dashboard
         </h1>
 
@@ -99,14 +91,10 @@ export default function AdminDashboard() {
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  fill="#10b981"
                   label
                 >
                   {modulesData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Legend />
@@ -115,7 +103,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* AI Summary */}
+        {/* Summary Placeholder */}
         <div className="bg-emerald-900/90 p-6 rounded-lg shadow-lg text-emerald-100 border border-emerald-400/60">
           <h2 className="text-xl font-semibold mb-2">AI Power Summary</h2>
           <p className="text-emerald-200">
@@ -124,6 +112,6 @@ export default function AdminDashboard() {
           </p>
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }

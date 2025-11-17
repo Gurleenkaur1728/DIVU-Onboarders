@@ -23,7 +23,6 @@ import {
   Calendar,
   CalendarPlus,
 } from "lucide-react";
-import AssignTemplates from "../pages/admin/AssignTemplates.jsx";
  
 // Example role IDs (match your DB)
 const ROLES = {
@@ -90,17 +89,19 @@ function Item({ icon: Icon, label, route, isActive, disabled, collapsed }) {
   );
 }
  
-export default function Sidebar({ role }) {
+export default function Sidebar({ role, collapsed, setCollapsed }) {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
  
   return (
     <aside
       className={`
-        flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950
+        fixed top-0 left-0
+        h-screen
         ${collapsed ? "w-20" : "w-64"}
-        h-screen border-r border-emerald-700/40 shadow-lg shadow-emerald-950/50
-        transition-all duration-300 overflow-y-auto custom-scrollbar
+        flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950
+        z-40
+        transition-all duration-300
+        overflow-y-auto custom-scrollbar
       `}
     >
 
@@ -161,7 +162,8 @@ export default function Sidebar({ role }) {
             <Item icon={MessageSquare} label="View Feedback" route="/admin/feedback" isActive={location.pathname === "/admin/feedback"} collapsed={collapsed}/>
             <Item icon={BarChart2} label="View Progress" route="/admin/progress" isActive={location.pathname === "/admin/progress"} collapsed={collapsed}/>
             <Item icon={BookOpen} label="Manage Questions" route="/admin/manage-questions" isActive={location.pathname === "/admin/manage-questions"} collapsed={collapsed}/>
-            <Item icon={User} label="Account" route="/account" isActive={location.pathname === "/account"} collapsed={collapsed}/>
+            <Item icon={User} 
+            className="-bottom-64" label="Account" route="/account" isActive={location.pathname === "/account"} collapsed={collapsed}/>
           </>
         )}
       </nav>

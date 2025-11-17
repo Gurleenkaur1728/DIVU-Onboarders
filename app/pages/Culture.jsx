@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../components/Sidebar";
+import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
@@ -62,9 +62,8 @@ export default function Culture() {
   }, []);
  
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar role={roleId} active="culture" />
- 
+    <AppLayout>
+    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}> 
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
@@ -178,6 +177,7 @@ export default function Culture() {
         )}
       </div>
     </div>
+    </AppLayout>
   );
 }
  

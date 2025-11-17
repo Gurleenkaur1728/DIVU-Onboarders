@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Sidebar from "./Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 
@@ -735,15 +735,16 @@ export default function EnhancedModuleDetail() {
   };
 
   return (
-    <div
-      className="flex min-h-dvh"
-      style={{
-        backgroundImage: "url('/bg.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Sidebar role={roleId} />
+    <AppLayout>
+    {/* // <div
+    //   className="flex min-h-dvh"
+    //   style={{
+    //     backgroundImage: "url('/bg.png')",
+    //     backgroundSize: "cover",
+    //     backgroundPosition: "center",
+    //   }}
+    // >
+    //   <Sidebar role={roleId} /> */}
 
       <div className="flex-1 p-6">
         {/* Header Card */}
@@ -1103,6 +1104,6 @@ export default function EnhancedModuleDetail() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }

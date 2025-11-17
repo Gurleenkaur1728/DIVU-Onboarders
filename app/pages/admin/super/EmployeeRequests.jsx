@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Sidebar from "../../../components/Sidebar.jsx";
+import AppLayout from "../../../../src/AppLayout.jsx";
 import { useRole } from "../../../../src/lib/hooks/useRole.js";
 import { X } from "lucide-react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
@@ -211,11 +211,12 @@ export default function AccessRequests() {
   };
 
   return (
-    <div
-      className="flex min-h-dvh bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-  <Sidebar active="employee-requests" role={roleId} />
+    <AppLayout>
+    {/* // <div
+    //   className="flex min-h-dvh bg-cover bg-center relative"
+    //   style={{ backgroundImage: "url('/bg.png')" }}
+    // > */}
+  {/* // <Sidebar active="employee-requests" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6 z-10">
         <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
@@ -326,6 +327,6 @@ export default function AccessRequests() {
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }

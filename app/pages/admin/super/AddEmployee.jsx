@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Sidebar from "../../../components/Sidebar.jsx";
+import AppLayout from "../../../../src/AppLayout.jsx";
 import { Send, RefreshCcw, XCircle } from "lucide-react";
 import { useRole } from "../../../../src/lib/hooks/useRole.js";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
@@ -184,8 +184,9 @@ export default function AddEmployee() {
   };
 
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar active="add-employee" role={roleId} />
+    <AppLayout>
+    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+    //   <Sidebar active="add-employee" role={roleId} /> */}
       <div className="flex-1 flex flex-col p-6">
         <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-6 text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">ADD EMPLOYEE</div>
 
@@ -241,7 +242,7 @@ export default function AddEmployee() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
 
