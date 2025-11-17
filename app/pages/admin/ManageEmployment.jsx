@@ -177,6 +177,8 @@ export default function ManageEmployment() {
       `Cancel changes for ${Object.keys(editingEmployees).length} employees?`
     );
   };
+
+  const saveEmployment = async (employeeId) => {
     try {
       const employeeFormData = formData[employeeId];
       const updateData = {
