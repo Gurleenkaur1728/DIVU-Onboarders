@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Sidebar from "../../../components/Sidebar.jsx";
+import AppLayout from "../../../../src/AppLayout.jsx";
 import { useRole } from "../../../../src/lib/hooks/useRole.js";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
 import { ChevronDown, ChevronRight, RefreshCcw } from "lucide-react";
@@ -105,11 +105,13 @@ export default function Records() {
   }, {});
 
   return (
-    <div
-      className="flex min-h-dvh bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-  <Sidebar active="records" role={roleId} />
+    <AppLayout>
+    {/* 
+    // <div
+    //   className="flex min-h-dvh bg-cover bg-center relative"
+    //   style={{ backgroundImage: "url('/bg.png')" }}
+    // /> */}
+    {/* // <Sidebar active="records" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6 overflow-y-auto">
         {/* Header */}
@@ -207,6 +209,6 @@ export default function Records() {
           )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

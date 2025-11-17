@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { AppWindow, CheckCircle2, Circle, Clock } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient.js";
-import { useRole } from "../../src/lib/hooks/useRole.js";
 
 export default function Modules() {
-  const { roleId } = useRole();
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,17 +46,15 @@ export default function Modules() {
   };
 
   return (
-    <div
+    <AppLayout>
+    {/* <div
       className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 relative"
       style={{
         backgroundImage: "url('/bg.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
-    >
-      {/* Sidebar */}
-      <Sidebar role={roleId} />
-
+    > */}
       {/* Main */}
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Ribbon */}
@@ -151,6 +147,6 @@ export default function Modules() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
