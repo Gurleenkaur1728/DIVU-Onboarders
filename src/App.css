@@ -5,3 +5,19 @@
 html, body, #root {
   height: 100%;
 }
+/* Hide Google Translate top banner */
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+body {
+  top: 0px !important;
+}
+
+/* Optional - make the widget look better */
+#google_translate_element select {
+  border: none;
+  background: transparent;
+  color: #065f46;
+  font-weight: 600;
+  cursor: pointer;
+}
