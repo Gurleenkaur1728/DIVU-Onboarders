@@ -29,3 +29,24 @@ html, body, #root {
   scrollbar-color: rgba(4, 120, 87, 0.8) transparent;
   scrollbar-width: thin;
 }
+
+.prose h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #064e3b;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose ul {
+  list-style-type: disc;
+  margin-left: 1.5rem;
+}
+
+.prose li {
+  margin-bottom: 0.25rem;
+}
+
+.prose strong {
+  color: #065f46;
+}
