@@ -89,3 +89,4 @@ export const router = createBrowserRouter([
   { path: "/admin/super/access-requests", element: <ProtectedRoute roles={[2]}><AccessRequests /></ProtectedRoute> },
   { path: "/admin/super/records", element: <ProtectedRoute roles={[2]}><Records /></ProtectedRoute> },
 ]);
+//routes.jsx
