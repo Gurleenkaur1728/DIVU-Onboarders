@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { supabase } from "../../src/lib/supabaseClient.js";
 
 export default function Account() {
   const [name, setName] = useState("");
@@ -13,12 +12,11 @@ export default function Account() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("employment");
   const [profileImage, setProfileImage] = useState(null);
-  const [profileImagePath, setProfileImagePath] = useState("");
   const fileInputRef = useRef(null);
   const nav = useNavigate();
 
   const { roleId } = useRole();
-  const { user, loading: authLoading, logout, setUser } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
 
   useEffect(() => {
     if (authLoading) return;
@@ -34,38 +32,9 @@ export default function Account() {
     setLoading(false);
   }, [authLoading, user, nav]);
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      setBusy(true);
-      const ext = file.name.split(".").pop();
-      const filePath = `avatars/${user.profile_id}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("profile_images")
-        .upload(filePath, file, { upsert: true });
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from("profile_images")
-        .getPublicUrl(filePath);
-
-      setProfileImage(data.publicUrl);
-      setProfileImagePath(filePath);
-
-      // Save in DB
-      await supabase
-        .from("users")
-        .update({ profile_image: filePath })
-        .eq("id", user.profile_id);
-
-      alert("Profile image updated!");
-    } catch (error) {
-      console.error(error);
-      alert("Image upload failed: " + error.message);
-    } finally {
-      setBusy(false);
-    }
+    if (file) setProfileImage(URL.createObjectURL(file));
   };
 
   const triggerFileInput = () => {
@@ -75,22 +44,7 @@ export default function Account() {
   const save = async () => {
     try {
       setBusy(true);
-
-      const updates = { name };
-      if (profileImagePath) updates.profile_image = profileImagePath;
-
-      const { error } = await supabase
-        .from("users")
-        .update(updates)
-        .eq("id", user.profile_id);
-
-      if (error) throw error;
-
-      // Update local + context
-      localStorage.setItem("user_name", name);
-      setUser({ ...user, name });
-
-      alert("Changes saved successfully!");
+      alert("Changes saved (stub). Add your Supabase update here.");
     } catch (e) {
       alert("Failed to save: " + e.message);
     } finally {
@@ -160,7 +114,7 @@ export default function Account() {
           ))}
         </div>
 
-        {/* Content */}
+        {/* Content Card */}
         <div className="bg-white/95 rounded-2xl p-6 sm:p-8 shadow-lg border border-emerald-200">
           {/* SETTINGS */}
           {activeTab === "settings" && (
@@ -262,16 +216,14 @@ export default function Account() {
           {activeTab === "employment" && (
             <div className="space-y-2 text-emerald-900 leading-relaxed">
               <p>
-                <span className="font-semibold">Employee Name:</span>{" "}
-                {name || "—"}
+                <span className="font-semibold">Employee Name:</span> {name || "—"}
               </p>
               <p>
                 <span className="font-semibold">Employee ID:</span>{" "}
                 {employeeId || "—"}
               </p>
               <p>
-                <span className="font-semibold">Employment Term:</span>{" "}
-                Full-Time
+                <span className="font-semibold">Employment Term:</span> Full-Time
               </p>
               <p>
                 <span className="font-semibold">Employment Role:</span>{" "}
@@ -294,16 +246,15 @@ export default function Account() {
           {activeTab === "role" && (
             <div className="space-y-2 text-emerald-900 leading-relaxed">
               <p>
-                <span className="font-semibold">Role Name:</span>{" "}
-                Frontend Engineer
+                <span className="font-semibold">Role Name:</span> Frontend Engineer
               </p>
               <p>
-                <span className="font-semibold">Role Details:</span> Responsible
-                for UI development using React & Tailwind
+                <span className="font-semibold">Role Details:</span> Responsible for UI
+                development using React & Tailwind
               </p>
               <p>
-                <span className="font-semibold">Specifications:</span> Works
-                closely with UX and backend teams
+                <span className="font-semibold">Specifications:</span> Works closely
+                with UX and backend teams
               </p>
               <p>
                 <span className="font-semibold">Hire Date:</span> 01-06-2025

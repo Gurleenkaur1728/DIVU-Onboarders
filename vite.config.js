@@ -13,4 +13,15 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"), // enables @ to point to src
     },
   },
+  server: {
+    proxy: {
+      // ✅ Proxy rule to fix CORS for LibreTranslate
+      "/translate": {
+        target: "https://libretranslate.com",
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/translate/, "/translate"),
+      },
+    },
+  },
 });
