@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar from "../../components/Sidebar.jsx";
+import AppLayout from "../../../src/AppLayout.jsx";
 import { Plus, 
   Edit, 
   Trash2, 
@@ -274,8 +274,9 @@ export default function ManageChecklist() {
   }
 
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar active="manage-checklist" role={roleId} />
+    <AppLayout>
+    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}> */}
+      {/* // <Sidebar active="manage-checklist" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6 z-10">
         <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
@@ -463,7 +464,7 @@ export default function ManageChecklist() {
           </div>
         </Modal>
       )}
-    </div>
+    </AppLayout>
   );
 }
 

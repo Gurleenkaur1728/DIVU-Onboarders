@@ -4,6 +4,7 @@ import { CheckCircle, Circle, ChevronDown, ChevronRight } from "lucide-react";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
  
 // Small helper to format dates
 const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : "-");
@@ -193,11 +194,11 @@ export default function Checklist() {
   }
  
   return (
+    <AppLayout>
     <div
       className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-      <Sidebar role={ROLES.USER} />
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Ribbon */}
         <div className="flex items-center justify-between h-12 rounded-lg bg-emerald-100/90 px-4 shadow-sm border border-emerald-200/50 mb-6">
@@ -258,7 +259,7 @@ export default function Checklist() {
                   {/* Group table */}
                   {open && (
                     <div className="overflow-x-auto">
-                      <table className="min-w-[960px] w-full border-collapse text-emerald-950 text-sm">
+                      <table className=" w-full border-collapse text-emerald-950 text-sm">
                         <thead>
                           <tr className="bg-emerald-800 text-left text-emerald-100">
                             <Th>Completed</Th>
@@ -307,6 +308,7 @@ export default function Checklist() {
         )}
       </div>
     </div>
+    </AppLayout>
   );
 }
  

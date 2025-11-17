@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -95,15 +95,17 @@ export default function Feedback() {
   const pendingModules = getModulesNeedingFeedback();
 
   return (
-    <div
-      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 relative"
-      style={{
-        backgroundImage: "url('/bg.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Sidebar role={ROLES.USER} />
+    <AppLayout>
+
+    {/* // <div
+    //   className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 relative"
+    //   style={{
+    //     backgroundImage: "url('/bg.png')",
+    //     backgroundSize: "cover",
+    //     backgroundPosition: "center",
+    //   }}
+    // >
+    //   <Sidebar role={ROLES.USER} /> */}
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 mb-6 shadow-sm border border-emerald-200/50">
@@ -255,7 +257,7 @@ export default function Feedback() {
           />
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
 

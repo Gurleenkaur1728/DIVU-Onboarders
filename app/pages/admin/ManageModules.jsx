@@ -1,4 +1,4 @@
-import Sidebar from "../../components/Sidebar.jsx";
+import AppLayout from "../../../src/AppLayout.jsx";
 import { useEffect, useState, useMemo } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import Toast from "../../components/Toast.jsx";
@@ -206,11 +206,12 @@ export default function ManageModules() {
   );
 
   return (
-    <div
-      className="flex min-h-dvh bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-      <Sidebar active="manage-modules" role={roleId} />
+    <AppLayout>
+    {/* // <div
+    //   className="flex min-h-dvh bg-cover bg-center relative"
+    //   style={{ backgroundImage: "url('/bg.png')" }}
+    // > */}
+      {/* <Sidebar active="manage-modules" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon Header */}
@@ -289,6 +290,6 @@ export default function ManageModules() {
           onClose={() => setToast(null)}
         />
       )}
-    </div>
+    </AppLayout>
   );
 }

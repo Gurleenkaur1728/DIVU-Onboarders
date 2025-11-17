@@ -1,4 +1,4 @@
-import Sidebar from "../../components/Sidebar.jsx";
+import AppLayout from "../../../src/AppLayout.jsx";
 import {
   BarChart,
   Bar,
@@ -39,9 +39,10 @@ export default function ManageProgress() {
   const COLORS = ["#34d399", "#fbbf24", "#f87171"];
 
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
+    <AppLayout>
+    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}> */}
       {/* Sidebar now uses detected role */}
-      <Sidebar active="manage-progress" role={roleId} />
+      {/* <Sidebar active="manage-progress" role={roleId} /> */}
 
       {/* Main */}
       <div className="flex-1 flex flex-col p-6 space-y-6">
@@ -105,7 +106,7 @@ export default function ManageProgress() {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
 

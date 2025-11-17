@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../src/lib/supabaseClient.js";
+import AppLayout from "../../src/AppLayout.jsx";
 
 export default function ModuleComplete() {
   const { id } = useParams();
@@ -125,14 +126,15 @@ if (!userData) {
   }
 
   return (
-    <div
+    <AppLayout>
+    {/* <div
       className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
       style={{
         backgroundImage: "url('/bg.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
-    >
+    > */}
       <div className="bg-white p-12 rounded-2xl shadow-2xl text-center w-[500px] max-w-xl">
         <h1 className="text-3xl font-bold text-emerald-900 mb-4">
           🎉 Congratulations!
@@ -165,6 +167,6 @@ if (!userData) {
           </button>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
