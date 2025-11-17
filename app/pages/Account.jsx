@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { supabase } from "../../src/lib/supabaseClient.js";
 
 export default function Account() {
   const [name, setName] = useState("");
@@ -38,7 +37,7 @@ export default function Account() {
   const nav = useNavigate();
 
   const { roleId } = useRole();
-  const { user, loading: authLoading, logout, setUser } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
 
   useEffect(() => {
     if (authLoading) return;
@@ -233,36 +232,7 @@ export default function Account() {
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      setBusy(true);
-      const ext = file.name.split(".").pop();
-      const filePath = `avatars/${user.profile_id}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("profile_images")
-        .upload(filePath, file, { upsert: true });
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from("profile_images")
-        .getPublicUrl(filePath);
-
-      setProfileImage(data.publicUrl);
-      setProfileImagePath(filePath);
-
-      // Save in DB
-      await supabase
-        .from("users")
-        .update({ profile_image: filePath })
-        .eq("id", user.profile_id);
-
-      alert("Profile image updated!");
-    } catch (error) {
-      console.error(error);
-      alert("Image upload failed: " + error.message);
-    } finally {
-      setBusy(false);
-    }
+    if (file) setProfileImage(URL.createObjectURL(file));
   };
 
   const triggerFileInput = () => {
@@ -382,7 +352,7 @@ export default function Account() {
           ))}
         </div>
 
-        {/* Content */}
+        {/* Content Card */}
         <div className="bg-white/95 rounded-2xl p-6 sm:p-8 shadow-lg border border-emerald-200">
           {/* DASHBOARD */}
           {activeTab === "dashboard" && (
