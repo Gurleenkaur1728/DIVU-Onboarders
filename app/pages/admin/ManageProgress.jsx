@@ -446,10 +446,10 @@ export default function ManageProgress() {
       };
 
       // AI Summary backend placeholder call
-      const res = await fetch("/api/ai/summary", {
+      const res = await fetch("http://localhost:5050/api/ai/summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ summary, selectedEmployee, timeRange }),
       });
 
       const data = await res.json();
@@ -827,9 +827,10 @@ export default function ManageProgress() {
                 </button>
 
                 {aiSummary ? (
-                  <p className="whitespace-pre-wrap text-sm text-emerald-950 leading-relaxed">
-                    {aiSummary}
-                  </p>
+                  <div
+                    className="prose prose-emerald max-w-none text-gray-800 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: aiSummary }}
+                  />
                 ) : (
                   <p className="text-sm text-gray-500 italic">
                     No AI summary generated yet.
