@@ -41,6 +41,7 @@ import ManageAdmins from "../app/pages/admin/super/ManageAdmins.jsx";
 import AdminRequests from "../app/pages/admin/super/AdminRequests.jsx";
 import AccessRequests from "../app/pages/admin/super/EmployeeRequests.jsx";
 import Records from "../app/pages/admin/super/Records.jsx";
+import ManageEmployment from "../app/pages/admin/ManageEmployment.jsx";
  
 import PublicRoute from "../app/components/PublicRoute.jsx";
 
@@ -73,6 +74,7 @@ export const router = createBrowserRouter([
   { path: "/admin/dashboard", element: <ProtectedRoute roles={[1, 2]}><AdminDashboard /></ProtectedRoute> },
   { path: "/admin/content", element: <ProtectedRoute roles={[1, 2]}><ManageContent /></ProtectedRoute> },
   { path: "/admin/checklist", element: <ProtectedRoute roles={[1, 2]}><ManageChecklist /></ProtectedRoute> },
+  { path: "/admin/manage-employment", element: <ProtectedRoute roles={[1, 2]}><ManageEmployment /></ProtectedRoute> },
   { path: "/admin/modules", element: <ProtectedRoute roles={[1, 2]}><ManageModules /></ProtectedRoute> },
   { path: "/admin/feedback", element: <ProtectedRoute roles={[1, 2]}><ViewFeedback /></ProtectedRoute> },
   { path: "/admin/progress", element: <ProtectedRoute roles={[1, 2]}><ViewProgress /></ProtectedRoute> },
