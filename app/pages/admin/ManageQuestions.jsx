@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
+import AppLayout from "../../../src/AppLayout.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
 import {
   PlusCircle,
@@ -28,11 +28,11 @@ import {
 export default function ManageQuestions() {
   const [tab, setTab] = useState("employee"); // "employee" | "archive" | "faqs"
 
-  // role for Sidebar
-  const roleId = useMemo(() => {
-    const rid = Number(localStorage.getItem("role_id") || 0);
-    return [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(rid) ? rid : ROLES.ADMIN;
-  }, []);
+  // // role for Sidebar
+  // const roleId = useMemo(() => {
+  //   const rid = Number(localStorage.getItem("role_id") || 0);
+  //   // return [roleId.ADMIN, roleId.SUPER_ADMIN].includes(rid) ? rid : roleId.ADMIN;
+  // }, []);
 
   // FAQs state
   const [faqs, setFaqs] = useState([]);
@@ -274,11 +274,12 @@ export default function ManageQuestions() {
 
   /* ========== Render ========== */
   return (
-    <div
-      className="flex min-h-dvh bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-      <Sidebar role={roleId} active="manage-questions" />
+    <AppLayout>
+    {/* // <div
+    //   className="flex min-h-dvh bg-cover bg-center relative"
+    //   style={{ backgroundImage: "url('/bg.png')" }}
+    // > */}
+      {/* <Sidebar role={roleId} active="manage-questions" /> */}
 
       <div className="flex-1 flex flex-col p-6">
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
@@ -340,7 +341,7 @@ export default function ManageQuestions() {
           />
         </Modal>
       )}
-    </div>
+    </AppLayout>
   );
 }
 

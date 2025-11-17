@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { HelpCircle, Send, MessageSquare } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -143,12 +143,15 @@ export default function Questions() {
   };
  
   return (
-    <div
-      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-      <Sidebar role={roleId} active="questions" />
- 
+    <AppLayout>
+
+    {/* // <div
+    //   className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
+    //   style={{ backgroundImage: "url('/bg.png')" }}
+    // >
+    //   <Sidebar role={roleId} active="questions" />
+  */}
+
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 mb-6 shadow-sm border border-emerald-200/50">
@@ -182,7 +185,7 @@ export default function Questions() {
           />
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
  

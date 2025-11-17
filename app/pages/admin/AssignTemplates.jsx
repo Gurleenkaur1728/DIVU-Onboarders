@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../../src/lib/supabaseClient.js";
-import Sidebar, { ROLES } from "../../components/Sidebar.jsx";
-
+import AppLayout from "../../../src/AppLayout.jsx";
 
 export default function AssignTemplates() {
   // ----- tabs for the whole page -----
@@ -281,11 +280,13 @@ export default function AssignTemplates() {
 
   // ======== RENDER ========
   return (
-    <div
-      className="flex min-h-dvh bg-cover bg-center"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-      <Sidebar active="assign-templates" role={roleId} />
+    <AppLayout>
+
+    {/* // <div
+    //   className="flex min-h-dvh bg-cover bg-center"
+    //   style={{ backgroundImage: "url('/bg.png')" }}
+    // > */}
+      {/* // <Sidebar active="assign-templates" role={roleId} /> */}
       <div className="flex-1 p-6">
         <div className="bg-emerald-900/95 px-6 py-4 rounded-xl shadow mb-6 text-emerald-100 font-extrabold text-2xl flex items-center justify-between">
           ASSIGN CHECKLIST TEMPLATES
@@ -535,7 +536,7 @@ export default function AssignTemplates() {
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }
 

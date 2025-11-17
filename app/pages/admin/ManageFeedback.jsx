@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import Sidebar from "../../components/Sidebar.jsx";
+import AppLayout from "../../../src/AppLayout.jsx";
 import { Trash2, Star, Eye, Filter, Download, BarChart3, TrendingUp, Users, Calendar, CheckCircle2, Bell, X } from "lucide-react";
 import { useRole } from "../../../src/lib/hooks/useRole.js";
 import { supabase } from "../../../src/lib/supabaseClient.js";
@@ -425,9 +425,10 @@ export default function ManageFeedback() {
   };
 
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar active="manage-feedback" role={roleId} />
-
+    <AppLayout>
+    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}> */}
+      {/* <Sidebar active="manage-feedback" role={roleId} /> */}
+    
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}
         <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 shadow-md mb-4">
@@ -929,7 +930,7 @@ export default function ManageFeedback() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
 

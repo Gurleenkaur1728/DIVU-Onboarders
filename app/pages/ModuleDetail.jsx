@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import Sidebar from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 
@@ -384,15 +384,16 @@ export default function ModuleDetail() {
   };
 
   return (
-    <div
-      className="flex min-h-dvh"
-      style={{
-        backgroundImage: "url(${'/bg.png'})",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Sidebar role={roleId} />
+    <AppLayout>
+
+    {/* // <div
+    //   className="flex min-h-dvh"
+    //   style={{
+    //     backgroundImage: "url(${'/bg.png'})",
+    //     backgroundSize: "cover",
+    //     backgroundPosition: "center",
+    //   }}
+    // > */}
 
       <div className="flex-1 flex justify-center items-start p-10">
         <div className="bg-white rounded-2xl shadow-2xl w-4/5 max-w-5xl p-12 text-gray-800">
@@ -452,6 +453,6 @@ export default function ModuleDetail() {
           </div>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

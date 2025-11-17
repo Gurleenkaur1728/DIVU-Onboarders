@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import {
   AreaChart,
@@ -271,43 +271,33 @@ export default function Progress() {
 
   // Allow access for regular users (employees) - USER role = 0
   // Only show a notice for admins, but allow access for debugging
-  if (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN) {
-    console.log("🔍 Admin accessing employee dashboard - roleId:", roleId, "ROLES:", ROLES);
-    // Allow access for now but show a notice
-    // Uncomment below to restrict access later:
-    /*
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Employee Dashboard</h1>
-          <p className="text-gray-600">This is the employee progress dashboard. Please access the admin dashboard instead.</p>
-          <Link to="/admin" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
-            Admin Dashboard
-          </Link>
-          <Link to="/" className="mt-4 inline-block px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
-            Go Home
-          </Link>
-        </div>
-      </div>
-    );
-    */
-  }
-
-  console.log("🚀 Progress page loading - User:", user, "Role ID:", roleId, "ROLES:", ROLES);
-
+  // if (roleId === ROLES.SUPER_ADMIN || roleId === ROLES.ADMIN) {
+  console.log("🔍 Admin accessing employee dashboard - roleId:", roleId);
+  // Allow access for now but show a notice
+  // Uncomment below to restrict access later:
+  /*
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-100">
-      <Sidebar role={roleId} />
-      
-      {/* Main content with responsive margin - defaults to collapsed sidebar width */}
-      <div className="ml-20 p-6 transition-all duration-300">
-        <style jsx>{`
-          @media (min-width: 1024px) {
-            .main-content {
-              margin-left: 16rem; /* 64 * 0.25rem = 16rem for expanded sidebar */
-            }
-          }
-        `}</style>
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Employee Dashboard</h1>
+        <p className="text-gray-600">This is the employee progress dashboard. Please access the admin dashboard instead.</p>
+        <Link to="/admin" className="mt-4 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 mr-2">
+          Admin Dashboard
+        </Link>
+        <Link to="/" className="mt-4 inline-block px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+          Go Home
+        </Link>
+      </div>
+    </div>
+  );
+  */
+  // }
+
+  console.log("🚀 Progress page loading - User:", user, "Role ID:", roleId);
+
+  return (      
+    <AppLayout>
+      <div className="p-6">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-emerald-900 mb-2">
@@ -725,6 +715,6 @@ export default function Progress() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
