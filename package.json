@@ -7,10 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ai": "node app/api/ai/summary.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0",
+    "@tailwindcss/typography": "^0.5.19",
     "bcryptjs": "^3.0.2",
     "canvas-confetti": "^1.9.4",
     "cors": "^2.8.5",
@@ -22,6 +24,7 @@
     "jspdf": "^3.0.3",
     "lucide-react": "^0.544.0",
     "node-mailjet": "^6.0.9",
+    "openai": "^6.9.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.1",
