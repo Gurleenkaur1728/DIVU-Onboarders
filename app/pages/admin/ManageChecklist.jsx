@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar from "../../components/Sidebar.jsx";
+import AppLayout from "../../../src/AppLayout.jsx";
 import { Plus, 
   Edit, 
   Trash2, 
@@ -13,12 +13,11 @@ import { useRole } from "../../../src/lib/hooks/useRole.js";
 const TABLES = {
   groups: "checklist_groups",
   items: "checklist_item",
-  adminRequests: "admin_requests",
 };
 
 export default function ManageChecklist() {
   const { roleId, role } = useRole();
-  const isSuperAdmin = role === "SUPER_ADMIN";
+  const isSuperAdmin = role === "SUPER_ADMIN" || role === 2;
 
   const me = useMemo(
     () => ({
@@ -275,8 +274,9 @@ export default function ManageChecklist() {
   }
 
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar active="manage-checklist" role={roleId} />
+    <AppLayout>
+    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}> */}
+      {/* // <Sidebar active="manage-checklist" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6 z-10">
         <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
@@ -464,7 +464,7 @@ export default function ManageChecklist() {
           </div>
         </Modal>
       )}
-    </div>
+    </AppLayout>
   );
 }
 

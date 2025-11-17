@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
@@ -62,9 +62,9 @@ export default function About() {
   }, []);
  
   return (
+    <AppLayout>
     <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar role={roleId} active="about" />
- 
+       
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
@@ -178,6 +178,7 @@ export default function About() {
         )}
       </div>
     </div>
+    </AppLayout>
   );
 }
  

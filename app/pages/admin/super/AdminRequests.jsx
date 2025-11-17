@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar from "../../../components/Sidebar.jsx";
+import AppLayout from "../../../../src/AppLayout.jsx";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
 import { useRole } from "../../../../src/lib/hooks/useRole.js";
@@ -76,11 +76,13 @@ export default function AdminRequests() {
   }
 
   return (
-    <div
-      className="flex min-h-dvh bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-      <Sidebar active="admin-requests" role={roleId} />
+    <AppLayout>
+{/*     
+    // <div
+    //   className="flex min-h-dvh bg-cover bg-center relative"
+    //   style={{ backgroundImage: "url('/bg.png')" }}
+    // > */}
+    {/* //   <Sidebar active="admin-requests" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6">
         {/* Ribbon */}
@@ -167,7 +169,7 @@ export default function AdminRequests() {
           </table>
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
 
