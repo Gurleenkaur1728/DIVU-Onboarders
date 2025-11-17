@@ -1,3 +1,4 @@
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import AppLayout from "../../src/AppLayout.jsx";
@@ -626,6 +627,15 @@ export default function EnhancedModuleDetail() {
         );
       
       case 'photo':
+        // Auto-complete photo sections after viewing
+        if (!progress.completedSections.includes(section.id)) {
+          setTimeout(() => {
+            if (!progress.completedSections.includes(section.id)) {
+              markSectionComplete(section.id);
+            }
+          }, 3000); // Auto-complete after 3 seconds
+        }
+        
         return (
           <div className="space-y-4">
             {section.media_path && (
@@ -634,10 +644,17 @@ export default function EnhancedModuleDetail() {
             {section.caption && (
               <p className="text-gray-600 text-center italic">{section.caption}</p>
             )}
+            <div className="text-center text-sm text-gray-500">
+              📸 Photo will be marked as viewed after 3 seconds
+            </div>
           </div>
         );
 
-      case 'questionnaire':
+      case 'questionnaire': {
+        const allRequiredAnswered = (section.questions || []).every(q => 
+          !q.required || (answers[q.id] && answers[q.id].toString().trim() !== '')
+        );
+        
         return (
           <div className="space-y-4">
             <div className="space-y-4">
@@ -654,7 +671,18 @@ export default function EnhancedModuleDetail() {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       placeholder="Your answer..."
                       value={answers[question.id] || ''}
-                      onChange={(e) => saveAnswer(question.id, e.target.value)}
+                      onChange={(e) => {
+                        saveAnswer(question.id, e.target.value);
+                        // Check completion after saving answer
+                        setTimeout(() => {
+                          const allAnswered = (section.questions || []).every(q => 
+                            !q.required || (answers[q.id] && answers[q.id].toString().trim() !== '')
+                          );
+                          if (allAnswered && !progress.completedSections.includes(section.id)) {
+                            markSectionComplete(section.id);
+                          }
+                        }, 100);
+                      }}
                       disabled={isCompleted}
                     />
                   )}
@@ -668,7 +696,18 @@ export default function EnhancedModuleDetail() {
                             name={`question-${question.id}`}
                             value={option}
                             checked={answers[question.id] === option}
-                            onChange={(e) => saveAnswer(question.id, e.target.value)}
+                            onChange={(e) => {
+                              saveAnswer(question.id, e.target.value);
+                              // Check completion after saving answer
+                              setTimeout(() => {
+                                const allAnswered = (section.questions || []).every(q => 
+                                  !q.required || (answers[q.id] && answers[q.id].toString().trim() !== '')
+                                );
+                                if (allAnswered && !progress.completedSections.includes(section.id)) {
+                                  markSectionComplete(section.id);
+                                }
+                              }, 100);
+                            }}
                             disabled={isCompleted}
                             className="text-emerald-600 focus:ring-emerald-500"
                           />
@@ -680,12 +719,36 @@ export default function EnhancedModuleDetail() {
                 </div>
               ))}
             </div>
+            {allRequiredAnswered && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-4">
+                <div className="text-emerald-700 text-sm font-medium">
+                  ✅ All required questions answered - Section automatically completed!
+                </div>
+              </div>
+            )}
           </div>
         );
+      }
 
-      case 'flashcards':
+      case 'flashcards': {
+        const totalCards = section.cards?.length || 0;
+        const flippedCount = section.cards?.filter((_, idx) => 
+          flippedCards.has(`${section.id}-${idx}`)
+        ).length || 0;
+        const allCardsFlipped = totalCards > 0 && flippedCount === totalCards;
+        
         return (
           <div className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-sm text-gray-600">
+                Progress: {flippedCount}/{totalCards} cards flipped
+              </div>
+              {allCardsFlipped && (
+                <div className="text-emerald-600 text-sm font-medium">
+                  ✅ All cards completed!
+                </div>
+              )}
+            </div>
             <div className="grid gap-4">
               {(section.cards || []).map((card, idx) => {
                 const cardKey = `${section.id}-${idx}`;
@@ -703,6 +766,15 @@ export default function EnhancedModuleDetail() {
                         newFlipped.add(cardKey);
                       }
                       setFlippedCards(newFlipped);
+                      
+                      // Check if all cards are now flipped
+                      const newFlippedCount = section.cards?.filter((_, cardIdx) => 
+                        newFlipped.has(`${section.id}-${cardIdx}`) || cardIdx === idx
+                      ).length || 0;
+                      
+                      if (newFlippedCount === totalCards && totalCards > 0 && !progress.completedSections.includes(section.id)) {
+                        setTimeout(() => markSectionComplete(section.id), 500);
+                      }
                     }}
                   >
                     <div className="font-medium text-emerald-800 mb-2">
@@ -724,6 +796,7 @@ export default function EnhancedModuleDetail() {
             </div>
           </div>
         );
+      }
 
       default:
         return (

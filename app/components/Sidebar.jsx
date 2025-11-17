@@ -22,6 +22,7 @@ import {
   CalendarDays,
   Calendar,
   CalendarPlus,
+  Users,
 } from "lucide-react";
  
 // Example role IDs (match your DB)
@@ -156,6 +157,7 @@ export default function Sidebar({ role, collapsed, setCollapsed }) {
             )}
             <Item icon={FileEdit} label="Manage Content" route="/admin/content" isActive={location.pathname === "/admin/content"} collapsed={collapsed}/>
             <Item icon={ListChecks} label="Manage Checklist" route="/admin/checklist" isActive={location.pathname === "/admin/checklist"} collapsed={collapsed}/>
+            <Item icon={Users} label="Manage Employment" route="/admin/manage-employment" isActive={location.pathname === "/admin/manage-employment"} collapsed={collapsed}/>
             <Item icon={UserCheckIcon} label="Assign Templates" route="/admin/assign-templates" isActive={location.pathname === "/admin/assign-templates"} collapsed={collapsed}/>
             <Item icon={BookOpen} label="Manage Modules" route="/admin/modules" isActive={location.pathname === "/admin/modules"} collapsed={collapsed}/>
             <Item icon={CalendarPlus} label="Manage Events" route="/admin/manage-events" isActive={location.pathname === "/admin/manage-events"} collapsed={collapsed}/>
