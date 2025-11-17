@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar from "../../../components/Sidebar.jsx";
+import AppLayout from "../../../../src/AppLayout.jsx";
 import { useRole } from "../../../../src/lib/hooks/useRole.js";
 import { Trash2, Plus, Loader2 } from "lucide-react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
@@ -105,11 +105,12 @@ export default function ManageAdmins() {
   }
 
   return (
-    <div
+    <AppLayout>
+    {/* <div
       className="flex min-h-dvh bg-cover bg-center relative"
       style={{ backgroundImage: "url('/bg.png')" }}
     >
-  <Sidebar active="manage-admins" role={roleId} />
+  {/* <Sidebar active="manage-admins" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6">
         {/* Header */}
@@ -276,6 +277,6 @@ export default function ManageAdmins() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }

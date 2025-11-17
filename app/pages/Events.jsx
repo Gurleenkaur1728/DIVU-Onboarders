@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import Sidebar from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { ChevronLeft, ChevronRight, List, Grid, Clock, MapPin } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
@@ -73,8 +73,7 @@ export default function Events() {
  
   /* Render */
   return (
-    <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-      <Sidebar active="events" role={roleId} />
+    <AppLayout>
  
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}
@@ -212,7 +211,7 @@ export default function Events() {
           </div>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 }
  

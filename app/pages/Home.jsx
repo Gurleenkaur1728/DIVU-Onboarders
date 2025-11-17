@@ -1,6 +1,6 @@
 //ChatGPT helped me understand my Home.jsx code by explaining each line clearly — including React Hooks (useState, useEffect, useMemo), Supabase data fetching, and page rendering flow. It also simplified complex concepts like async/await and [] dependencies
 import { useEffect, useState, useMemo } from "react";
-import Sidebar from "../components/Sidebar";
+import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient";
@@ -80,9 +80,9 @@ export default function Home() {
   }, []);
  
   return (
+  
+  <AppLayout>
     <div className="flex min-h-dvh bg-cover bg-center relative bg-emerald-50">
-      <Sidebar role={roleId} />
- 
       <div className="flex-1 flex flex-col p-6 z-10">
         {/* Ribbon */}
         <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
@@ -202,6 +202,7 @@ export default function Home() {
         )}
       </div>
     </div>
+    </AppLayout>
   );
 }
  

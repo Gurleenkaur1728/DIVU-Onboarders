@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -66,15 +66,17 @@ export default function Account() {
   }
 
   return (
-    <div
-      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60"
-      style={{
-        backgroundImage: "url('/bg.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Sidebar role={roleId} />
+    <AppLayout>
+
+    {/* // <div
+    //   className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60"
+    //   style={{
+    //     backgroundImage: "url('/bg.png')",
+    //     backgroundSize: "cover",
+    //     backgroundPosition: "center",
+    //   }}
+    // >
+    //   <Sidebar role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
@@ -187,13 +189,13 @@ export default function Account() {
                   </span>
                   <input
                     type="text"
-                    value={
-                      roleId === ROLES.ADMIN
-                        ? "Admin"
-                        : roleId === ROLES.SUPER_ADMIN
-                        ? "Super Admin"
-                        : "User"
-                    }
+                    // value={
+                    //   roleId === ROLES.ADMIN
+                    //     ? "Admin"
+                    //     : roleId === ROLES.SUPER_ADMIN
+                    //     ? "Super Admin"
+                    //     : "User"
+                    // }
                     disabled
                     className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
                   />
@@ -227,11 +229,11 @@ export default function Account() {
               </p>
               <p>
                 <span className="font-semibold">Employment Role:</span>{" "}
-                {roleId === ROLES.ADMIN
+                {/* {roleId === ROLES.ADMIN
                   ? "Admin"
                   : roleId === ROLES.SUPER_ADMIN
                   ? "Super Admin"
-                  : "User"}
+                  : "User"} */}
               </p>
               <p>
                 <span className="font-semibold">Pay Type:</span> Salary
@@ -284,6 +286,7 @@ export default function Account() {
           )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }
+//Account.jsx

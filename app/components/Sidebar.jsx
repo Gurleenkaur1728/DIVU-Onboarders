@@ -22,8 +22,8 @@ import {
   CalendarDays,
   CalendarPlus,
 } from "lucide-react";
-
-// Role constants
+ 
+// Example role IDs (match your DB)
 const ROLES = {
   SUPER_ADMIN: 2,
   ADMIN: 1,
@@ -57,22 +57,24 @@ function Item({ icon: Icon, label, route, isActive, collapsed, disabled }) {
     </Link>
   );
 }
-
-// Main Sidebar Component
-export default function Sidebar({ role }) {
+ 
+export default function Sidebar({ role, collapsed, setCollapsed }) {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
-
+ 
   return (
     <aside
       className={`
-        flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950
+        fixed top-0 left-0
+        h-screen
         ${collapsed ? "w-20" : "w-64"}
-        min-h-screen border-r border-emerald-700/40 shadow-lg
+        flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950
+        z-40
         transition-all duration-300
+        overflow-y-auto custom-scrollbar
       `}
     >
-      {/* Header */}
+
+      {/* Header with Logo + Collapse Toggle */}
       <div className="flex items-center justify-between px-4 py-6">
         <Logo size={collapsed ? "" : 140} />
 
@@ -85,10 +87,10 @@ export default function Sidebar({ role }) {
       </div>
 
       <div className="mx-4 mb-4 h-[1px] bg-emerald-700/40" />
-
-      {/* Menu */}
-      <nav className="flex flex-col space-y-1">
-        {/* USER */}
+ 
+      {/* MENU */}
+      <nav className="flex flex-col space-y-1 flex-1 overflow-y-auto px-2 pb-4">
+        {/* User Menu */}
         {role === ROLES.USER && (
           <>
             <Item icon={Home} label="Home Page" route="/home" isActive={location.pathname === "/home"} collapsed={collapsed} />
@@ -119,16 +121,16 @@ export default function Sidebar({ role }) {
                 <div className="mx-4 my-2 h-[1px] bg-emerald-700/40" />
               </>
             )}
-
-            <Item icon={FileEdit} label="Manage Content" route="/admin/content" isActive={location.pathname === "/admin/content"} collapsed={collapsed} />
-            <Item icon={ListChecks} label="Manage Checklist" route="/admin/checklist" isActive={location.pathname === "/admin/checklist"} collapsed={collapsed} />
-            <Item icon={UserCheckIcon} label="Assign Templates" route="/admin/assign-templates" isActive={location.pathname === "/admin/assign-templates"} collapsed={collapsed} />
-            <Item icon={BookOpen} label="Manage Modules" route="/admin/modules" isActive={location.pathname === "/admin/modules"} collapsed={collapsed} />
-            <Item icon={CalendarPlus} label="Manage Events" route="/admin/manage-events" isActive={location.pathname === "/admin/manage-events"} collapsed={collapsed} />
-            <Item icon={MessageSquare} label="View Feedback" route="/admin/feedback" isActive={location.pathname === "/admin/feedback"} collapsed={collapsed} />
-            <Item icon={BarChart2} label="View Progress" route="/admin/progress" isActive={location.pathname === "/admin/progress"} collapsed={collapsed} />
-            <Item icon={BookOpen} label="Manage Questions" route="/admin/manage-questions" isActive={location.pathname === "/admin/manage-questions"} collapsed={collapsed} />
-            <Item icon={User} label="Account" route="/account" isActive={location.pathname === "/account"} collapsed={collapsed} />
+            <Item icon={FileEdit} label="Manage Content" route="/admin/content" isActive={location.pathname === "/admin/content"} collapsed={collapsed}/>
+            <Item icon={ListChecks} label="Manage Checklist" route="/admin/checklist" isActive={location.pathname === "/admin/checklist"} collapsed={collapsed}/>
+            <Item icon={UserCheckIcon} label="Assign Templates" route="/admin/assign-templates" isActive={location.pathname === "/admin/assign-templates"} collapsed={collapsed}/>
+            <Item icon={BookOpen} label="Manage Modules" route="/admin/modules" isActive={location.pathname === "/admin/modules"} collapsed={collapsed}/>
+            <Item icon={CalendarPlus} label="Manage Events" route="/admin/manage-events" isActive={location.pathname === "/admin/manage-events"} collapsed={collapsed}/>
+            <Item icon={MessageSquare} label="View Feedback" route="/admin/feedback" isActive={location.pathname === "/admin/feedback"} collapsed={collapsed}/>
+            <Item icon={BarChart2} label="View Progress" route="/admin/progress" isActive={location.pathname === "/admin/progress"} collapsed={collapsed}/>
+            <Item icon={BookOpen} label="Manage Questions" route="/admin/manage-questions" isActive={location.pathname === "/admin/manage-questions"} collapsed={collapsed}/>
+            <Item icon={User} 
+            className="-bottom-64" label="Account" route="/account" isActive={location.pathname === "/account"} collapsed={collapsed}/>
           </>
         )}
       </nav>
@@ -137,3 +139,4 @@ export default function Sidebar({ role }) {
 }
 
 export { ROLES };
+ //Sidebar.jsx
