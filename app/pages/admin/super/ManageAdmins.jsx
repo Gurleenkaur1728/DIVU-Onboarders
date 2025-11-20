@@ -121,7 +121,7 @@ export default function ManageAdmins() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-DivuLightGreen text-2xl tracking-wide">
           MANAGE ADMINS
         </div>
 
@@ -141,7 +141,7 @@ export default function ManageAdmins() {
           <div className="grid md:grid-cols-2 gap-8">
             {/* ✅ Current Admins Table */}
             <div className="bg-white rounded-xl shadow-lg border border-emerald-400/70 overflow-hidden">
-              <h3 className="bg-emerald-900 text-white px-6 py-3 font-bold text-lg rounded-t-xl">
+              <h3 className="bg-DivuLightGreen text-black px-6 py-3 font-bold text-lg rounded-t-xl">
                 Current Admins
               </h3>
 
@@ -209,7 +209,7 @@ export default function ManageAdmins() {
 
             {/* ✅ Add Admin Table */}
             <div className="bg-white rounded-xl shadow-lg border border-emerald-400/70 overflow-hidden">
-              <h3 className="bg-emerald-900 text-white px-6 py-3 font-bold text-lg rounded-t-xl">
+              <h3 className="bg-DivuBlue text-black px-6 py-3 font-bold text-lg rounded-t-xl">
                 Add Admin
               </h3>
 
@@ -262,7 +262,7 @@ export default function ManageAdmins() {
                           <td className="px-4 py-3 text-center">
                             <button
                               onClick={() => promote(u)}
-                              className="inline-flex items-center gap-1 px-3 py-1 rounded bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition"
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded bg-DivuLightGreen text-black text-sm font-medium hover:bg-DivuLightGreen/90 transition"
                             >
                               <Plus size={14} /> Make Admin
                             </button>

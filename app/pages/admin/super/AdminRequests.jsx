@@ -93,7 +93,7 @@ export default function AdminRequests() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
           ADMIN REQUESTS
         </div>
 
@@ -106,7 +106,7 @@ export default function AdminRequests() {
         <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-emerald-400/70">
           <table className="min-w-[820px] w-full">
             <thead>
-              <tr className="bg-emerald-900/95 text-emerald-100">
+              <tr className="bg-DivuLightGreen text-black">
                 <Th>Requested By</Th>
                 <Th>Type</Th>
                 <Th>Target</Th>
