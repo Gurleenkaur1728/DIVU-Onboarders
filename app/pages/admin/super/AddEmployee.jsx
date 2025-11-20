@@ -188,7 +188,7 @@ export default function AddEmployee() {
     {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
     //   <Sidebar active="add-employee" role={roleId} /> */}
       <div className="flex-1 flex flex-col p-6">
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-6 text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">ADD EMPLOYEE</div>
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-6 text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">ADD EMPLOYEE</div>
 
         <div className="flex gap-2 mb-6">
           <Tab label="Add Employee" active={activeTab === "form"} onClick={() => setActiveTab("form")} />
@@ -208,7 +208,7 @@ export default function AddEmployee() {
             <input name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
             <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
             <input name="position" placeholder="Position" value={formData.position} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
-            <button onClick={handleSubmit} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded bg-emerald-600 text-white font-semibold hover:bg-emerald-500 disabled:bg-gray-400">
+            <button onClick={handleSubmit} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded bg-DivuDarkGreen text-white font-semibold hover:bg-DivuLightGreen hover:text-black disabled:bg-gray-400">
               <Send size={16} /> {loading ? "Sending..." : "Send Invitation"}
             </button>
             {message && <p className={`mt-3 text-sm ${isError ? "text-red-600" : "text-green-600"}`}>{message}</p>}
@@ -219,7 +219,7 @@ export default function AddEmployee() {
           <div className="overflow-x-auto rounded-lg border bg-white">
             <table className="min-w-[800px] w-full border-collapse">
               <thead>
-                <tr className="bg-emerald-900/95 text-emerald-100">
+                <tr className="bg-DivuLightGreen text-Black">
                   <Th>Name</Th><Th>Email</Th><Th>Position</Th><Th>Status</Th><Th>Created</Th><Th>Actions</Th>
                 </tr>
               </thead>
@@ -232,7 +232,7 @@ export default function AddEmployee() {
                     <td className="px-4 py-3">{inv.status}</td>
                     <td className="px-4 py-3">{new Date(inv.created_at).toLocaleString()}</td>
                     <td className="px-4 py-3 flex gap-2">
-                      <button onClick={() => handleResend(inv)} className="p-2 bg-blue-500 text-white rounded"><RefreshCcw size={16} /></button>
+                      <button onClick={() => handleResend(inv)} className="p-2 bg-DivuBlue text-white rounded"><RefreshCcw size={16} /></button>
                       <button onClick={() => handleRevoke(inv)} className="p-2 bg-red-500 text-white rounded"><XCircle size={16} /></button>
                     </td>
                   </tr>
@@ -248,7 +248,7 @@ export default function AddEmployee() {
 
 function Tab({ label, active, onClick }) {
   return (
-    <button onClick={onClick} className={`px-4 py-2 rounded-lg text-sm font-semibold ${active ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950" : "bg-emerald-800/70 text-emerald-100"}`}>
+    <button onClick={onClick} className={`px-4 py-2 rounded-lg text-sm font-semibold ${active ? "bg-DivuLightGreen hover:bg-DivuBlue" : "bg-DivuDarkGreen/90 text-white hover:bg-DivuBlue hover:text-black"}`}>
       {label}
     </button>
   );
