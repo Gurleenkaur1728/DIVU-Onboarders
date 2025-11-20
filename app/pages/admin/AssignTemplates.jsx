@@ -282,13 +282,8 @@ export default function AssignTemplates() {
   return (
     <AppLayout>
 
-    {/* // <div
-    //   className="flex min-h-dvh bg-cover bg-center"
-    //   style={{ backgroundImage: "url('/bg.png')" }}
-    // > */}
-      {/* // <Sidebar active="assign-templates" role={roleId} /> */}
       <div className="flex-1 p-6">
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl shadow mb-6 text-emerald-100 font-extrabold text-2xl flex items-center justify-between">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl shadow mb-6 text-emerald-100 font-extrabold text-2xl flex items-center justify-between">
           ASSIGN CHECKLIST TEMPLATES
           <div className="flex gap-2">
             {["assign", "viewupdate"].map((t) => (
@@ -297,8 +292,8 @@ export default function AssignTemplates() {
                 onClick={() => setTab(t)}
                 className={`px-3 py-1 rounded ${
                   tab === t
-                    ? "bg-emerald-600 text-white"
-                    : "bg-white text-emerald-800 border"
+                    ? "bg-DivuLightGreen text-black hover:bg-DivuBlue"
+                    : "bg-white text-black hover:bg-DivuBlue hover:text-black"
                 }`}
               >
                 {t === "viewupdate" ? "View / Update" : t[0].toUpperCase() + t.slice(1)}
@@ -314,12 +309,12 @@ export default function AssignTemplates() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search employees (name/email)…"
-            className="border border-emerald-300 rounded px-3 py-2 w-full sm:w-80"
+            className="border border-DivuDarkGreen rounded px-3 py-2 w-full sm:w-80"
           />
           <select
             value={filterBy}
             onChange={(e) => setFilterBy(e.target.value)}
-            className="border border-emerald-300 rounded px-3 py-2"
+            className="border border-DivuDarkGreen rounded px-3 py-2"
           >
             <option value="name">Filter by: Name</option>
             <option value="first">Filter by: First Name</option>
@@ -371,7 +366,7 @@ export default function AssignTemplates() {
                       </label>
                       <button
                         onClick={() => openEmployeeModal(u)}
-                        className="px-2 py-1 text-xs rounded bg-emerald-600 text-white hover:bg-emerald-500"
+                        className="px-2 py-1 text-xs rounded bg-DivuBlue/70 text-white hover:bg-DivuBlue"
                       >
                         Edit
                       </button>
@@ -436,7 +431,7 @@ export default function AssignTemplates() {
               <button
                 onClick={assign}
                 disabled={loading}
-                className="px-4 py-2 rounded bg-emerald-600 text-white font-semibold hover:bg-emerald-500 disabled:opacity-60"
+                className="px-4 py-2 rounded bg-DivuDarkGreen text-white font-semibold hover:bg-DivuBlue disabled:opacity-60"
               >
                 {loading ? "Assigning..." : "Assign Selected"}
               </button>
@@ -495,8 +490,8 @@ export default function AssignTemplates() {
                   onClick={() => setModalTab(t)}
                   className={`px-3 py-1.5 rounded-t ${
                     modalTab === t
-                      ? "bg-emerald-600 text-white"
-                      : "bg-emerald-100 text-emerald-900"
+                      ? "bg-DivuLightGreen text-black hover:bg-DivuBlue"
+                      : "bg-DivuLightGreen/20 text-black hover:bg-DivuBlue hover:text-black"
                   }`}
                 >
                   {t === "templates" && "Templates"}
@@ -668,7 +663,7 @@ function AddCustomItemTab({
       <div className="pt-2">
         <button
           onClick={onAdd}
-          className="px-4 py-2 rounded bg-emerald-600 text-white font-semibold hover:bg-emerald-500 disabled:opacity-60"
+          className="px-4 py-2 rounded bg-DivuDarkGreen text-white font-semibold hover:bg-DivuLightGreen hover:text-black disabled:opacity-60"
           disabled={!newCustomTitle.trim() || !newCustomGroupId}
         >
           Add Item

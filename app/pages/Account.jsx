@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
+import { supabase } from "../../src/lib/supabaseClient.js";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -70,7 +71,7 @@ export default function Account() {
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("xp, level, streak_days, last_login, profile_image, hire_date, department, position, manager, employment_type, salary")
-        .eq("id", userId)
+        .eq("user_id", userId)
         .single();
 
       if (userError) {
@@ -295,15 +296,7 @@ export default function Account() {
   }
 
   return (
-    <div
-      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60"
-      style={{
-        backgroundImage: "url('/bg.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      <Sidebar role={roleId} />
+    <AppLayout>
 
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
@@ -615,18 +608,18 @@ export default function Account() {
                   <span className="block text-sm font-semibold text-emerald-900 mb-1">
                     Role
                   </span>
-                  <input
+                  {/* <input
                     type="text"
                     value={
-                      roleId === ROLES.ADMIN
+                      roleId === "ADMIN"
                         ? "Admin"
-                        : roleId === ROLES.SUPER_ADMIN
+                        : roleId === "SUPER_ADMIN"
                         ? "Super Admin"
                         : "User"
                     }
                     disabled
                     className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
-                  />
+                  /> */}
                 </label>
               </div>
 
@@ -779,9 +772,9 @@ export default function Account() {
                     <label className="block text-sm font-semibold text-purple-800">System Role</label>
                   </div>
                   <p className="text-lg font-medium text-purple-900">
-                    {roleId === ROLES.ADMIN
+                    {roleId === roleId.ADMIN
                       ? "Admin"
-                      : roleId === ROLES.SUPER_ADMIN
+                      : roleId === roleId.SUPER_ADMIN
                       ? "Super Admin"
                       : "User"}
                   </p>
@@ -935,6 +928,6 @@ export default function Account() {
           )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

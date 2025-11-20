@@ -208,7 +208,7 @@ export default function ManageEvents() {
         </div>
  
         {/* Title banner */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl shadow-lg text-emerald-100 font-extrabold border text-2xl">
           MANAGE EVENTS
         </div>
  
@@ -231,23 +231,23 @@ export default function ManageEvents() {
  
             {/* Right: view switch + add (fixed at far right) */}
             <div className="ml-auto flex items-center gap-2">
-              <div className="flex rounded-lg border bg-white overflow-hidden">
+              <div className="flex rounded-lg border bg-DivuWhite overflow-hidden">
                 <button
                   onClick={() => setView("month")}
-                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="month"?"bg-emerald-600 text-white":"hover:bg-emerald-50"}`}
+                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="month"?"bg-DivuLightGreen text-black":"hover:bg-DivuBlue"}`}
                 >
                   <Grid className="w-4 h-4"/> Month
                 </button>
                 <button
                   onClick={() => setView("list")}
-                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="list"?"bg-emerald-600 text-white":"hover:bg-emerald-50"}`}
+                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="list"?"bg-DivuLightGreen text-black":"hover:bg-DivuBlue"}`}
                 >
                   <List className="w-4 h-4"/> List
                 </button>
               </div>
               <button
                 onClick={openBlankCreate}
-                className="flex items-center gap-2 px-3 py-1.5 rounded bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-500"
+                className="flex items-center gap-2 px-3 py-1.5 rounded bg-DivuDarkGreen text-white font-semibold text-sm hover:bg-DivuLightGreen hover:text-black"
               >
                 <CalendarPlus className="w-4 h-4" /> Add Event
               </button>
@@ -262,8 +262,8 @@ export default function ManageEvents() {
               Loading events...
             </div>
           ) : (
-          <div className="bg-white border rounded-xl shadow w-full md:w-3/5 overflow-hidden">
-            <div className="grid grid-cols-7 bg-emerald-900/95 text-emerald-50 text-[11px] font-bold uppercase">
+          <div className="bg-white border-DivuDarkGreen border-2 rounded-xl shadow w-full  max-auto overflow-hidden">
+            <div className="grid grid-cols-7 bg-DivuLightGreen text-black text-[11px] font-bold uppercase">
               {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
                 <div key={d} className="px-2 py-2 text-center">{d}</div>
               ))}
@@ -278,7 +278,7 @@ export default function ManageEvents() {
                   <button
                     key={i}
                     onClick={() => onDayClick(d)}
-                    className={`h-24 border p-1 text-left ${inMonth ? "bg-white":"bg-gray-50"} hover:bg-emerald-50/70`}
+                    className={`h-24 border p-1 text-left ${inMonth ? "bg-white":"bg-DivuWhite"} hover:bg-DivuBlue`}
                     title="Add event"
                   >
                     <div className="flex items-center justify-between">
@@ -325,13 +325,13 @@ export default function ManageEvents() {
               Loading events...
             </div>
           ) : (
-            <div className="w-full md:w-3/5 space-y-4">
+            <div className="w-full  space-y-4">
               {monthGroups.length === 0 ? (
                 <div className="bg-white rounded-xl border shadow p-4 text-sm text-emerald-800">No upcoming events.</div>
               ) : (
                 monthGroups.map((g, idx) => (
                   <div key={idx} className="bg-white rounded-xl border shadow overflow-hidden">
-                    <div className="px-4 py-2 bg-emerald-900/95 text-emerald-50 text-sm font-bold">
+                    <div className="px-4 py-2 bg-DivuLightGreen text-black text-sm font-bold">
                       {g.label}
                     </div>
                     {g.items.length === 0 ? (
@@ -361,7 +361,7 @@ export default function ManageEvents() {
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 grid place-items-center z-50">
           <div className="bg-white w-full max-w-lg rounded-xl shadow-xl overflow-hidden">
-            <div className="flex justify-between px-4 py-3 bg-emerald-900 text-white">
+            <div className="flex justify-between px-4 py-3 bg-DivuDarkGreen text-white">
               <div className="font-bold">
                 {editingId ? "Edit Event" : "Add Event"}{draftDate ? ` — ${new Date(draftDate).toLocaleDateString()}` : ""}
               </div>
@@ -396,11 +396,11 @@ export default function ManageEvents() {
  
             <div className="px-4 py-3 bg-gray-50 flex justify-between">
               {editingId ? (
-                <button onClick={deleteEvent} className="px-3 py-1 border text-red-700 border-red-300 rounded">Delete</button>
+                <button onClick={deleteEvent} className="px-3 py-1 border text-red-700 border-red-300 hover:bg-red-700 hover:text-white rounded">Delete</button>
               ) : <span/>}
               <div className="flex gap-2">
-                <button onClick={()=>setModalOpen(false)} className="px-3 py-1 border rounded bg-white">Cancel</button>
-                <button onClick={saveEvent} disabled={saving} className="px-3 py-1 bg-emerald-600 text-white rounded">
+                <button onClick={()=>setModalOpen(false)} className="px-3 py-1 border rounded bg-white hover:bg-DivuLightGreen hover:text-black">Cancel</button>
+                <button onClick={saveEvent} disabled={saving} className="px-3 py-1 bg-DivuDarkGreen text-white rounded hover:bg-DivuLightGreen hover:text-black">
                   {saving ? "Saving..." : editingId ? "Update" : "Save"}
                 </button>
               </div>
