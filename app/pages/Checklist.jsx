@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle, Circle, ChevronDown, ChevronRight } from "lucide-react";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import AppLayout from "../../src/AppLayout.jsx";
