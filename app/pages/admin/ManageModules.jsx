@@ -175,7 +175,7 @@ export default function ManageModules() {
       <div className="flex gap-2 mt-auto">
         <button
           onClick={() => openBuilder(m.status === "draft" ? m.id : null)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600"
+          className="flex items-center gap-1 px-3 py-1.5 rounded bg-DivuBlue/80 text-white text-sm font-semibold hover:bg-DivuBlue"
         >
           <Edit size={14} /> Edit / Build
         </button>
@@ -221,14 +221,14 @@ export default function ManageModules() {
           </span>
           <button
             onClick={() => openBuilder(null)} // always create new draft
-            className="flex items-center gap-2 px-3 py-1.5 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500"
+            className="flex items-center gap-2 px-3 py-1.5 rounded bg-DivuLightGreen text-black text-sm font-semibold hover:bg-DivuBlue"
           >
             <Plus size={16} /> Create New Module
           </button>
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
           MANAGE MODULES
         </div>
 

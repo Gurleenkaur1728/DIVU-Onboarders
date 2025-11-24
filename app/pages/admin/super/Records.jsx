@@ -106,12 +106,6 @@ export default function Records() {
 
   return (
     <AppLayout>
-    {/* 
-    // <div
-    //   className="flex min-h-dvh bg-cover bg-center relative"
-    //   style={{ backgroundImage: "url('/bg.png')" }}
-    // /> */}
-    {/* // <Sidebar active="records" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6 overflow-y-auto">
         {/* Header */}
@@ -121,7 +115,7 @@ export default function Records() {
           </span>
           <button
             onClick={loadAllLogs}
-            className="flex items-center gap-2 text-emerald-800 hover:text-emerald-950 text-sm font-semibold"
+            className="flex items-center gap-2 text-emerald-800 hover:text-DivuBlue text-sm font-semibold"
             title="Refresh Logs"
           >
             <RefreshCcw size={16} /> Refresh
@@ -129,7 +123,7 @@ export default function Records() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-900 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
           USER ACTIVITY RECORDS
         </div>
 
@@ -144,7 +138,7 @@ export default function Records() {
           />
           <button
             onClick={() => setSearch("")}
-            className="px-4 py-2 bg-emerald-700 text-white rounded-md hover:bg-emerald-800"
+            className="px-4 py-2 bg-DivuLightGreen text-black hover:text-white rounded-md hover:bg-DivuBlue"
           >
             Clear
           </button>
@@ -168,8 +162,8 @@ export default function Records() {
                   }
                   className={`w-full flex justify-between items-center px-4 py-3 font-semibold text-emerald-900 ${
                     expanded[name]
-                      ? "bg-emerald-300/70"
-                      : "bg-emerald-100 hover:bg-emerald-200"
+                      ? "bg-DivuBlue/60 hover:bg-DivuBlue/70 text-black"
+                      : "bg-DivuLightGreen/40 hover:bg-DivuBlue/50"
                   }`}
                 >
                   <span>

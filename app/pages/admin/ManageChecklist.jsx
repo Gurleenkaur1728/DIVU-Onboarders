@@ -284,14 +284,14 @@ export default function ManageChecklist() {
           <div className="flex gap-2">
             <button
               onClick={openNewGroup}
-              className="flex items-center gap-2 px-3 py-1.5 rounded bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-500"
+              className="flex items-center gap-2 px-3 py-1.5 rounded bg-DivuLightGreen text-black  font-semibold text-sm hover:bg-DivuBlue"
             >
               <Plus size={16} /> New Group
             </button>
           </div>
         </div>
 
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">
           MANAGE CHECKLIST TEMPLATES
         </div>
 
@@ -309,27 +309,27 @@ export default function ManageChecklist() {
               const open = !!expanded[g.id];
               const items = itemsByGroup[g.id] || [];
               return (
-                <div key={g.id} className="bg-white/95 rounded-xl shadow border border-emerald-200">
-                  <div className="flex items-center justify-between px-4 py-3 bg-emerald-900/95 text-emerald-100 rounded-t-xl">
+                <div key={g.id} className="bg-white/95 rounded-xl shadow border border-DivuDarkGreen/70">
+                  <div className="flex items-center justify-between px-4 py-3 bg-DivuLightGreen text-black rounded-t-xl">
                     <button
                       className="flex items-center gap-2 font-semibold"
                       onClick={() => setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))}
                       title={open ? "Collapse" : "Expand"}
                     >
-                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-300" />
+                      <span className="inline-block w-2 h-2 rounded-full bg-DivuBlue" />
                       {g.name}
                     </button>
                     <div className="flex gap-2">
                       <button
                         onClick={() => openNewItem(g.id)}
-                        className="px-2 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500"
+                        className="px-2 py-1 rounded bg-DivuDarkGreen text-white text-sm hover:bg-emerald-500"
                         title="Add checklist item"
                       >
                         <Plus size={14} />
                       </button>
                       <button
                         onClick={() => openEditGroup(g)}
-                        className="px-2 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-500"
+                        className="px-2 py-1 rounded bg-DivuBlue text-white text-sm hover:bg-blue-500"
                         title="Rename group"
                       >
                         <Edit size={14} />
@@ -348,7 +348,7 @@ export default function ManageChecklist() {
                     <div className="overflow-x-auto">
                       <table className="w-full table-auto border-collapse">
                         <thead>
-                          <tr className="bg-emerald-800 text-left w-auto text-emerald-100">
+                          <tr className="bg-DivuBlue text-left w-auto text-emerald-100">
                             <Th>Required</Th>
                             <Th>Module</Th>
                             <Th>Date Assigned</Th>
@@ -378,7 +378,7 @@ export default function ManageChecklist() {
                                   <div className="flex gap-2 justify-end pr-1">
                                     <button
                                       onClick={() => openEditItem(it)}
-                                      className="p-2 rounded bg-blue-500/80 text-white hover:bg-blue-500"
+                                      className="p-2 rounded bg-DivuBlue/80 text-white hover:bg-blue-500"
                                       title="Edit item"
                                     >
                                       <Edit size={16} />
@@ -413,7 +413,7 @@ export default function ManageChecklist() {
             <input
               value={groupModal.title}
               onChange={(e) => setGroupModal((m) => ({ ...m, title: e.target.value }))}
-              className="w-full rounded-lg border border-emerald-700 bg-emerald-900/60 px-3 py-2 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              className="w-full rounded-lg border border-emerald-700 bg-White px-3 py-2 text-black placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
               placeholder="e.g. Complete within first week of employment"
             />
             <div className="flex justify-end gap-2 pt-2">
@@ -435,7 +435,7 @@ export default function ManageChecklist() {
             <input
               value={itemModal.title}
               onChange={(e) => setItemModal((m) => ({ ...m, title: e.target.value }))}
-              className="w-full rounded-lg border border-emerald-700 bg-emerald-900/60 px-3 py-2 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              className="w-full rounded-lg border border-emerald-700 bg-white px-3 py-2 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
               placeholder="e.g. Security Training"
             />
             <label className="block text-sm mt-2">Date Assigned (optional)</label>
@@ -475,7 +475,7 @@ function Th({ children, className = "" }) {
 function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="w-full max-w-md bg-emerald-950/95 text-white rounded-xl shadow-lg border border-emerald-700 backdrop-blur-xl p-6 relative">
+      <div className="w-full max-w-md bg-DivuDarkGreen text-white rounded-xl shadow-lg border border-emerald-700 backdrop-blur-xl p-6 relative">
         <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-emerald-700/50 hover:bg-emerald-600" title="Close">
           <X size={18} />
         </button>

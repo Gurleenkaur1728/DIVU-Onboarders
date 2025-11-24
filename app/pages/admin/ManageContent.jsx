@@ -248,7 +248,7 @@ export default function ManageContent() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
           MANAGE CONTENT
         </div>
 
@@ -522,8 +522,8 @@ function Tab({ label, active, onClick }) {
       onClick={onClick}
       className={`px-4 py-2 rounded-lg font-semibold ${
         active
-          ? "bg-emerald-400 text-emerald-950 shadow-md"
-          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700"
+          ? "bg-DivuLightGreen text-emerald-950 shadow-md"
+          : "bg-DivuDarkGreen/90 text-emerald-100 hover:bg-DivuBlue hover:text-black"
       }`}
     >
       {label}

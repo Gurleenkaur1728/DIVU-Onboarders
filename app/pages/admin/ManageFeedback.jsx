@@ -438,7 +438,7 @@ export default function ManageFeedback() {
         </div>
 
         {/* Title */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg flex justify-between items-center">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg flex justify-between items-center">
           <span>EMPLOYEE FEEDBACK ({feedbacks.length} total)</span>
           <div className="flex items-center gap-3">
             {/* Notification Bell */}

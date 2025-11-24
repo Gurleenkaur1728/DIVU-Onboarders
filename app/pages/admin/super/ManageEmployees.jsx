@@ -586,7 +586,7 @@ export default function ManageEmployment() {
                         <td className="p-4">
                           <button
                             onClick={() => startEditing(employee)}
-                            className="px-3 py-1 bg-emerald-500 text-white rounded text-sm hover:bg-emerald-600"
+                            className="px-3 py-1 bg-DivuLightGreen text-black rounded text-sm hover:bg-emerald-600"
                           >
                             Edit
                           </button>
