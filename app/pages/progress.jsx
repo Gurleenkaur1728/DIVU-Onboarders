@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
@@ -583,11 +582,9 @@ export default function Progress() {
                   {userStats.xp} XP
                 </p>
                 <div className="w-full mt-3 bg-gray-200 h-2 rounded-full overflow-hidden">
-                  <motion.div
-                    className="bg-emerald-600 h-2 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${xpPercent}%` }}
-                    transition={{ duration: 1.2, ease: "easeOut" }}
+                  <div
+                    className="bg-emerald-600 h-2 rounded-full transition-all duration-1000 ease-out"
+                    style={{ width: `${xpPercent}%` }}
                   />
                 </div>
                 <p className="text-sm text-gray-500 mt-2">

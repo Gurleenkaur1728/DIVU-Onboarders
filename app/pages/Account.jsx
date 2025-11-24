@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { supabase } from "../../src/lib/supabaseClient.js";
 
 export default function Account() {
   const [name, setName] = useState("");
