@@ -212,14 +212,9 @@ export default function AccessRequests() {
 
   return (
     <AppLayout>
-    {/* // <div
-    //   className="flex min-h-dvh bg-cover bg-center relative"
-    //   style={{ backgroundImage: "url('/bg.png')" }}
-    // > */}
-  {/* // <Sidebar active="employee-requests" role={roleId} /> */}
 
       <div className="flex-1 flex flex-col p-6 z-10">
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
           REQUESTS
         </div>
 
@@ -246,7 +241,7 @@ export default function AccessRequests() {
             {requests.map((req) => (
               <li
                 key={req.id}
-                className="p-4 bg-white rounded-lg shadow cursor-pointer hover:bg-emerald-50"
+                className="p-4 bg-white rounded-lg shadow cursor-pointer hover:bg-DivuLightGreen/30 transition"
                 onClick={() => setSelected(req)}
               >
                 <span className="font-semibold text-emerald-900">
@@ -294,7 +289,7 @@ export default function AccessRequests() {
             {/* Actions */}
             <div className="flex flex-col gap-3 mt-6">
               <button
-                className="w-full px-4 py-2 rounded bg-emerald-600 text-white font-semibold hover:bg-emerald-500"
+                className="w-full px-4 py-2 rounded bg-DivuDarkGreen text-white font-semibold hover:bg-DivuLightGreen hover:text-black"
                 onClick={() => handleApprove(selected)}
               >
                 Confirm & Grant Access

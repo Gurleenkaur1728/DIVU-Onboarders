@@ -379,19 +379,19 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
     >
       <div
         className={`flex items-center justify-center w-8 h-8 rounded-full font-bold border shadow-sm transition-all
-        ${active ? "bg-emerald-600 text-white border-emerald-700 scale-105 ring-2 ring-emerald-400/30"
-                 : done ? "bg-white text-emerald-700 border-emerald-300"
-                 : "bg-white text-emerald-800 border-emerald-300 group-hover:bg-emerald-50"}`}
+        ${active ? "bg-DivuDarkGreen text-white border-DivuDarkGreen scale-105 ring-2 ring-DivuLightGreen/30"
+                 : done ? "bg-white text-black border-emerald-300"
+                 : "bg-white text-black border-emerald-300 group-hover:bg-emerald-50"}`}
       >
         {done ? (
-          <CheckCircle size={14} className="text-emerald-600" />
+          <CheckCircle size={14} className="text-black" />
         ) : (
           <span className={`text-xs font-semibold ${active ? "text-white" : "text-emerald-800"}`}>
             {typeof index === "number" ? index + 1 : (label === "Info" ? "I" : "R")}
           </span>
         )}
       </div>
-      <span className={`text-[11px] font-semibold ${active ? "text-white" : done ? "text-emerald-100" : "text-emerald-200"}`}>
+      <span className={`text-[11px] font-semibold ${active ? "text-black" : done ? "text-black" : "text-DivuDarkGreen/70 group-hover:text-black "}`}>
         {label}
       </span>
     </button>
@@ -407,9 +407,9 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
   return (
   <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50">
     {/* fixed-size modal */}
-    <div className="w-full max-w-5xl h-[80vh] bg-white rounded-2xl shadow-xl overflow-visible flex flex-col">
+    <div className="w-full max-w-5xl h-[80vh] bg-white border-DivuDarkGreen rounded-2xl shadow-xl overflow-visible flex flex-col">
       {/* header */}
-      <div className="flex items-center justify-between bg-emerald-900 text-white rounded-t-2xl p-4">
+      <div className="flex items-center justify-between bg-DivuLightGreen text-black rounded-t-2xl p-4">
         {/* progress dots w/ connectors */}
         <div className="flex items-center gap-3 overflow-x-auto">
           <ProgressDot label="Info" active={step === 0} done={step > 0} onClick={goInfo} />
@@ -476,7 +476,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
       <div className="px-6 py-3 flex items-center gap-4">
         <div className="relative flex-1 h-3 rounded-full bg-emerald-100/70 shadow-inner overflow-hidden">
           <div
-            className="absolute left-0 top-0 h-full rounded-full transition-[width] duration-500 ease-out bg-gradient-to-r from-emerald-600 to-emerald-400 shadow"
+            className="absolute left-0 top-0 h-full rounded-full transition-[width] duration-500 ease-out bg-gradient-to-r from-DivuDarkGreen to-DivuLightGreen shadow"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -492,7 +492,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
           <div className="grid grid-cols-1 gap-6">
             <div className="p-4 border rounded-xl border-emerald-300 bg-white">
               <div className="mb-3">
-                <div className="font-semibold text-emerald-900 mb-2">Module Title</div>
+                <div className="font-semibold text-black mb-2">Module Title</div>
                 <input
                   value={title}
                   onChange={(e) => onChangeTitle(e.target.value)}
@@ -674,7 +674,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
           <div className="space-y-6">
             <div className="p-4 border rounded-xl border-emerald-300 bg-white">
               <div className="font-semibold text-emerald-900 mb-2">Review Summary</div>
-              <div className="text-sm text-emerald-900">
+              <div className="text-sm text-black">
                 <div>
                   <span className="font-semibold">Title:</span>{" "}
                   {title || <i>(empty)</i>}
