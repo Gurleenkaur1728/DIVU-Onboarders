@@ -11,122 +11,34 @@ body,
   transition: opacity 0.3s ease-in-out;
   opacity: 0.95;
 }
-/* Hide Google Translate top banner */
-.goog-te-banner-frame.skiptranslate {
+/* Hide Google top bar */
+.goog-te-banner-frame {
   display: none !important;
 }
+
+/* Hide extra top space added by Google */
 body {
-  top: 0px !important;
+  top: 0 !important;
 }
 
-/* Floating container */
-#google_translate_container {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 9999;
-}
-
-/* Green floating button */
-#translate-toggle {
-  background-color: #065f46; /* emerald green */
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 54px;
-  height: 54px;
-  font-size: 22px;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-#translate-toggle:hover {
-  background-color: #059669;
-  transform: scale(1.05);
-}
-
-/* Dropdown styling */
-#google_translate_dropdown {
-  display: none;
-  position: absolute;
-  bottom: 70px;
-  right: 0;
-  background: white;
-  border-radius: 10px;
-  padding: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-}
-
-/* Select styling */
-#google_translate_dropdown select {
-  background: transparent;
-  border: none;
-  color: #064e3b;
-  font-weight: 600;
-  font-size: 14px;
-  outline: none;
-  cursor: pointer;
-}
-
-/* Hide the ugly default Google branding */
-.goog-logo-link,
-.goog-te-gadget span {
+/* Hide popup frame */
+.goog-te-spinner-pos,
+.goog-te-balloon-frame {
   display: none !important;
 }
 
-/* Make sure dropdown doesn’t shift layout */
-.goog-te-gadget {
-  height: 28px !important;
-  overflow: hidden;
+/* Hide Google Translate toolbar */
+.goog-te-banner {
+  display: none !important;
 }
 
-.prose h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #064e3b;
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
+/* Hide the goog logo iframe */
+iframe.goog-te-menu-frame {
+  box-shadow: none !important;
+  border: none !important;
 }
 
-.prose ul {
-  list-style-type: disc;
-  margin-left: 1.5rem;
+/* Prevent layout shifting */
+.goog-te-gadget-icon {
+  display: none !important;
 }
-
-.prose li {
-  margin-bottom: 0.25rem;
-}
-
-.prose strong {
-  color: #065f46;
-}
-
-
-/* Custom Sidebar Scrollbar Styling */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent; /* see-through track */
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(81, 135, 120, 0.8); /* dark emerald thumb */
-  border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(2, 90, 65, 0.9);
-}
-
-/* Firefox support */
-.custom-scrollbar {
-  scrollbar-color: rgba(4, 120, 87, 0.8) transparent;
-  scrollbar-width: thin;
-}
-
