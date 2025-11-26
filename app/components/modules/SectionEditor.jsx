@@ -5,7 +5,69 @@ const uid = () =>
   globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 
-export default function SectionEditor({ section, onChange, uploadToBucket }) {
+/* Extract text content from all pages for AI quiz generation */
+const extractModuleContent = (pages) => {
+  if (!pages || pages.length === 0) {
+    return "No content available yet. Please add some text sections first.";
+  }
+
+  const contentParts = [];
+  
+  pages.forEach((page, pageIndex) => {
+    if (page.name) {
+      contentParts.push(`Page ${pageIndex + 1}: ${page.name}`);
+    }
+    
+    if (page.sections && Array.isArray(page.sections)) {
+      page.sections.forEach((section) => {
+        switch (section.type) {
+          case "text":
+            if (section.title) contentParts.push(`Title: ${section.title}`);
+            if (section.body) contentParts.push(section.body);
+            break;
+          case "photo":
+            if (section.caption) contentParts.push(`Image caption: ${section.caption}`);
+            break;
+          case "video":
+            if (section.transcript) contentParts.push(`Video transcript: ${section.transcript}`);
+            break;
+          case "flashcards":
+            if (section.cards) {
+              section.cards.forEach((card) => {
+                if (card.front || card.back) {
+                  contentParts.push(`Flashcard - Front: ${card.front} | Back: ${card.back}`);
+                }
+              });
+            }
+            break;
+          case "dropdowns":
+            if (section.items) {
+              section.items.forEach((item) => {
+                if (item.header) contentParts.push(`Topic: ${item.header}`);
+                if (item.info) contentParts.push(item.info);
+              });
+            }
+            break;
+          case "checklist":
+            if (section.items) {
+              section.items.forEach((item) => {
+                if (item.text) contentParts.push(`Checklist item: ${item.text}`);
+              });
+            }
+            break;
+          case "embed":
+            if (section.note) contentParts.push(`Embedded content note: ${section.note}`);
+            break;
+        }
+      });
+    }
+  });
+  
+  const fullContent = contentParts.join("\n\n");
+  return fullContent.trim() || "No meaningful content found. Please add text, descriptions, or captions to your module sections.";
+};
+
+export default function SectionEditor({ section, onChange, uploadToBucket, allPages }) {
   if (!section) return null;
 
   /* Upload handler */
@@ -434,23 +496,69 @@ export default function SectionEditor({ section, onChange, uploadToBucket }) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900">Questions</h3>
-              <button
-                onClick={() => {
-                  const newQuestion = {
-                    id: uid(),
-                    type: "multiple-choice",
-                    question: "",
-                    options: ["", "", "", ""],
-                    correctAnswer: 0,
-                    points: 10,
-                    explanation: ""
-                  };
-                  onChange({ questions: [...(section.questions || []), newQuestion] });
-                }}
-                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-              >
-                + Add Question
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    // Get module content from parent - we'll need to pass this
+                    if (!window.confirm("Generate quiz questions with AI? This will analyze your module content and create questions automatically.")) {
+                      return;
+                    }
+                    
+                    const btn = event.target;
+                    btn.disabled = true;
+                    btn.textContent = "Generating...";
+                    
+                    try {
+                      // Extract all text content from the module pages
+                      const moduleContent = extractModuleContent(allPages || []);
+                      
+                      const response = await fetch("http://localhost:5050/api/ai/generate-quiz", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          moduleContent,
+                          questionCount: 10
+                        })
+                      });
+                      
+                      const data = await response.json();
+                      
+                      if (data.questions) {
+                        onChange({ questions: data.questions });
+                        alert(`✅ Successfully generated ${data.questions.length} questions!`);
+                      } else {
+                        throw new Error(data.error || "Failed to generate questions");
+                      }
+                    } catch (error) {
+                      console.error("AI generation error:", error);
+                      alert("❌ Failed to generate quiz questions. Please try again.");
+                    } finally {
+                      btn.disabled = false;
+                      btn.textContent = "✨ Generate with AI";
+                    }
+                  }}
+                  className="px-3 py-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded hover:from-purple-700 hover:to-blue-700 text-sm font-medium"
+                >
+                  ✨ Generate with AI
+                </button>
+                <button
+                  onClick={() => {
+                    const newQuestion = {
+                      id: uid(),
+                      type: "multiple-choice",
+                      question: "",
+                      options: ["", "", "", ""],
+                      correctAnswer: 0,
+                      points: 10,
+                      explanation: ""
+                    };
+                    onChange({ questions: [...(section.questions || []), newQuestion] });
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                >
+                  + Add Question
+                </button>
+              </div>
             </div>
 
             {(section.questions || []).map((q, qIdx) => (

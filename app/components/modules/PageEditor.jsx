@@ -8,6 +8,7 @@ const uid = () =>
 
 export default function PageEditor({
   page,
+  pages,
   onRename,
   onAddSection,
   onRemoveSection,
@@ -104,6 +105,7 @@ export default function PageEditor({
                 section={section}
                 onChange={(patch) => onUpdateSection(idx, patch)}
                 uploadToBucket={uploadToBucket}
+                allPages={pages}
               />
             </div>
           ))}
