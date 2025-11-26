@@ -679,6 +679,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
               ) : (
                 <PageEditor
                   page={pages[activePageIndex]}
+                  pages={pages}
                   onRename={async (name) => updateActivePage({ name })}
                   onAddSection={onAddSection}
                   onRemoveSection={onRemoveSection}

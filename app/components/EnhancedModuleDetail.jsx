@@ -893,16 +893,61 @@ export default function EnhancedModuleDetail() {
         };
 
         // Submit quiz
-        const submitQuiz = () => {
+        const submitQuiz = async () => {
           const score = calculateScore();
           const passed = score.percentage >= (section.settings?.passingScore || 70);
+          const timeTaken = Math.floor((Date.now() - quizState.startTime) / 1000); // seconds
           
+          // Save quiz state
           saveQuizState({
             ...quizState,
             submitted: true,
             score: score,
             endTime: Date.now()
           });
+
+          // Save to database
+          try {
+            // Get previous attempt count
+            const { data: previousAttempts } = await supabase
+              .from('quiz_attempts')
+              .select('attempt_number')
+              .eq('user_id', userId)
+              .eq('module_id', id)
+              .eq('section_id', section.id)
+              .order('attempt_number', { ascending: false })
+              .limit(1);
+
+            const attemptNumber = previousAttempts?.length > 0 
+              ? previousAttempts[0].attempt_number + 1 
+              : 1;
+
+            // Insert quiz attempt
+            const { error } = await supabase
+              .from('quiz_attempts')
+              .insert({
+                user_id: userId,
+                module_id: id,
+                section_id: section.id,
+                attempt_number: attemptNumber,
+                score: score.points,
+                max_score: totalPoints,
+                percentage: score.percentage,
+                passed: passed,
+                answers: quizState.userAnswers,
+                time_taken_seconds: timeTaken,
+                started_at: new Date(quizState.startTime).toISOString(),
+                completed_at: new Date().toISOString()
+              });
+
+            if (error) {
+              console.error('Error saving quiz attempt:', error);
+            } else {
+              console.log('✅ Quiz attempt saved to database');
+            }
+          } catch (error) {
+            console.error('Failed to save quiz attempt:', error);
+          }
 
           // Mark section complete if passed
           if (passed && !progress.completedSections.includes(section.id)) {
