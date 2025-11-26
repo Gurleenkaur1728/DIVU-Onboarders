@@ -21,6 +21,8 @@ import Progress from "../app/pages/progress.jsx";
 import Certificate from "../app/pages/certificate.jsx";
 import Questions from "../app/pages/Questions.jsx";
 import Events from "../app/pages/Events.jsx";
+import Chatbot from "../app/pages/Chatbot.jsx";
+
  
 // Admin pages
 import AdminDashboard from "../app/pages/admin/AdminDashboard.jsx";
@@ -69,6 +71,8 @@ export const router = createBrowserRouter([
   { path: "/culture", element: <ProtectedRoute><Culture /></ProtectedRoute> },
   { path: "/about", element: <ProtectedRoute><About /></ProtectedRoute> },
   { path: "/questions", element: <ProtectedRoute><Questions /></ProtectedRoute> },
+  { path: "/chatbot", element: <ProtectedRoute><Chatbot /></ProtectedRoute>},
+
  
   // ✅ Admin pages
   { path: "/admin/dashboard", element: <ProtectedRoute roles={[1, 2]}><AdminDashboard /></ProtectedRoute> },
