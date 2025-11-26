@@ -31,7 +31,7 @@ export const defaultSection = (type) => {
     case "video":
       return { id: uid(), type, media_url: "", transcript: "" };
     case "flashcards":
-      return { id: uid(), type, cards: [{ id: uid(), title: "", info: "" }] };
+      return { id: uid(), type, cards: [{ id: uid(), front: "", back: "" }] };
     case "dropdowns":
       return { id: uid(), type, items: [{ id: uid(), header: "", info: "" }] };
     case "questionnaire":

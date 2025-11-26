@@ -228,6 +228,7 @@ export default function EnhancedModuleDetail() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [flippedCards, setFlippedCards] = useState(new Set());
+  const [checkedItems, setCheckedItems] = useState(new Set());
   const [answers, setAnswers] = useState({});
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedback, setFeedback] = useState({
@@ -472,6 +473,17 @@ export default function EnhancedModuleDetail() {
     await updateProgress({ answers: newAnswers });
   };
 
+  const toggleChecklistItem = (sectionId, itemId) => {
+    const key = `${sectionId}-${itemId}`;
+    const newChecked = new Set(checkedItems);
+    if (newChecked.has(key)) {
+      newChecked.delete(key);
+    } else {
+      newChecked.add(key);
+    }
+    setCheckedItems(newChecked);
+  };
+
   const goToPage = async (pageIndex) => {
     // Check if page is unlocked
     if (pageIndex > 0) {
@@ -638,15 +650,12 @@ export default function EnhancedModuleDetail() {
         
         return (
           <div className="space-y-4">
-            {section.media_path && (
-              <PhotoDisplay photoPath={section.media_path} caption={section.caption} moduleId={id} pageIndex={currentPage} />
+            {(section.media_url || section.media_path) && (
+              <PhotoDisplay photoPath={section.media_url || section.media_path} caption={section.caption} moduleId={id} pageIndex={currentPage} />
             )}
             {section.caption && (
               <p className="text-gray-600 text-center italic">{section.caption}</p>
             )}
-            <div className="text-center text-sm text-gray-500">
-              📸 Photo will be marked as viewed after 3 seconds
-            </div>
           </div>
         );
 
@@ -661,11 +670,11 @@ export default function EnhancedModuleDetail() {
               {(section.questions || []).map((question, idx) => (
                 <div key={question.id || idx} className="space-y-2">
                   <label className="block text-gray-700 font-medium">
-                    {question.text}
+                    {question.q || question.text}
                     {question.required && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   
-                  {question.type === 'text' && (
+                  {(question.kind || question.type) === 'text' && (
                     <input 
                       type="text" 
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
@@ -687,7 +696,7 @@ export default function EnhancedModuleDetail() {
                     />
                   )}
                   
-                  {question.type === 'radio' && (
+                  {(question.kind || question.type) === 'radio' && (
                     <div className="space-y-2">
                       {(question.options || []).map((option, optIdx) => (
                         <label key={optIdx} className="flex items-center space-x-2">
@@ -722,7 +731,7 @@ export default function EnhancedModuleDetail() {
             {allRequiredAnswered && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-4">
                 <div className="text-emerald-700 text-sm font-medium">
-                  ✅ All required questions answered - Section automatically completed!
+                  ✅ All required questions answered!
                 </div>
               </div>
             )}
@@ -797,6 +806,159 @@ export default function EnhancedModuleDetail() {
           </div>
         );
       }
+
+      case 'video':
+        // Auto-complete video sections after viewing
+        if (!progress.completedSections.includes(section.id)) {
+          setTimeout(() => {
+            if (!progress.completedSections.includes(section.id)) {
+              markSectionComplete(section.id);
+            }
+          }, 5000); // Auto-complete after 5 seconds
+        }
+        
+        return (
+          <div className="space-y-4">
+            {(section.media_url || section.media_path) && (
+              <video 
+                controls 
+                className="w-full rounded-lg shadow-lg"
+                src={section.media_url || section.media_path}
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
+            {section.caption && (
+              <p className="text-gray-600 text-center italic">{section.caption}</p>
+            )}
+          </div>
+        );
+
+      case 'dropdowns': {
+        const allRequiredAnswered = (section.questions || []).every(q => 
+          !q.required || (answers[q.id] && answers[q.id].toString().trim() !== '')
+        );
+        
+        return (
+          <div className="space-y-4">
+            <div className="space-y-4">
+              {(section.questions || []).map((question, idx) => (
+                <div key={question.id || idx} className="space-y-2">
+                  <label className="block text-gray-700 font-medium">
+                    {question.q || question.text}
+                    {question.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    value={answers[question.id] || ''}
+                    onChange={(e) => {
+                      saveAnswer(question.id, e.target.value);
+                      // Check completion after saving answer
+                      setTimeout(() => {
+                        const allAnswered = (section.questions || []).every(q => 
+                          !q.required || (answers[q.id] && answers[q.id].toString().trim() !== '')
+                        );
+                        if (allAnswered && !progress.completedSections.includes(section.id)) {
+                          markSectionComplete(section.id);
+                        }
+                      }, 100);
+                    }}
+                    disabled={isCompleted}
+                  >
+                    <option value="">Select an option...</option>
+                    {(question.options || []).map((option, optIdx) => (
+                      <option key={optIdx} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            {allRequiredAnswered && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-4">
+                <div className="text-emerald-700 text-sm font-medium">
+                  ✅ All required dropdowns answered!
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      case 'checklist': {
+        const totalItems = section.items?.length || 0;
+        const checkedCount = section.items?.filter((item) => 
+          checkedItems.has(`${section.id}-${item.id}`)
+        ).length || 0;
+        const allChecked = totalItems > 0 && checkedCount === totalItems;
+        
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {(section.items || []).map((item) => (
+                <label 
+                  key={item.id} 
+                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checkedItems.has(`${section.id}-${item.id}`)}
+                    onChange={() => toggleChecklistItem(section.id, item.id)}
+                    disabled={isCompleted}
+                    className="mt-1 h-5 w-5 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                  />
+                  <span className="text-gray-700 flex-1">{item.text || item.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">
+                Progress: {checkedCount}/{totalItems} items checked
+              </span>
+              {allChecked && (
+                <span className="text-emerald-600 font-medium">
+                  ✅ All items completed!
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      case 'embed':
+        // Auto-complete embed sections after viewing
+        if (!progress.completedSections.includes(section.id)) {
+          setTimeout(() => {
+            if (!progress.completedSections.includes(section.id)) {
+              markSectionComplete(section.id);
+            }
+          }, 3000); // Auto-complete after 3 seconds
+        }
+        
+        return (
+          <div className="space-y-4">
+            {section.url ? (
+              <div className="space-y-2">
+                <iframe
+                  src={section.url}
+                  className="w-full h-96 rounded-lg shadow-lg border-2 border-gray-200"
+                  title={section.title || section.note || 'Embedded Content'}
+                  allowFullScreen
+                />
+                {section.note && (
+                  <p className="text-gray-600 text-sm italic">{section.note}</p>
+                )}
+              </div>
+            ) : (
+              <div className="text-gray-500 italic">No URL provided for this embed</div>
+            )}
+            {section.caption && (
+              <p className="text-gray-600 text-center italic">{section.caption}</p>
+            )}
+          </div>
+        );
 
       default:
         return (

@@ -13,7 +13,11 @@ export default function SectionEditor({ section, onChange, uploadToBucket }) {
     const file = e.target.files?.[0];
     if (!file) return;
     const path = await uploadToBucket(file);
-    if (path) onChange({ media_path: path });
+    if (path) {
+      // Convert path to public URL
+      const { data } = supabase.storage.from("assets").getPublicUrl(path);
+      onChange({ media_url: data.publicUrl, media_path: path });
+    }
   };
 
   switch (section.type) {
@@ -41,11 +45,11 @@ export default function SectionEditor({ section, onChange, uploadToBucket }) {
       return (
         <div className="space-y-2">
           <input type="file" accept="image/*" onChange={handleUpload} />
-          {section.media_path && (
+          {(section.media_url || section.media_path) && (
             <img
               src={
-                supabase.storage
-                  .from("modules_assets")
+                section.media_url || supabase.storage
+                  .from("assets")
                   .getPublicUrl(section.media_path).data.publicUrl
               }
               className="rounded shadow max-h-64"
@@ -66,12 +70,12 @@ export default function SectionEditor({ section, onChange, uploadToBucket }) {
       return (
         <div className="space-y-2">
           <input type="file" accept="video/*" onChange={handleUpload} />
-          {section.media_path && (
+          {(section.media_url || section.media_path) && (
             <video
               controls
               src={
-                supabase.storage
-                  .from("modules_assets")
+                section.media_url || supabase.storage
+                  .from("assets")
                   .getPublicUrl(section.media_path).data.publicUrl
               }
               className="rounded shadow max-h-64"
@@ -93,23 +97,23 @@ export default function SectionEditor({ section, onChange, uploadToBucket }) {
           {(section.cards || []).map((c, i) => (
             <div key={c.id} className="border rounded p-2 space-y-1">
               <input
-                value={c.title || ""}
+                value={c.front || ""}
                 onChange={(e) => {
                   const cards = [...(section.cards || [])];
-                  cards[i] = { ...cards[i], title: e.target.value };
+                  cards[i] = { ...cards[i], front: e.target.value };
                   onChange({ cards });
                 }}
-                placeholder="Card Title"
+                placeholder="Question / Front of Card"
                 className="w-full border rounded px-2 py-1 text-sm"
               />
               <textarea
-                value={c.info || ""}
+                value={c.back || ""}
                 onChange={(e) => {
                   const cards = [...(section.cards || [])];
-                  cards[i] = { ...cards[i], info: e.target.value };
+                  cards[i] = { ...cards[i], back: e.target.value };
                   onChange({ cards });
                 }}
-                placeholder="Card Info"
+                placeholder="Answer / Back of Card"
                 className="w-full border rounded px-2 py-1 text-sm h-16"
               />
             </div>
@@ -117,7 +121,7 @@ export default function SectionEditor({ section, onChange, uploadToBucket }) {
           <button
             onClick={() =>
               onChange({
-                cards: [...(section.cards || []), { id: uid(), title: "", info: "" }],
+                cards: [...(section.cards || []), { id: uid(), front: "", back: "" }],
               })
             }
             className="px-3 py-1 bg-emerald-600 text-white text-sm rounded"
