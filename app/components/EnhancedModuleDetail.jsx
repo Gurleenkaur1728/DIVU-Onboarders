@@ -230,6 +230,7 @@ export default function EnhancedModuleDetail() {
   const [flippedCards, setFlippedCards] = useState(new Set());
   const [checkedItems, setCheckedItems] = useState(new Set());
   const [answers, setAnswers] = useState({});
+  const [quizStates, setQuizStates] = useState({});
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedback, setFeedback] = useState({
     rating: 0,
@@ -802,6 +803,440 @@ export default function EnhancedModuleDetail() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        );
+      }
+
+      case 'quiz': {
+        // Get or initialize quiz state for this section
+        const getQuizState = () => {
+          if (!quizStates[section.id]) {
+            const saved = localStorage.getItem(`quiz-${section.id}-${userId}`);
+            const initialState = saved ? JSON.parse(saved) : {
+              started: false,
+              currentQuestion: 0,
+              userAnswers: {},
+              submitted: false,
+              score: null,
+              startTime: null,
+              endTime: null
+            };
+            return initialState;
+          }
+          return quizStates[section.id];
+        };
+
+        const quizState = getQuizState();
+
+        const totalQuestions = section.questions?.length || 0;
+        const totalPoints = (section.questions || []).reduce((sum, q) => sum + (q.points || 0), 0);
+        const currentQ = section.questions?.[quizState.currentQuestion];
+
+        // Save quiz state to localStorage
+        const saveQuizState = (newState) => {
+          setQuizStates(prev => ({ ...prev, [section.id]: newState }));
+          localStorage.setItem(`quiz-${section.id}-${userId}`, JSON.stringify(newState));
+        };
+
+        // Start quiz
+        const startQuiz = () => {
+          saveQuizState({
+            ...quizState,
+            started: true,
+            startTime: Date.now(),
+            userAnswers: {}
+          });
+        };
+
+        // Answer question
+        const answerQuestion = (answer) => {
+          saveQuizState({
+            ...quizState,
+            userAnswers: {
+              ...quizState.userAnswers,
+              [quizState.currentQuestion]: answer
+            }
+          });
+        };
+
+        // Calculate score
+        const calculateScore = () => {
+          let earnedPoints = 0;
+          (section.questions || []).forEach((q, idx) => {
+            const userAnswer = quizState.userAnswers[idx];
+            let isCorrect = false;
+
+            if (q.type === 'multiple-choice') {
+              isCorrect = userAnswer === q.correctAnswer;
+            } else if (q.type === 'multiple-select') {
+              const correctSet = new Set(q.correctAnswers || []);
+              const userSet = new Set(userAnswer || []);
+              isCorrect = correctSet.size === userSet.size && 
+                        [...correctSet].every(a => userSet.has(a));
+            } else if (q.type === 'true-false') {
+              isCorrect = userAnswer === q.correctAnswer;
+            } else if (q.type === 'fill-blank') {
+              isCorrect = (userAnswer || '').toLowerCase().trim() === 
+                         (q.correctAnswer || '').toLowerCase().trim();
+            }
+
+            if (isCorrect) {
+              earnedPoints += q.points || 0;
+            }
+          });
+
+          return {
+            points: earnedPoints,
+            percentage: totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0
+          };
+        };
+
+        // Submit quiz
+        const submitQuiz = () => {
+          const score = calculateScore();
+          const passed = score.percentage >= (section.settings?.passingScore || 70);
+          
+          saveQuizState({
+            ...quizState,
+            submitted: true,
+            score: score,
+            endTime: Date.now()
+          });
+
+          // Mark section complete if passed
+          if (passed && !progress.completedSections.includes(section.id)) {
+            markSectionComplete(section.id);
+          }
+        };
+
+        // Retake quiz
+        const retakeQuiz = () => {
+          localStorage.removeItem(`quiz-${section.id}-${userId}`);
+          setQuizStates(prev => {
+            const newStates = { ...prev };
+            delete newStates[section.id];
+            return newStates;
+          });
+        };
+
+        // Not started view
+        if (!quizState.started) {
+          return (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 text-center">
+              <div className="text-5xl mb-4">📝</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                {section.title || "Quiz"}
+              </h3>
+              {section.description && (
+                <p className="text-gray-600 mb-6">{section.description}</p>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6">
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-blue-600">{totalQuestions}</div>
+                  <div className="text-sm text-gray-600">Questions</div>
+                </div>
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-blue-600">{totalPoints}</div>
+                  <div className="text-sm text-gray-600">Total Points</div>
+                </div>
+                {section.settings?.timeLimit && (
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {section.settings.timeLimit}
+                    </div>
+                    <div className="text-sm text-gray-600">Minutes</div>
+                  </div>
+                )}
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-green-600">
+                    {section.settings?.passingScore || 70}%
+                  </div>
+                  <div className="text-sm text-gray-600">Passing Score</div>
+                </div>
+              </div>
+
+              <button
+                onClick={startQuiz}
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg"
+              >
+                Start Quiz
+              </button>
+            </div>
+          );
+        }
+
+        // Results view
+        if (quizState.submitted) {
+          const passed = quizState.score.percentage >= (section.settings?.passingScore || 70);
+          
+          return (
+            <div className="space-y-6">
+              <div className={`rounded-xl p-8 text-center ${
+                passed ? 'bg-gradient-to-br from-green-50 to-emerald-50' : 'bg-gradient-to-br from-red-50 to-orange-50'
+              }`}>
+                <div className="text-6xl mb-4">{passed ? '🎉' : '📚'}</div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                  {passed ? 'Congratulations!' : 'Keep Learning!'}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {passed ? 'You passed the quiz!' : `You need ${section.settings?.passingScore || 70}% to pass.`}
+                </p>
+                
+                <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-3xl font-bold text-blue-600">
+                      {quizState.score.percentage}%
+                    </div>
+                    <div className="text-sm text-gray-600">Score</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-3xl font-bold text-purple-600">
+                      {quizState.score.points}/{totalPoints}
+                    </div>
+                    <div className="text-sm text-gray-600">Points</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-3xl font-bold text-green-600">
+                      {Object.keys(quizState.userAnswers).length}/{totalQuestions}
+                    </div>
+                    <div className="text-sm text-gray-600">Answered</div>
+                  </div>
+                </div>
+
+                {section.settings?.allowRetake && !passed && (
+                  <button
+                    onClick={retakeQuiz}
+                    className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                  >
+                    Retake Quiz
+                  </button>
+                )}
+              </div>
+
+              {/* Review Answers */}
+              {section.settings?.showCorrectAnswers && (
+                <div className="space-y-4">
+                  <h4 className="text-xl font-bold text-gray-900">Review Your Answers</h4>
+                  {(section.questions || []).map((q, idx) => {
+                    const userAnswer = quizState.userAnswers[idx];
+                    let isCorrect = false;
+
+                    if (q.type === 'multiple-choice') {
+                      isCorrect = userAnswer === q.correctAnswer;
+                    } else if (q.type === 'multiple-select') {
+                      const correctSet = new Set(q.correctAnswers || []);
+                      const userSet = new Set(userAnswer || []);
+                      isCorrect = correctSet.size === userSet.size && 
+                                [...correctSet].every(a => userSet.has(a));
+                    } else if (q.type === 'true-false') {
+                      isCorrect = userAnswer === q.correctAnswer;
+                    } else if (q.type === 'fill-blank') {
+                      isCorrect = (userAnswer || '').toLowerCase().trim() === 
+                                 (q.correctAnswer || '').toLowerCase().trim();
+                    }
+
+                    return (
+                      <div key={idx} className={`border-2 rounded-lg p-4 ${
+                        isCorrect ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'
+                      }`}>
+                        <div className="flex items-start gap-3">
+                          <div className="text-2xl">
+                            {isCorrect ? '✅' : '❌'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-900 mb-2">
+                              Question {idx + 1}: {q.question}
+                            </div>
+                            
+                            <div className="text-sm space-y-1">
+                              <div>
+                                <span className="font-medium">Your answer: </span>
+                                {q.type === 'multiple-choice' && q.options?.[userAnswer]}
+                                {q.type === 'multiple-select' && (userAnswer || []).map(i => q.options?.[i]).join(', ')}
+                                {q.type === 'true-false' && String(userAnswer)}
+                                {q.type === 'fill-blank' && userAnswer}
+                              </div>
+                              {!isCorrect && (
+                                <div className="text-green-700">
+                                  <span className="font-medium">Correct answer: </span>
+                                  {q.type === 'multiple-choice' && q.options?.[q.correctAnswer]}
+                                  {q.type === 'multiple-select' && (q.correctAnswers || []).map(i => q.options?.[i]).join(', ')}
+                                  {q.type === 'true-false' && String(q.correctAnswer)}
+                                  {q.type === 'fill-blank' && q.correctAnswer}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {q.explanation && (
+                              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                                <div className="text-sm font-medium text-blue-900 mb-1">Explanation:</div>
+                                <div className="text-sm text-blue-800">{q.explanation}</div>
+                              </div>
+                            )}
+                            
+                            <div className="mt-2 text-xs text-gray-600">
+                              Points: {isCorrect ? q.points : 0}/{q.points}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // Taking quiz view
+        return (
+          <div className="space-y-6">
+            {/* Progress bar */}
+            <div className="bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all"
+                style={{ width: `${((quizState.currentQuestion + 1) / totalQuestions) * 100}%` }}
+              />
+            </div>
+
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>Question {quizState.currentQuestion + 1} of {totalQuestions}</span>
+              <span>{Object.keys(quizState.userAnswers).length} answered</span>
+            </div>
+
+            {/* Current Question */}
+            {currentQ && (
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+                <div className="text-lg font-semibold text-gray-900 mb-4">
+                  {currentQ.question}
+                </div>
+
+                {/* Multiple Choice */}
+                {currentQ.type === 'multiple-choice' && (
+                  <div className="space-y-2">
+                    {(currentQ.options || []).map((opt, optIdx) => (
+                      <label
+                        key={optIdx}
+                        className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          quizState.userAnswers[quizState.currentQuestion] === optIdx
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${quizState.currentQuestion}`}
+                          checked={quizState.userAnswers[quizState.currentQuestion] === optIdx}
+                          onChange={() => answerQuestion(optIdx)}
+                          className="w-5 h-5 text-blue-600"
+                        />
+                        <span className="flex-1">{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Multiple Select */}
+                {currentQ.type === 'multiple-select' && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600 mb-3">Select all that apply:</p>
+                    {(currentQ.options || []).map((opt, optIdx) => {
+                      const selected = (quizState.userAnswers[quizState.currentQuestion] || []).includes(optIdx);
+                      return (
+                        <label
+                          key={optIdx}
+                          className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            selected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={(e) => {
+                              const current = quizState.userAnswers[quizState.currentQuestion] || [];
+                              const newAnswer = e.target.checked
+                                ? [...current, optIdx]
+                                : current.filter(i => i !== optIdx);
+                              answerQuestion(newAnswer);
+                            }}
+                            className="w-5 h-5 text-blue-600 rounded"
+                          />
+                          <span className="flex-1">{opt}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* True/False */}
+                {currentQ.type === 'true-false' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {[true, false].map((value) => (
+                      <label
+                        key={String(value)}
+                        className={`flex items-center justify-center gap-3 p-6 border-2 rounded-lg cursor-pointer transition-all ${
+                          quizState.userAnswers[quizState.currentQuestion] === value
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${quizState.currentQuestion}`}
+                          checked={quizState.userAnswers[quizState.currentQuestion] === value}
+                          onChange={() => answerQuestion(value)}
+                          className="w-5 h-5 text-blue-600"
+                        />
+                        <span className="text-lg font-semibold">{value ? 'True' : 'False'}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Fill in the Blank */}
+                {currentQ.type === 'fill-blank' && (
+                  <input
+                    type="text"
+                    value={quizState.userAnswers[quizState.currentQuestion] || ''}
+                    onChange={(e) => answerQuestion(e.target.value)}
+                    placeholder="Type your answer here..."
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-lg focus:border-blue-600 focus:outline-none"
+                  />
+                )}
+
+                <div className="mt-4 text-sm text-gray-600">
+                  Points: {currentQ.points || 0}
+                </div>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => saveQuizState({ ...quizState, currentQuestion: quizState.currentQuestion - 1 })}
+                disabled={quizState.currentQuestion === 0}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+
+              {quizState.currentQuestion < totalQuestions - 1 ? (
+                <button
+                  onClick={() => saveQuizState({ ...quizState, currentQuestion: quizState.currentQuestion + 1 })}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Next →
+                </button>
+              ) : (
+                <button
+                  onClick={submitQuiz}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                >
+                  Submit Quiz
+                </button>
+              )}
             </div>
           </div>
         );

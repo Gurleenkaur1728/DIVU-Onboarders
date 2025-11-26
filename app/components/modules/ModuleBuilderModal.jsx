@@ -18,6 +18,7 @@ export const SECTION_TYPES = [
   { key: "flashcards", label: "Flashcards" },
   { key: "dropdowns", label: "Dropdowns" },
   { key: "questionnaire", label: "Questionnaire" },
+  { key: "quiz", label: "Quiz/Assessment" },
   { key: "checklist", label: "Checklist" },
   { key: "embed", label: "Embed (URL)" },
 ];
@@ -39,6 +40,32 @@ export const defaultSection = (type) => {
         id: uid(),
         type,
         questions: [{ id: uid(), q: "", kind: "mcq", options: ["", ""], correctIndex: 0 }],
+      };
+    case "quiz":
+      return {
+        id: uid(),
+        type,
+        title: "Quiz",
+        description: "",
+        settings: {
+          passingScore: 70,
+          showCorrectAnswers: true,
+          allowRetake: true,
+          maxAttempts: 3,
+          shuffleQuestions: false,
+          timeLimit: null
+        },
+        questions: [
+          {
+            id: uid(),
+            type: "multiple-choice",
+            question: "",
+            options: ["", "", "", ""],
+            correctAnswer: 0,
+            points: 10,
+            explanation: ""
+          }
+        ]
       };
     case "checklist":
       return { id: uid(), type, items: [{ id: uid(), text: "", required: true }] };
