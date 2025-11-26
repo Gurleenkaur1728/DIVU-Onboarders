@@ -95,6 +95,7 @@ export default function Sidebar({ role, collapsed, setCollapsed }) {
         {role === ROLES.USER && (
           <>
             <Item icon={Home} label="Home Page" route="/home" isActive={location.pathname === "/home"} collapsed={collapsed} />
+            <Item icon={BookOpen} label="Modules" route="/modules" isActive={location.pathname === "/modules" || location.pathname.startsWith("/modules/")} collapsed={collapsed} />
             <Item icon={List} label="Checklist" route="/checklist" isActive={location.pathname === "/checklist"} collapsed={collapsed} />
             <Item icon={CalendarDays} label="Events" route="/events" isActive={location.pathname === "/events"} collapsed={collapsed} />
             <Item icon={MessageSquare} label="Feedback" route="/feedback" isActive={location.pathname === "/feedback"} collapsed={collapsed} />
