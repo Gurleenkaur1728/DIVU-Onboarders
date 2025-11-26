@@ -27,9 +27,9 @@ export const defaultSection = (type) => {
     case "text":
       return { id: uid(), type, title: "", body: "" };
     case "photo":
-      return { id: uid(), type, media_path: "", caption: "" };
+      return { id: uid(), type, media_url: "", caption: "" };
     case "video":
-      return { id: uid(), type, media_path: "", transcript: "" };
+      return { id: uid(), type, media_url: "", transcript: "" };
     case "flashcards":
       return { id: uid(), type, cards: [{ id: uid(), title: "", info: "" }] };
     case "dropdowns":
@@ -222,7 +222,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
             break;
           case "photo":
           case "video":
-            if (!s.media_path || !s.media_path.trim()) {
+            if (!s.media_url || !s.media_url.trim()) {
               showToast(`Page ${pIndex + 1} — ${s.type} section ${sIndex + 1} requires an upload.`, "error");
               return false;
             }

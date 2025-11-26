@@ -1,44 +1,100 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AppLayout from "../../src/AppLayout.jsx";
-import { AppWindow, CheckCircle2, Circle, Clock } from "lucide-react";
+import { AppWindow, CheckCircle2, Circle, Clock, MessageSquare } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Modules() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Load published modules from Supabase
   useEffect(() => {
-    loadModules();
-  }, []);
+    if (user?.profile_id) {
+      loadModules();
+    }
+  }, [user?.profile_id]);
 
   const loadModules = async () => {
     try {
       setLoading(true);
+      const userId = user?.profile_id;
       
-      // Fetch all published modules
+      if (!userId) {
+        console.warn("No user ID found");
+        setModules([]);
+        return;
+      }
+
+      // Fetch all active modules
       const { data: modulesData, error: modulesError } = await supabase
         .from("modules")
         .select("*")
+        .eq("is_active", true)
         .order("created_at", { ascending: true });
 
       if (modulesError) throw modulesError;
 
-      // For now, set all modules as pending until we implement user progress tracking
-      const modulesWithStatus = (modulesData || []).map((module) => ({
-        ...module,
-        assigned: "-",
-        completed: "-",
-        feedback: "-",
-        status: "pending", // Default status until progress tracking is implemented
-        progress_percent: 0
-      }));
+      // Fetch user progress for all modules
+      const { data: progressData, error: progressError } = await supabase
+        .from("user_module_progress")
+        .select("module_id, is_completed, completed_at, created_at, completion_percentage")
+        .eq("user_id", userId);
+
+      if (progressError) throw progressError;
+
+      // Fetch feedback for all modules
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from("module_feedback")
+        .select("module_id, rating, created_at")
+        .eq("user_id", userId);
+
+      if (feedbackError) throw feedbackError;
+
+      // Combine data
+      const modulesWithStatus = (modulesData || []).map((module) => {
+        const progress = progressData?.find(p => p.module_id === module.id);
+        const feedback = feedbackData?.find(f => f.module_id === module.id);
+        
+        // Date assigned = when user_module_progress was created (first interaction)
+        const dateAssigned = progress?.created_at 
+          ? new Date(progress.created_at).toLocaleDateString()
+          : "-";
+        
+        // Date completed = when module was marked complete
+        const dateCompleted = progress?.is_completed && progress?.completed_at
+          ? new Date(progress.completed_at).toLocaleDateString()
+          : "-";
+        
+        // Feedback status
+        const feedbackStatus = feedback ? "Yes" : (progress?.is_completed ? "No" : "-");
+        
+        // Module status
+        let status = "not-started";
+        if (progress?.is_completed) {
+          status = "completed";
+        } else if (progress && progress.completion_percentage > 0) {
+          status = "in-progress";
+        }
+
+        return {
+          ...module,
+          assigned: dateAssigned,
+          completed: dateCompleted,
+          feedback: feedbackStatus,
+          hasFeedback: !!feedback,
+          isCompleted: progress?.is_completed || false,
+          status: status,
+          progress_percent: progress?.completion_percentage || 0
+        };
+      });
 
       setModules(modulesWithStatus);
     } catch (error) {
       console.error("Error loading modules:", error);
-      // Fallback to empty array if error
       setModules([]);
     } finally {
       setLoading(false);
@@ -130,14 +186,25 @@ export default function Modules() {
                       <td className="p-3 text-sm text-emerald-800">{m.completed}</td>
 
                       {/* Feedback */}
-                      <td
-                        className={`p-3 text-sm font-semibold ${
-                          m.feedback === "Yes"
-                            ? "text-emerald-600"
-                            : "text-gray-500 italic"
-                        }`}
-                      >
-                        {m.feedback}
+                      <td className="p-3">
+                        {m.hasFeedback ? (
+                          <button
+                            onClick={() => navigate('/feedback')}
+                            className="text-emerald-600 font-semibold hover:underline flex items-center gap-1"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                            View
+                          </button>
+                        ) : m.isCompleted ? (
+                          <button
+                            onClick={() => navigate(`/feedback/${m.id}`)}
+                            className="text-amber-600 font-semibold hover:underline"
+                          >
+                            Give Feedback
+                          </button>
+                        ) : (
+                          <span className="text-gray-400 italic">-</span>
+                        )}
                       </td>
                     </tr>
                   ))
