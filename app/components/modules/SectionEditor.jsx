@@ -863,6 +863,100 @@ export default function SectionEditor({ section, onChange, uploadToBucket, allPa
         </div>
       );
 
+    /* FILE DOWNLOAD SECTION */
+    case "file":
+      return (
+        <div className="space-y-4">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              File Title *
+            </label>
+            <input
+              type="text"
+              value={section.title || ""}
+              onChange={(e) => onChange({ title: e.target.value })}
+              placeholder="e.g., Employee Handbook, Safety Guidelines"
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description (optional)
+            </label>
+            <textarea
+              value={section.description || ""}
+              onChange={(e) => onChange({ description: e.target.value })}
+              placeholder="Describe what this file contains..."
+              className="w-full border rounded px-3 py-2 h-20"
+            />
+          </div>
+
+          {/* File Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Upload File *
+            </label>
+            {section.file_url ? (
+              <div className="border rounded-lg p-4 bg-emerald-50 border-emerald-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-emerald-900">
+                      📄 {section.file_name || "Uploaded file"}
+                    </div>
+                    {section.file_size > 0 && (
+                      <div className="text-sm text-emerald-700">
+                        {(section.file_size / 1024).toFixed(2)} KB
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => onChange({ file_url: "", file_name: "", file_size: 0 })}
+                    className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-emerald-400 transition-colors">
+                <input
+                  type="file"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    
+                    const path = await uploadToBucket(file);
+                    if (path) {
+                      const { data } = supabase.storage.from("assets").getPublicUrl(path);
+                      onChange({
+                        file_url: data.publicUrl,
+                        file_name: file.name,
+                        file_size: file.size,
+                      });
+                    }
+                  }}
+                  className="hidden"
+                  id="file-upload"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="cursor-pointer inline-block px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                >
+                  Choose File
+                </label>
+                <p className="text-sm text-gray-500 mt-2">
+                  PDF, DOC, XLS, PPT, TXT, ZIP (max 50MB)
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
     /* DEFAULT CASE */
     default:
       return <div className="text-gray-400">Unknown section type.</div>;

@@ -1440,6 +1440,63 @@ export default function EnhancedModuleDetail() {
           </div>
         );
 
+      // File Download Section
+      case "file":
+        return (
+          <div className="space-y-4">
+            {section.title && (
+              <h3 className="text-xl font-bold text-emerald-900">{section.title}</h3>
+            )}
+            {section.description && (
+              <p className="text-gray-700">{section.description}</p>
+            )}
+            
+            {section.file_url ? (
+              <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-emerald-600 text-white rounded-lg p-3">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-emerald-900 text-lg">
+                        {section.file_name || "Download File"}
+                      </div>
+                      {section.file_size > 0 && (
+                        <div className="text-sm text-emerald-700">
+                          {section.file_size > 1024 * 1024 
+                            ? `${(section.file_size / (1024 * 1024)).toFixed(2)} MB`
+                            : `${(section.file_size / 1024).toFixed(2)} KB`
+                          }
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <a
+                    href={section.file_url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => handleSectionComplete(sectionIndex)}
+                    className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold flex items-center gap-2 transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-4">
+                No file available for download
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return (
           <div className="text-gray-500 italic">
