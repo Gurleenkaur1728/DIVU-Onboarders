@@ -21,6 +21,7 @@ export const SECTION_TYPES = [
   { key: "quiz", label: "Quiz/Assessment" },
   { key: "checklist", label: "Checklist" },
   { key: "embed", label: "Embed (URL)" },
+  { key: "file", label: "File Download" },
 ];
 
 export const defaultSection = (type) => {
@@ -71,6 +72,8 @@ export const defaultSection = (type) => {
       return { id: uid(), type, items: [{ id: uid(), text: "", required: true }] };
     case "embed":
       return { id: uid(), type, url: "", note: "" };
+    case "file":
+      return { id: uid(), type, file_url: "", file_name: "", title: "", description: "", file_size: 0 };
     default:
       return { id: uid(), type: "text", title: "", body: "" };
   }
