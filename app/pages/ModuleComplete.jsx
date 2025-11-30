@@ -1,29 +1,70 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import AppLayout from "../../src/AppLayout.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useEffect, useState } from "react";
 
 export default function ModuleComplete() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [moduleTitle, setModuleTitle] = useState("");
+
+  useEffect(() => {
+    // Mark module as complete when this page loads
+    markModuleComplete();
+    // Fetch module title
+    fetchModuleTitle();
+  }, [id, user?.profile_id]);
+
+  const fetchModuleTitle = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("modules")
+        .select("title")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      setModuleTitle(data.title);
+    } catch (error) {
+      console.error("Error fetching module title:", error);
+      setModuleTitle(`Module ${id}`);
+    }
+  };
+
+  const markModuleComplete = async () => {
+    try {
+      const userId = user?.profile_id;
+      if (!userId) return;
+
+      // Update progress to mark as complete
+      const { error: updateError } = await supabase
+        .from("user_module_progress")
+        .update({
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+          completion_percentage: 100
+        })
+        .eq("user_id", userId)
+        .eq("module_id", id);
+
+      if (updateError) throw updateError;
+      console.log("✅ Module marked as complete");
+    } catch (error) {
+      console.error("❌ Error marking module complete:", error);
+    }
+  };
 
   async function handleCertificateAndXP() {
-    const userId = localStorage.getItem("profile_id");
-    const moduleTitle = `Module ${id}`;
+    const userId = user?.profile_id;
     const issueDate = new Date().toISOString();
 
     if (!userId) {
-      alert("User ID not found in localStorage. Please log in again.");
+      alert("User ID not found. Please log in again.");
       return;
     }
     console.log("User ID:", userId);
-const { data: userData, error: userError } = await supabase
-  .from("users")
-  .select("xp, level, streak_days, last_login")
-  .eq("id", userId)
-  .single();
-
-console.log("Fetched user data:", userData, "Error:", userError);
-
 
     try {
       // 🔹 Check if certificate already exists
@@ -31,7 +72,7 @@ console.log("Fetched user data:", userData, "Error:", userError);
         .from("certificates")
         .select("id")
         .eq("user_id", userId)
-        .eq("title", moduleTitle)
+        .eq("module_id", id)
         .maybeSingle();
 
       if (checkError) throw checkError;
@@ -47,6 +88,7 @@ console.log("Fetched user data:", userData, "Error:", userError);
         await supabase.from("certificates").insert([
           {
             user_id: userId,
+            module_id: id,
             title: moduleTitle,
             issue_date: issueDate,
             status: "completed",
@@ -56,31 +98,30 @@ console.log("Fetched user data:", userData, "Error:", userError);
 
       // 🔹 Update XP, streak, and level in users table
       let { data: userData, error: userError } = await supabase
-  .from("users")
-  .select("xp, level, streak_days, last_login")
-  .eq("id", userId)
-  .maybeSingle();
+        .from("users")
+        .select("xp, level, streak_days, last_login")
+        .eq("id", userId)
+        .maybeSingle();
 
-// 👇 If user doesn't exist, create a new one
-if (!userData) {
-  const insertResult = await supabase
-    .from("users")
-    .insert([
-      {
-        id: userId,
-        xp: 0,
-        level: 1,
-        streak_days: 0,
-        last_login: new Date().toISOString(),
-      },
-    ])
-    .select()
-    .single();
+      // 👇 If user doesn't exist, create a new one
+      if (!userData) {
+        const insertResult = await supabase
+          .from("users")
+          .insert([
+            {
+              id: userId,
+              xp: 0,
+              level: 1,
+              streak_days: 0,
+              last_login: new Date().toISOString(),
+            },
+          ])
+          .select()
+          .single();
 
-  userData = insertResult.data;
-  console.log("✅ Created new user record:", userData);
-}
-
+        userData = insertResult.data;
+        console.log("✅ Created new user record:", userData);
+      }
 
       const currentXP = userData?.xp || 0;
       const newXP = currentXP + 20; // 💥 +20 XP per module
@@ -141,7 +182,7 @@ if (!userData) {
         </h1>
         <p className="text-lg text-gray-700 mb-8">
           You have completed{" "}
-          <span className="font-semibold italic">Module {id}</span>!
+          <span className="font-semibold italic">{moduleTitle || `Module ${id}`}</span>!
         </p>
 
         <div className="flex flex-col gap-4">
