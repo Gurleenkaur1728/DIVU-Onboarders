@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import AppLayout from "../../src/AppLayout.jsx";
 import { supabase } from "../../src/lib/supabaseClient.js";
-import { useRole } from "../../src/lib/hooks/useRole.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 // Smart image component that tries multiple path variations
 function PhotoDisplay({ mediaPath, caption }) {
@@ -14,19 +14,14 @@ function PhotoDisplay({ mediaPath, caption }) {
   const getPossiblePaths = (originalPath) => {
     if (!originalPath) return [];
     
-    const filename = originalPath.split(/[/\\]/).pop(); // Get just the filename
+    // If it's already a full URL, use it directly (MOST COMMON CASE NOW)
+    if (originalPath.startsWith('http://') || originalPath.startsWith('https://')) {
+      return [originalPath];
+    }
     
-    return [
-      // Try Supabase Storage URL first (this is likely the correct one)
-      supabase.storage.from("modules_assets").getPublicUrl(originalPath).data.publicUrl,
-      originalPath, // Try original path
-      `/${originalPath}`, // Add leading slash
-      `/assets/images/${filename}`, // Assets folder
-      `/src/assets/images/${filename}`, // Src assets folder  
-      `/${filename}`, // Just filename in public
-      `/public/${filename}`, // Public folder
-      originalPath.replace(/\\/g, '/'), // Convert backslashes to forward slashes
-    ].filter(Boolean);
+    // Otherwise build the URL from the path
+    const publicUrl = supabase.storage.from("module-content").getPublicUrl(originalPath).data.publicUrl;
+    return [publicUrl];
   };
 
   useEffect(() => {
@@ -90,11 +85,50 @@ function PhotoDisplay({ mediaPath, caption }) {
 export default function ModuleDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { roleId } = useRole();
+  const { user } = useAuth();
   const [module, setModule] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [flippedCards, setFlippedCards] = useState(new Set()); // Track which flashcards are flipped
+
+  // Initialize or update progress tracking
+  const initializeProgress = useCallback(async (moduleId) => {
+    try {
+      const userId = user?.profile_id;
+      if (!userId) return;
+
+      // Check if progress already exists
+      const { data: existingProgress, error: checkError } = await supabase
+        .from("user_module_progress")
+        .select("id, current_page")
+        .eq("user_id", userId)
+        .eq("module_id", moduleId)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (!existingProgress) {
+        // Create new progress record
+        const { error: insertError } = await supabase
+          .from("user_module_progress")
+          .insert({
+            user_id: userId,
+            module_id: moduleId,
+            current_page: 0,
+            completion_percentage: 0,
+            is_completed: false,
+            completed_sections: []
+          });
+
+        if (insertError) throw insertError;
+        console.log("✅ Progress tracking initialized for module:", moduleId);
+      } else {
+        console.log("📊 Progress already exists for module:", moduleId);
+      }
+    } catch (error) {
+      console.error("❌ Error initializing progress:", error);
+    }
+  }, [user?.profile_id]);
 
   useEffect(() => {
     const loadModule = async () => {
@@ -115,6 +149,11 @@ export default function ModuleDetail() {
         if (data) {
           console.log("Module found:", data);
           setModule(data);
+          
+          // Initialize or update user progress when module is loaded
+          if (user?.profile_id) {
+            await initializeProgress(data.id);
+          }
         } else {
           console.log("No module found with ID:", id);
         }
@@ -128,7 +167,35 @@ export default function ModuleDetail() {
     if (id) {
       loadModule();
     }
-  }, [id]);
+  }, [id, user?.profile_id, initializeProgress]);
+
+  // Update progress when page changes
+  useEffect(() => {
+    const updateProgress = async () => {
+      if (!user?.profile_id || !module?.id) return;
+
+      try {
+        const totalPages = module.pages?.length || 1;
+        const completionPercentage = Math.round(((page + 1) / totalPages) * 100);
+
+        await supabase
+          .from("user_module_progress")
+          .update({
+            current_page: page,
+            completion_percentage: completionPercentage,
+            updated_at: new Date().toISOString()
+          })
+          .eq("user_id", user.profile_id)
+          .eq("module_id", module.id);
+
+        console.log(`📈 Progress updated: Page ${page + 1}/${totalPages} (${completionPercentage}%)`);
+      } catch (error) {
+        console.error("Error updating progress:", error);
+      }
+    };
+
+    updateProgress();
+  }, [page, module?.id, module?.pages?.length, user?.profile_id]);
 
   if (loading) {
     return (
@@ -185,10 +252,17 @@ export default function ModuleDetail() {
         );
       
       case 'photo':
+        console.log('Photo section data:', section);
         return (
           <div key={section.id} className="space-y-4">
-            {section.media_path && (
-              <PhotoDisplay mediaPath={section.media_path} caption={section.caption} />
+            {(section.media_url || section.media_path) && (
+              <PhotoDisplay mediaPath={section.media_url || section.media_path} caption={section.caption} />
+            )}
+            {!section.media_url && !section.media_path && (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-yellow-800">Debug: No media_url or media_path found</p>
+                <pre className="text-xs mt-2">{JSON.stringify(section, null, 2)}</pre>
+              </div>
             )}
             {section.caption && (
               <p className="text-gray-600 text-center italic">{section.caption}</p>
@@ -199,9 +273,9 @@ export default function ModuleDetail() {
       case 'video':
         return (
           <div key={section.id} className="space-y-4">
-            {section.media_path && (
+            {(section.media_url || section.media_path) && (
               <video 
-                src={section.media_path} 
+                src={section.media_url || section.media_path} 
                 controls 
                 className="w-full max-w-md mx-auto rounded-lg shadow-md"
               />
@@ -239,23 +313,17 @@ export default function ModuleDetail() {
       case 'dropdowns':
         return (
           <div key={section.id} className="space-y-4">
-            <h3 className="font-semibold text-xl text-emerald-800">
-              {section.question || "Dropdown Question"}
-            </h3>
+            <h3 className="font-semibold text-xl text-emerald-800">Information</h3>
             <div className="space-y-3">
               {(section.items || []).map((item, idx) => (
-                <div key={item.id || idx} className="space-y-2">
-                  <label className="block text-gray-700 font-medium">
-                    {item.question}
-                    {item.required && <span className="text-red-500 ml-1">*</span>}
-                  </label>
-                  <select className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-                    <option value="">Select an option...</option>
-                    {(item.options || []).map((option, optIdx) => (
-                      <option key={optIdx} value={option}>{option}</option>
-                    ))}
-                  </select>
-                </div>
+                <details key={item.id || idx} className="border border-gray-200 rounded-lg">
+                  <summary className="cursor-pointer px-4 py-3 font-medium text-gray-800 hover:bg-gray-50">
+                    {item.header || `Item ${idx + 1}`}
+                  </summary>
+                  <div className="px-4 py-3 text-gray-700 bg-gray-50">
+                    {item.info || "No information provided"}
+                  </div>
+                </details>
               ))}
             </div>
           </div>
@@ -264,31 +332,14 @@ export default function ModuleDetail() {
       case 'questionnaire':
         return (
           <div key={section.id} className="space-y-4">
-            <h3 className="font-semibold text-xl text-emerald-800">
-              {section.title || "Questionnaire"}
-            </h3>
+            <h3 className="font-semibold text-xl text-emerald-800">Quiz Questions</h3>
             <div className="space-y-4">
               {(section.questions || []).map((question, idx) => (
                 <div key={question.id || idx} className="space-y-2">
                   <label className="block text-gray-700 font-medium">
-                    {question.text}
-                    {question.required && <span className="text-red-500 ml-1">*</span>}
+                    {idx + 1}. {question.q || question.text}
                   </label>
-                  {question.type === 'text' && (
-                    <input 
-                      type="text" 
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                      placeholder="Your answer..."
-                    />
-                  )}
-                  {question.type === 'textarea' && (
-                    <textarea 
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                      rows="3"
-                      placeholder="Your answer..."
-                    />
-                  )}
-                  {question.type === 'radio' && (
+                  {question.kind === 'mcq' && (
                     <div className="space-y-2">
                       {(question.options || []).map((option, optIdx) => (
                         <label key={optIdx} className="flex items-center space-x-2">
@@ -302,6 +353,13 @@ export default function ModuleDetail() {
                         </label>
                       ))}
                     </div>
+                  )}
+                  {(question.kind === 'text' || question.type === 'text') && (
+                    <input 
+                      type="text" 
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="Your answer..."
+                    />
                   )}
                 </div>
               ))}
@@ -355,29 +413,37 @@ export default function ModuleDetail() {
       case 'embed':
         return (
           <div key={section.id} className="space-y-4">
-            <h3 className="font-semibold text-xl text-emerald-800">
-              {section.title || "Embedded Content"}
-            </h3>
+            <h3 className="font-semibold text-xl text-emerald-800">Embedded Link</h3>
             {section.url && (
-              <iframe 
-                src={section.url}
-                className="w-full h-96 border border-gray-300 rounded-lg"
-                title={section.title || "Embedded content"}
-              />
+              <div className="border border-gray-300 rounded-lg p-4">
+                <a 
+                  href={section.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 underline break-all"
+                >
+                  {section.url}
+                </a>
+                <p className="text-xs text-gray-500 mt-2">Click to open in new tab</p>
+              </div>
             )}
-            {section.description && (
-              <p className="text-gray-600 text-sm">{section.description}</p>
+            {section.note && (
+              <p className="text-gray-600 text-sm">{section.note}</p>
             )}
           </div>
         );
       
       default:
+        console.warn('Unsupported section type:', section.type, section);
         return (
           <div key={section.id} className="space-y-4">
-            <p className="text-gray-500 italic">Section type "{section.type}" not supported yet.</p>
-            <pre className="text-xs text-gray-400 bg-gray-50 p-2 rounded">
-              {JSON.stringify(section, null, 2)}
-            </pre>
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-yellow-800 font-medium">Section type "{section.type}" not fully supported yet.</p>
+              <p className="text-sm text-gray-600 mt-2">Section data:</p>
+              <pre className="text-xs text-gray-600 bg-white p-2 rounded mt-1 overflow-auto max-h-40">
+                {JSON.stringify(section, null, 2)}
+              </pre>
+            </div>
           </div>
         );
     }

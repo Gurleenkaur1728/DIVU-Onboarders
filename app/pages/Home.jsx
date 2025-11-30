@@ -4,7 +4,6 @@ import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient";
-import DivuChatbot from "../components/DivuChatbot";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 
 export default function Home() {
@@ -101,7 +100,7 @@ export default function Home() {
           <Tab label="Welcome" to="/home" active />
           <Tab label="Culture" to="/culture" />
           <Tab label="About" to="/about" />
-          <DivuChatbot />
+          
 
         </div>
  
