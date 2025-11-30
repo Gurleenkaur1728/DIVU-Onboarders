@@ -1,0 +1,32 @@
+[
+  {
+    "file": "culture.txt",
+    "index": 0,
+    "text": "Our company values:\r\n\r\n1. Teamwork  \r\n   Employees are encouraged to collaborate, support each other, and communicate openly.\r\n\r\n2. Integrity  \r\n   We expect honesty and transparency in all professional interactions.\r\n\r\n3. Innovation  \r\n   Employees are encouraged to bring creative ideas and explore better ways of working.\r\n\r\n4. Respect  \r\n   Every employee is treated with fairness and dignity.\r\n\r\n5. Continuous Learning  \r\n   Training and development opportunities are available throughout the year.\r\n\r\nWork Culture:\r\n- We focus on creating a positive, inclusive work environment.\r\n- Employees are encouraged to maintain work-life balance.\r\n- New employees can ask questions freely—there are no “bad” questions here.\r\n"
+  },
+  {
+    "file": "employee_support.txt",
+    "index": 0,
+    "text": "HR Support:\r\n- Employees can contact HR through the app's Feedback or Questions section.\r\n- For urgent matters, employees should directly email the HR team.\r\n\r\nTechnical Support:\r\n- Issues with login, modules, or app access should be reported using the Feedback page.\r\n- Employees may also restart the app or clear cache if issues continue.\r\n\r\nTraining Support:\r\n- Employees should complete modules assigned to their role.\r\n- If training content is unclear, they can report issues inside the modules.\r\n\r\nConfidentiality Note:\r\n- All employee questions are treated confidentially.\r\n- The AI Assistant does not reveal information about other employees or internal decisions.\r\n"
+  },
+  {
+    "file": "faqs.txt",
+    "index": 0,
+    "text": "Q: What is the purpose of the onboarding program?\r\nA: The onboarding program helps new employees understand company processes, tools, expectations, and culture.\r\n\r\nQ: Where can employees submit required onboarding documents?\r\nA: Employees can upload documents inside the Employment > Documents section of the app.\r\n\r\nQ: What should I do if I cannot access a module?\r\nA: Employees can contact HR or their manager. The DIVU app may also mark modules unavailable if they are not assigned.\r\n\r\nQ: Who should I reach out to if I have HR-related questions?\r\nA: Employees should contact the HR department using the Feedback or Questions section of the app.\r\n\r\nQ: How long does onboarding usually take?\r\nA: The onboarding timeline varies by role but usually takes between 1–3 weeks.\r\n\r\nQ: What is the checklist in DIVU?\r\nA: The checklist shows required tasks an employee must complete as part of onboarding, such as signing documents, attending orientation, and completing training modules.\r\n"
+  },
+  {
+    "file": "hr_guidelines.txt",
+    "index": 0,
+    "text": "HR Guidelines:\r\n\r\nCommunication:\r\n- Employees should communicate respectfully in all HR interactions.\r\n- Email responses may take 24–48 hours.\r\n\r\nDocument Verification:\r\n- HR verifies uploaded documents within 3–5 business days.\r\n\r\nRole Information:\r\n- Role-specific responsibilities can be found in the Employment > Role Info section.\r\n\r\nFeedback:\r\n- Employees are encouraged to provide feedback about onboarding or training.\r\n\r\nProbation Period:\r\n- New employees typically have a 3-month probation period.\r\n"
+  },
+  {
+    "file": "onboarding_steps.txt",
+    "index": 0,
+    "text": "Onboarding Steps:\r\n\r\nStep 1: Profile Setup\r\n- Employees must update their basic details inside the Account > Profile section.\r\n\r\nStep 2: Submit Required Documents\r\n- Documents such as ID, bank details, and employment forms must be uploaded.\r\n\r\nStep 3: Complete Assigned Modules\r\n- Modules include company overview, workplace safety, culture, and job-specific training.\r\n\r\nStep 4: Attend Orientation Events\r\n- Employees must attend scheduled onboarding events.\r\n\r\nStep 5: Ask Questions\r\n- Employees can use the Questions section or AI Assistant for support.\r\n\r\nCompletion:\r\n- Once all steps are complete, employees receive a digital certificate.\r\n"
+  },
+  {
+    "file": "policies.txt",
+    "index": 0,
+    "text": "Leave Policy:\r\n- Sick Leave: Employees are entitled to 5 paid sick leave days per year.\r\n- Casual Leave: Employees receive 7 paid casual leave days annually.\r\n- Emergency Leave: May be granted at the discretion of HR.\r\n- Unpaid Leave: Must be approved by HR and direct manager.\r\n\r\nAttendance Policy:\r\n- Employees must clock-in using the attendance system.\r\n- Repeated late attendance may require HR review.\r\n- Remote workers must check in through the designated online portal.\r\n\r\nWorking Hours:\r\n- Standard hours: 9:00 AM to 5:00 PM.\r\n- Break time: 1 hour.\r\n- Flexible hours may be available depending on the role.\r\n\r\nConfidentiality:\r\n- Employees must not share internal company data.\r\n- HR-related queries are handled privately and securely.\r\n\r\nCode of Conduct:\r\n- Employees are expected to behave respectfully and professionally at all times.\r\n"
+  }
+]
