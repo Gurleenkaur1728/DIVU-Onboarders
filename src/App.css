@@ -5,19 +5,34 @@
 html, body, #root {
   height: 100%;
 }
-/* Hide Google Translate top banner */
-.goog-te-banner-frame.skiptranslate {
+/* Hide Google top bar */
+.goog-te-banner-frame {
   display: none !important;
 }
+
+/* Hide extra top space added by Google */
 body {
-  top: 0px !important;
+  top: 0 !important;
 }
 
-/* Optional - make the widget look better */
-#google_translate_element select {
-  border: none;
-  background: transparent;
-  color: #065f46;
-  font-weight: 600;
-  cursor: pointer;
+/* Hide popup frame */
+.goog-te-spinner-pos,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+
+/* Hide Google Translate toolbar */
+.goog-te-banner {
+  display: none !important;
+}
+
+/* Hide the goog logo iframe */
+iframe.goog-te-menu-frame {
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Prevent layout shifting */
+.goog-te-gadget-icon {
+  display: none !important;
 }
