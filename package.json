@@ -11,7 +11,7 @@
     "ai": "node app/api/ai/summary.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.58.0",
+    "@supabase/supabase-js": "^2.86.0",
     "@tailwindcss/typography": "^0.5.19",
     "bcryptjs": "^3.0.2",
     "canvas-confetti": "^1.9.4",
