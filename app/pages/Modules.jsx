@@ -213,7 +213,7 @@ export default function Modules() {
           /* Table */
           <div className="overflow-x-auto rounded-2xl shadow-lg bg-white/95 border border-emerald-200">
             <table className="min-w-[700px] w-full text-left border-collapse text-sm md:text-base">
-              <thead className="bg-emerald-800 text-white">
+              <thead className="bg-DivuLightGreen text-white">
                 <tr>
                   <th className="p-4 font-semibold">Status</th>
                   <th className="p-4 font-semibold">Module</th>

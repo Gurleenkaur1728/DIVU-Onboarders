@@ -305,7 +305,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* AI Summary */}
-        <div className="bg-DivuBlue p-6 rounded-lg shadow-lg text-black border border-emerald-400/60">
+        <div className="bg-DivuWhite/60 p-6 rounded-lg shadow-lg text-black border-4 border-DivuLightGreen">
           <h2 className="text-xl font-semibold mb-4">AI Summary</h2>
           <button
             onClick={generateAISummary}
@@ -317,11 +317,11 @@ export default function AdminDashboard() {
 
           {aiSummary ? (
             <div
-              className="prose prose-invert max-w-none text-emerald-50"
+              className="prose prose-invert max-w-none text-black"
               dangerouslySetInnerHTML={{ __html: aiSummary }}
             />
           ) : (
-            <p className="text-white italic">
+            <p className="text-slate-800 italic">
               {loading
                 ? "Loading data…"
                 : "No AI summary generated yet. Click the button above to create one."}

@@ -752,7 +752,7 @@ export default function ManageFeedback() {
         </div>
 
         {/* Feedback Table */}
-        <div className="overflow-x-auto rounded-lg border border-emerald-400/70 shadow-lg bg-white">
+        <div className="overflow-x-auto rounded-lg border border-DivuDarkGreen shadow-lg bg-white">
           {loading ? (
             <div className="p-8 text-center text-emerald-600">
               Loading feedback...
@@ -764,13 +764,13 @@ export default function ManageFeedback() {
           ) : (
             <table className="min-w-[980px] w-full border-collapse">
               <thead>
-                <tr className="bg-emerald-900/95 text-left text-emerald-100">
-                  <th className="px-4 py-3 font-bold text-emerald-50 border-r border-emerald-800/50 w-12">
+                <tr className="bg-DivuLightGreen text-left text-black">
+                  <th className="px-4 py-3 font-bold text-black border-r border-emerald-800/50 w-12">
                     <input
                       type="checkbox"
                       checked={selectedItems.length === filteredFeedbacks.length && filteredFeedbacks.length > 0}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 text-emerald-600 bg-white border-emerald-300 rounded focus:ring-emerald-500"
+                      className="w-4 h-4 text-black bg-white border-DivuBlue rounded focus:ring-DivuBlue"
                     />
                   </th>
                   <Th>Employee</Th>
@@ -832,7 +832,7 @@ export default function ManageFeedback() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => viewFeedbackDetails(feedback)}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded bg-blue-500 text-white text-xs font-semibold hover:bg-blue-600 transition-colors"
+                          className="flex items-center gap-1 px-2 py-1.5 rounded bg-DivuBlue/80 text-white text-xs font-semibold hover:bg-DivuBlue transition-colors"
                         >
                           <Eye size={14} /> View
                         </button>
