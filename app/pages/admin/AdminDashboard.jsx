@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppLayout from "../../../src/AppLayout.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
+import { useToast } from "../../context/ToastContext.jsx";
 
 import {
   BarChart,
@@ -40,32 +41,48 @@ export default function AdminDashboard() {
     modulePie: [],
   });
 
+  const { showToast } = useToast(); // ⭐ REQUIRED for toast system
+
   useEffect(() => {
     loadAnalytics();
   }, []);
 
-  // 🔹 Main loader – pulls everything from Supabase
+  // ⭐⭐ SEND REMINDERS FUNCTION (added)
+  const sendReminders = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/api/reminders/sendNow", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        showToast(`Sent ${data.sent} reminders!`, "success");
+      } else {
+        showToast(`Error: ${data.error}`, "error");
+      }
+    } catch (err) {
+      showToast("Backend unreachable", "error");
+    }
+  };
+
+  // 🔹 Main loader — pulls everything from Supabase
   async function loadAnalytics() {
     try {
       setLoading(true);
 
-      // 1️⃣ Employees (non-admin users)
-      // Your users table has `role_id`, not `role`. We'll just grab everyone
-      // and let you filter by role_id later if needed. :contentReference[oaicite:1]{index=1}
       const { data: users, error: usersError } = await supabase
         .from("users")
         .select("id, first_name, last_name, email, role_id, is_active");
 
       if (usersError) throw usersError;
 
-      // (Optional) only active employees
       const activeUsers = (users || []).filter(
-        (u) => u.is_active !== false // treat null as active
+        (u) => u.is_active !== false
       );
 
       const userIds = activeUsers.map((u) => u.id);
 
-      // If there are no employees yet, bail early with zeros
       if (userIds.length === 0) {
         setEmployees([]);
         setModules([]);
@@ -81,7 +98,6 @@ export default function AdminDashboard() {
         return;
       }
 
-      // 2️⃣ Module progress
       const { data: moduleData, error: moduleError } = await supabase
         .from("user_module_progress")
         .select("user_id, is_completed, completion_percentage, completed_at")
@@ -89,7 +105,6 @@ export default function AdminDashboard() {
 
       if (moduleError) throw moduleError;
 
-      // 3️⃣ Checklist items
       const { data: checklistData, error: checklistError } = await supabase
         .from("assigned_checklist_item")
         .select("user_id, done, is_overdue, completed_at")
@@ -97,7 +112,6 @@ export default function AdminDashboard() {
 
       if (checklistError) throw checklistError;
 
-      // 4️⃣ Feedback (per-item ratings)
       const { data: feedbackData, error: feedbackError } = await supabase
         .from("feedback")
         .select("user_id, rating")
@@ -105,18 +119,16 @@ export default function AdminDashboard() {
 
       if (feedbackError) throw feedbackError;
 
-      // Store raw data
       setEmployees(activeUsers);
       setModules(moduleData || []);
       setChecklist(checklistData || []);
       setFeedback(feedbackData || []);
 
-      // Derive stats + charts
       computeStats(activeUsers, moduleData || [], checklistData || [], feedbackData || []);
       computeCharts(moduleData || [], checklistData || []);
     } catch (error) {
       console.error("❌ Error loading admin analytics:", error);
-      // On error, keep zeros to avoid crashing UI
+
       setEmployees([]);
       setModules([]);
       setChecklist([]);
@@ -133,14 +145,10 @@ export default function AdminDashboard() {
     }
   }
 
-  // 🔹 High-level KPI numbers
   function computeStats(users, modules, checklist, feedback) {
     const totalEmployees = users.length;
-
     const completedModules = modules.filter((m) => m.is_completed).length;
-
     const overdueTasks = checklist.filter((c) => c.is_overdue).length;
-
     const ratings = feedback
       .map((f) => f.rating)
       .filter((r) => typeof r === "number" && !Number.isNaN(r));
@@ -153,18 +161,15 @@ export default function AdminDashboard() {
     setStats({ totalEmployees, completedModules, overdueTasks, avgRating });
   }
 
-  // 🔹 Chart data (time series + pie breakdown)
   function computeCharts(modules, checklist) {
     const byDate = {};
 
-    // Checklist completions per day
     checklist.forEach((row) => {
       if (!row.done || !row.completed_at) return;
-      const d = row.completed_at.slice(0, 10); // YYYY-MM-DD
+      const d = row.completed_at.slice(0, 10);
       byDate[d] = (byDate[d] || 0) + 1;
     });
 
-    // Module completions per day
     modules.forEach((row) => {
       if (!row.is_completed || !row.completed_at) return;
       const d = row.completed_at.slice(0, 10);
@@ -175,7 +180,6 @@ export default function AdminDashboard() {
       .sort(([a], [b]) => (a < b ? -1 : 1))
       .map(([date, count]) => ({ date, count }));
 
-    // Pie: completed / in-progress / pending modules
     const completed = modules.filter((m) => m.is_completed).length;
     const inProgress = modules.filter(
       (m) => !m.is_completed && (m.completion_percentage || 0) > 0
@@ -193,7 +197,6 @@ export default function AdminDashboard() {
     setCharts({ completionsOverTime, modulePie });
   }
 
-  // 🔹 AI summary based on live stats/charts
   async function generateAISummary() {
     try {
       setAiLoading(true);
@@ -211,9 +214,7 @@ export default function AdminDashboard() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        throw new Error(`API returned ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
 
       const data = await res.json();
       setAiSummary(data.summary || "⚠️ No AI summary returned.");
@@ -236,24 +237,12 @@ export default function AdminDashboard() {
           Admin Dashboard
         </h1>
 
-        {/* Top-level stats */}
+        {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <StatCard
-            label="Total Employees"
-            value={loading ? "…" : stats.totalEmployees}
-          />
-          <StatCard
-            label="Completed Modules"
-            value={loading ? "…" : stats.completedModules}
-          />
-          <StatCard
-            label="Overdue Tasks"
-            value={loading ? "…" : stats.overdueTasks}
-          />
-          <StatCard
-            label="Avg. Feedback"
-            value={loading ? "…" : stats.avgRating}
-          />
+          <StatCard label="Total Employees" value={loading ? "…" : stats.totalEmployees} />
+          <StatCard label="Completed Modules" value={loading ? "…" : stats.completedModules} />
+          <StatCard label="Overdue Tasks" value={loading ? "…" : stats.overdueTasks} />
+          <StatCard label="Avg. Feedback" value={loading ? "…" : stats.avgRating} />
         </div>
 
         {/* Charts */}
@@ -262,9 +251,7 @@ export default function AdminDashboard() {
             {loading ? (
               <p className="text-emerald-100 italic">Loading chart…</p>
             ) : charts.completionsOverTime.length === 0 ? (
-              <p className="text-emerald-100 italic">
-                No completions recorded yet.
-              </p>
+              <p className="text-emerald-100 italic">No completions recorded yet.</p>
             ) : (
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={charts.completionsOverTime}>
@@ -279,28 +266,16 @@ export default function AdminDashboard() {
           </ChartCard>
 
           <ChartCard title="Module Completion Breakdown">
-            {loading ? (
-              <p className="text-emerald-100 italic">Loading chart…</p>
-            ) : (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={charts.modulePie}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
-                  >
-                    {charts.modulePie.map((entry, index) => (
-                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie data={charts.modulePie} dataKey="value" cx="50%" cy="50%" outerRadius={80} label>
+                  {charts.modulePie.map((entry, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </ChartCard>
         </div>
 
@@ -322,11 +297,21 @@ export default function AdminDashboard() {
             />
           ) : (
             <p className="text-white italic">
-              {loading
-                ? "Loading data…"
-                : "No AI summary generated yet. Click the button above to create one."}
+              {loading ? "Loading data…" : "No AI summary yet. Click the button above."}
             </p>
           )}
+        </div>
+
+        {/* ⭐⭐ SEND REMINDERS BUTTON SECTION ⭐⭐ */}
+        <div className="mt-6 bg-purple-600 p-6 rounded-lg shadow-lg text-white border border-purple-300">
+          <h2 className="text-xl font-bold mb-4">Send Email Reminders</h2>
+
+          <button
+            onClick={sendReminders}
+            className="bg-green-600 hover:bg-green-700 px-5 py-2 rounded-lg text-white shadow-lg"
+          >
+            Send Reminders Now
+          </button>
         </div>
       </main>
     </AppLayout>
