@@ -38,7 +38,7 @@ const COMPLETION_BUCKETS = [
   { key: "75-100", label: "75–100%" },
 ];
 
-const PIE_COLORS = ["#22c55e", "#3b82f6", "#f97316", "#ef4444"];
+const PIE_COLORS = ["#61e965", "#223b34", "#6060e1",];
 
 /**
  * Helper to get ISO date string N days ago
@@ -535,12 +535,6 @@ export default function ManageProgress() {
               helper={`${summary.completedModules} modules completed`}
             />
             <SummaryCard
-              icon={SmilePlus}
-              label="Avg feedback rating"
-              value={summary.avgFeedback ?? "—"}
-              helper={summary.avgFeedback ? "Out of 5" : "Not enough data"}
-            />
-            <SummaryCard
               icon={Activity}
               label="Scope"
               value={selectedEmployee ? "Per-employee" : "All employees"}
@@ -664,13 +658,13 @@ export default function ManageProgress() {
                           dataKey="completed"
                           stackId="a"
                           name="Completed"
-                          fill="#22c55e"
+                          fill="#61e965"
                         />
                         <Bar
                           dataKey="remaining"
                           stackId="a"
-                          name="Remaining"
-                          fill="#a7f3d0"
+                          name="Remaining"  
+                          fill="#6060e1"
                         />
                         <Bar
                           dataKey="overdue"
@@ -855,8 +849,8 @@ function TimeRangeButton({ label, value, current, onChange }) {
       onClick={() => onChange(value)}
       className={`px-3 py-1.5 rounded-full text-xs md:text-sm font-medium border transition-all ${
         active
-          ? "bg-emerald-600 text-white border-emerald-700 shadow-sm"
-          : "bg-white/90 text-emerald-900 border-emerald-200 hover:bg-emerald-50"
+          ? "bg-DivuLightGreen text-black border-emerald-700 shadow-sm"
+          : "bg-white/90 text-emerald-900 border-emerald-200 hover:bg-DivuBlue hover:text-black"
       }`}
     >
       {label}
@@ -866,7 +860,7 @@ function TimeRangeButton({ label, value, current, onChange }) {
 
 function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
   const base =
-    "rounded-2xl bg-emerald-900/90 text-emerald-50 px-4 py-3 shadow-md border";
+    "rounded-2xl bg-DivuDarkGreen text-emerald-50 px-4 py-3 shadow-md border";
   const border =
     emphasis === "warning"
       ? "border-amber-400/70"
@@ -874,8 +868,8 @@ function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
 
   return (
     <div className={`${base} ${border} flex items-center gap-3`}>
-      <div className="w-9 h-9 rounded-full bg-emerald-800/90 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-emerald-200" />
+      <div className="w-9 h-9 rounded-full bg-DivuLightGreen flex items-center justify-center">
+        <Icon className="w-5 h-5 text-black" />
       </div>
       <div className="flex flex-col">
         <span className="text-xs font-semibold text-emerald-100/90">
@@ -892,7 +886,7 @@ function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
 
 function AnalyticsCard({ title, children }) {
   return (
-    <div className="bg-white/95 rounded-2xl shadow-lg border border-emerald-200 p-4 md:p-5">
+    <div className="bg-white/60 rounded-2xl shadow-lg border border-emerald-200 p-4 md:p-5">
       <h2 className="text-sm md:text-base font-semibold text-emerald-950 mb-3">
         {title}
       </h2>

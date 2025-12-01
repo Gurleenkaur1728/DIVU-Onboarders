@@ -82,7 +82,7 @@ export default function Events() {
         </div>
  
         {/* Title banner */}
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">
+        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">
           EVENTS
         </div>
  
@@ -93,7 +93,7 @@ export default function Events() {
             <div className="flex items-center gap-2">
               {view === "month" ? (
                 <>
-                  <button onClick={goToday} className="px-3 py-1.5 text-sm border rounded bg-white hover:bg-emerald-50">Today</button>
+                  <button onClick={goToday} className="px-3 py-1.5 text-sm border rounded bg-white hover:bg-DivuBlue">Today</button>
                   <button onClick={goPrev} className="p-2 border rounded hover:bg-emerald-50"><ChevronLeft className="w-4 h-4"/></button>
                   <span className="font-semibold text-emerald-900">{monthLabel}</span>
                   <button onClick={goNext} className="p-2 border rounded hover:bg-emerald-50"><ChevronRight className="w-4 h-4"/></button>
@@ -108,13 +108,13 @@ export default function Events() {
               <div className="flex rounded-lg border bg-white overflow-hidden">
                 <button
                   onClick={() => setView("month")}
-                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="month"?"bg-emerald-600 text-white":"hover:bg-emerald-50"}`}
+                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="month"?"bg-DivuLightGreen text-black":"hover:bg-DivuBlue"}`}
                 >
                   <Grid className="w-4 h-4"/> Month
                 </button>
                 <button
                   onClick={() => setView("list")}
-                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="list"?"bg-emerald-600 text-white":"hover:bg-emerald-50"}`}
+                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="list"?"bg-DivuLightGreen text-black":"hover:bg-DivuBlue"}`}
                 >
                   <List className="w-4 h-4"/> List
                 </button>
@@ -125,8 +125,8 @@ export default function Events() {
  
         {/* Month calendar (compact rectangular; day cells square) */}
         {view === "month" && (
-          <div className="bg-white border rounded-xl shadow w-full md:w-3/5 overflow-hidden">
-            <div className="grid grid-cols-7 bg-emerald-900/95 text-emerald-50 text-[11px] font-bold uppercase">
+          <div className="bg-white border-DivuDarkGreen border-2 rounded-xl shadow w-full overflow-hidden">
+            <div className="grid grid-cols-7 bg-DivuLightGreen text-black text-[11px] font-bold uppercase">
               {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
                 <div key={d} className="px-2 py-2 text-center">{d}</div>
               ))}
@@ -140,7 +140,7 @@ export default function Events() {
                 return (
                   <div
                     key={i}
-                    className={`h-24 border p-1 text-left ${inMonth ? "bg-white":"bg-gray-50"} hover:bg-emerald-50/70`}
+                    className={`h-24 border p-1 text-left ${inMonth ? "bg-white":"bg-gray-50"} hover:bg-DivuBlue`}
                   >
                     <div className="flex items-center justify-between">
                       <span className={`text-xs font-semibold ${inMonth ? "text-emerald-900":"text-gray-400"}`}>{d.getDate()}</span>
@@ -187,7 +187,7 @@ export default function Events() {
             ) : (
               monthGroups.map((g, idx) => (
                 <div key={idx} className="bg-white rounded-xl border shadow overflow-hidden">
-                  <div className="px-4 py-2 bg-emerald-900/95 text-emerald-50 text-sm font-bold">
+                  <div className="px-4 py-2 bg-DivuLightGreen text-black text-sm font-bold">
                     {g.label}
                   </div>
                   {g.items.length === 0 ? (
