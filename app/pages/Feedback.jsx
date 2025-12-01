@@ -3,6 +3,7 @@ import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { H1, Text } from "../components/ui/Typography.jsx";
 
 export default function Feedback() {
   const { user } = useAuth();
@@ -94,64 +95,58 @@ export default function Feedback() {
 
   return (
     <AppLayout>
-
-    {/* // <div
-    //   className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 relative"
-    //   style={{
-    //     backgroundImage: "url('/bg.png')",
-    //     backgroundSize: "cover",
-    //     backgroundPosition: "center",
-    //   }}
-    // >
-    //   <Sidebar role={ROLES.USER} /> */}
-      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
+      <div className="ds-container ds-p-6">
         {/* Header */}
-        <div className="flex items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 mb-6 shadow-sm border border-emerald-200/50">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-emerald-950 tracking-wide">
-            Feedback Center
-          </h1>
+        <div className="ds-mb-8">
+          <H1>Feedback Center</H1>
+          <Text className="ds-text-muted ds-mt-2">
+            Share your thoughts and view your submitted feedback
+          </Text>
         </div>
 
         {/* Tabs */}
-        <div className="flex flex-wrap gap-3 mb-8">
-          <button
-            onClick={() => setActiveTab("submitted")}
-            className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400
-              ${
+        <div className="ds-mb-6" style={{borderBottom: '2px solid var(--ds-border)'}}>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab("submitted")}
+              className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
                 activeTab === "submitted"
-                  ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-                  : "bg-white text-emerald-800 hover:bg-gray-100"
+                  ? "border-emerald-600 text-emerald-600"
+                  : "border-transparent text-gray-600 hover:text-emerald-600"
               }`}
-          >
-            Feedback Submitted
-          </button>
-          <button
-            onClick={() => setActiveTab("create")}
-            className={`px-6 py-2 rounded-full font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400
-              ${
+            >
+              Feedback Submitted
+            </button>
+            <button
+              <button
+              onClick={() => setActiveTab("create")}
+              className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
                 activeTab === "create"
-                  ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-                  : "bg-white text-emerald-800 hover:bg-gray-100"
+                  ? "border-emerald-600 text-emerald-600"
+                  : "border-transparent text-gray-600 hover:text-emerald-600"
               }`}
-          >
-            Create Feedback
-          </button>
+            >
+              Create Feedback
+            </button>
+          </div>
         </div>
 
         {/* ✅ Submitted Feedback Table */}
         {activeTab === "submitted" && (
-          <div className="bg-white/95 rounded-2xl shadow-lg overflow-hidden border border-emerald-200">
+          <div className="overflow-x-auto">
             {loading ? (
-              <div className="p-8 text-center text-gray-600">Loading feedback...</div>
+              <div className="ds-loading">
+                <div className="ds-spinner"></div>
+              </div>
             ) : (
-              <table className="w-full text-left border-collapse text-sm md:text-base">
-                <thead className="bg-emerald-800 text-white">
+              <table className="ds-table">
+                <thead>
                   <tr>
-                    <th className="p-4 font-semibold">Module Name</th>
-                    <th className="p-4 font-semibold">Rating</th>
-                    <th className="p-4 font-semibold">Difficulty</th>
-                    <th className="p-4 font-semibold">Feedback Date</th>
-                    <th className="p-4 font-semibold">Action</th>
+                    <th style={{color: 'var(--ds-primary)'}}>Module Name</th>
+                    <th style={{color: 'var(--ds-primary)'}}>Rating</th>
+                    <th style={{color: 'var(--ds-primary)'}}>Difficulty</th>
+                    <th style={{color: 'var(--ds-primary)'}}>Feedback Date</th>
+                    <th style={{color: 'var(--ds-primary)'}}>Action</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -5,6 +5,10 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
+import { H1, H2, H3, Text } from "../components/ui/Typography.jsx";
+import Card from "../components/ui/Card.jsx";
+import Button from "../components/ui/Button.jsx";
+import Badge from "../components/ui/Badge.jsx";
 import {
   AreaChart,
   Area,
@@ -297,15 +301,13 @@ export default function Progress() {
 
   return (      
     <AppLayout>
-      <div className="p-6">
+      <div className="ds-container ds-p-6">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-emerald-900 mb-2">
-            📊 Your Learning Progress
-          </h1>
-          <p className="text-emerald-700 text-lg">
+        <div className="ds-mb-8">
+          <H1>Your Learning Progress</H1>
+          <Text className="ds-text-muted ds-mt-2">
             Track your journey, celebrate achievements, and stay motivated!
-          </p>
+          </Text>
         </div>
 
         {/* Enhanced Navigation Tabs */}
