@@ -207,9 +207,9 @@ export default function Checklist() {
         </div>
  
         {/* Header */}
-        <div className="flex items-center justify-between bg-emerald-950/90 px-4 py-3 rounded-lg mb-6 shadow-md border border-emerald-800/70">
+        <div className="flex items-center justify-between bg-DivuDarkGreen px-4 py-3 rounded-lg mb-6 shadow-md border border-emerald-800/70">
           <h2 className="text-lg md:text-xl font-bold text-emerald-100 tracking-wide">
-            ONBOARDING CHECKLIST
+            ONBOARDING CHECKLIST 
           </h2>
         </div>
  
@@ -239,9 +239,9 @@ export default function Checklist() {
                   className="bg-white/95 rounded-xl shadow-md border border-emerald-200 overflow-hidden transition-all duration-300"
                 >
                   {/* Group header */}
-                  <div className="flex items-center justify-between px-4 py-3 bg-emerald-900 text-emerald-100 rounded-t-xl">
+                  <div className="flex items-center justify-between px-4 py-3 bg-DivuLightGreen text-black rounded-t-xl">
                     <button
-                      className="flex items-center gap-2 font-semibold hover:text-emerald-300 transition-colors duration-200"
+                      className="flex items-center gap-2 font-semibold hover:text-white transition-colors duration-200"
                       onClick={() =>
                         setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))
                       }
@@ -256,7 +256,7 @@ export default function Checklist() {
                     <div className="overflow-x-auto">
                       <table className=" w-full border-collapse text-emerald-950 text-sm">
                         <thead>
-                          <tr className="bg-emerald-800 text-left text-emerald-100">
+                          <tr className="bg-DivuBlue text-left text-emerald-100">
                             <Th>Completed</Th>
                             <Th>Module</Th>
                             <Th>Date Assigned</Th>
