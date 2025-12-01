@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { supabase } from "../../src/lib/supabaseClient.js";
 
 const AUTH_STORAGE_KEYS = [
   "user",

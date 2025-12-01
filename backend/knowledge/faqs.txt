@@ -1,0 +1,17 @@
+Q: What is the purpose of the onboarding program?
+A: The onboarding program helps new employees understand company processes, tools, expectations, and culture.
+
+Q: Where can employees submit required onboarding documents?
+A: Employees can upload documents inside the Employment > Documents section of the app.
+
+Q: What should I do if I cannot access a module?
+A: Employees can contact HR or their manager. The DIVU app may also mark modules unavailable if they are not assigned.
+
+Q: Who should I reach out to if I have HR-related questions?
+A: Employees should contact the HR department using the Feedback or Questions section of the app.
+
+Q: How long does onboarding usually take?
+A: The onboarding timeline varies by role but usually takes between 1–3 weeks.
+
+Q: What is the checklist in DIVU?
+A: The checklist shows required tasks an employee must complete as part of onboarding, such as signing documents, attending orientation, and completing training modules.

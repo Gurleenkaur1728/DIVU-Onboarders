@@ -228,7 +228,9 @@ export default function EnhancedModuleDetail() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [flippedCards, setFlippedCards] = useState(new Set());
+  const [checkedItems, setCheckedItems] = useState(new Set());
   const [answers, setAnswers] = useState({});
+  const [quizStates, setQuizStates] = useState({});
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [feedback, setFeedback] = useState({
     rating: 0,
@@ -472,6 +474,17 @@ export default function EnhancedModuleDetail() {
     await updateProgress({ answers: newAnswers });
   };
 
+  const toggleChecklistItem = (sectionId, itemId) => {
+    const key = `${sectionId}-${itemId}`;
+    const newChecked = new Set(checkedItems);
+    if (newChecked.has(key)) {
+      newChecked.delete(key);
+    } else {
+      newChecked.add(key);
+    }
+    setCheckedItems(newChecked);
+  };
+
   const goToPage = async (pageIndex) => {
     // Check if page is unlocked
     if (pageIndex > 0) {
@@ -638,15 +651,12 @@ export default function EnhancedModuleDetail() {
         
         return (
           <div className="space-y-4">
-            {section.media_path && (
-              <PhotoDisplay photoPath={section.media_path} caption={section.caption} moduleId={id} pageIndex={currentPage} />
+            {(section.media_url || section.media_path) && (
+              <PhotoDisplay photoPath={section.media_url || section.media_path} caption={section.caption} moduleId={id} pageIndex={currentPage} />
             )}
             {section.caption && (
               <p className="text-gray-600 text-center italic">{section.caption}</p>
             )}
-            <div className="text-center text-sm text-gray-500">
-              📸 Photo will be marked as viewed after 3 seconds
-            </div>
           </div>
         );
 
@@ -661,11 +671,11 @@ export default function EnhancedModuleDetail() {
               {(section.questions || []).map((question, idx) => (
                 <div key={question.id || idx} className="space-y-2">
                   <label className="block text-gray-700 font-medium">
-                    {question.text}
+                    {question.q || question.text}
                     {question.required && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   
-                  {question.type === 'text' && (
+                  {(question.kind || question.type) === 'text' && (
                     <input 
                       type="text" 
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
@@ -687,7 +697,7 @@ export default function EnhancedModuleDetail() {
                     />
                   )}
                   
-                  {question.type === 'radio' && (
+                  {(question.kind || question.type) === 'radio' && (
                     <div className="space-y-2">
                       {(question.options || []).map((option, optIdx) => (
                         <label key={optIdx} className="flex items-center space-x-2">
@@ -722,7 +732,7 @@ export default function EnhancedModuleDetail() {
             {allRequiredAnswered && (
               <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-4">
                 <div className="text-emerald-700 text-sm font-medium">
-                  ✅ All required questions answered - Section automatically completed!
+                  ✅ All required questions answered!
                 </div>
               </div>
             )}
@@ -797,6 +807,695 @@ export default function EnhancedModuleDetail() {
           </div>
         );
       }
+
+      case 'quiz': {
+        // Get or initialize quiz state for this section
+        const getQuizState = () => {
+          if (!quizStates[section.id]) {
+            const saved = localStorage.getItem(`quiz-${section.id}-${userId}`);
+            const initialState = saved ? JSON.parse(saved) : {
+              started: false,
+              currentQuestion: 0,
+              userAnswers: {},
+              submitted: false,
+              score: null,
+              startTime: null,
+              endTime: null
+            };
+            return initialState;
+          }
+          return quizStates[section.id];
+        };
+
+        const quizState = getQuizState();
+
+        const totalQuestions = section.questions?.length || 0;
+        const totalPoints = (section.questions || []).reduce((sum, q) => sum + (q.points || 0), 0);
+        const currentQ = section.questions?.[quizState.currentQuestion];
+
+        // Save quiz state to localStorage
+        const saveQuizState = (newState) => {
+          setQuizStates(prev => ({ ...prev, [section.id]: newState }));
+          localStorage.setItem(`quiz-${section.id}-${userId}`, JSON.stringify(newState));
+        };
+
+        // Start quiz
+        const startQuiz = () => {
+          saveQuizState({
+            ...quizState,
+            started: true,
+            startTime: Date.now(),
+            userAnswers: {}
+          });
+        };
+
+        // Answer question
+        const answerQuestion = (answer) => {
+          saveQuizState({
+            ...quizState,
+            userAnswers: {
+              ...quizState.userAnswers,
+              [quizState.currentQuestion]: answer
+            }
+          });
+        };
+
+        // Calculate score
+        const calculateScore = () => {
+          let earnedPoints = 0;
+          (section.questions || []).forEach((q, idx) => {
+            const userAnswer = quizState.userAnswers[idx];
+            let isCorrect = false;
+
+            if (q.type === 'multiple-choice') {
+              isCorrect = userAnswer === q.correctAnswer;
+            } else if (q.type === 'multiple-select') {
+              const correctSet = new Set(q.correctAnswers || []);
+              const userSet = new Set(userAnswer || []);
+              isCorrect = correctSet.size === userSet.size && 
+                        [...correctSet].every(a => userSet.has(a));
+            } else if (q.type === 'true-false') {
+              isCorrect = userAnswer === q.correctAnswer;
+            } else if (q.type === 'fill-blank') {
+              isCorrect = (userAnswer || '').toLowerCase().trim() === 
+                         (q.correctAnswer || '').toLowerCase().trim();
+            }
+
+            if (isCorrect) {
+              earnedPoints += q.points || 0;
+            }
+          });
+
+          return {
+            points: earnedPoints,
+            percentage: totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0
+          };
+        };
+
+        // Submit quiz
+        const submitQuiz = async () => {
+          const score = calculateScore();
+          const passed = score.percentage >= (section.settings?.passingScore || 70);
+          const timeTaken = Math.floor((Date.now() - quizState.startTime) / 1000); // seconds
+          
+          // Save quiz state
+          saveQuizState({
+            ...quizState,
+            submitted: true,
+            score: score,
+            endTime: Date.now()
+          });
+
+          // Save to database
+          try {
+            // Get previous attempt count
+            const { data: previousAttempts } = await supabase
+              .from('quiz_attempts')
+              .select('attempt_number')
+              .eq('user_id', userId)
+              .eq('module_id', id)
+              .eq('section_id', section.id)
+              .order('attempt_number', { ascending: false })
+              .limit(1);
+
+            const attemptNumber = previousAttempts?.length > 0 
+              ? previousAttempts[0].attempt_number + 1 
+              : 1;
+
+            // Insert quiz attempt
+            const { error } = await supabase
+              .from('quiz_attempts')
+              .insert({
+                user_id: userId,
+                module_id: id,
+                section_id: section.id,
+                attempt_number: attemptNumber,
+                score: score.points,
+                max_score: totalPoints,
+                percentage: score.percentage,
+                passed: passed,
+                answers: quizState.userAnswers,
+                time_taken_seconds: timeTaken,
+                started_at: new Date(quizState.startTime).toISOString(),
+                completed_at: new Date().toISOString()
+              });
+
+            if (error) {
+              console.error('Error saving quiz attempt:', error);
+            } else {
+              console.log('✅ Quiz attempt saved to database');
+            }
+          } catch (error) {
+            console.error('Failed to save quiz attempt:', error);
+          }
+
+          // Mark section complete if passed
+          if (passed && !progress.completedSections.includes(section.id)) {
+            markSectionComplete(section.id);
+          }
+        };
+
+        // Retake quiz
+        const retakeQuiz = () => {
+          localStorage.removeItem(`quiz-${section.id}-${userId}`);
+          setQuizStates(prev => {
+            const newStates = { ...prev };
+            delete newStates[section.id];
+            return newStates;
+          });
+        };
+
+        // Not started view
+        if (!quizState.started) {
+          return (
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-8 text-center">
+              <div className="text-5xl mb-4">📝</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                {section.title || "Quiz"}
+              </h3>
+              {section.description && (
+                <p className="text-gray-600 mb-6">{section.description}</p>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6">
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-blue-600">{totalQuestions}</div>
+                  <div className="text-sm text-gray-600">Questions</div>
+                </div>
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-blue-600">{totalPoints}</div>
+                  <div className="text-sm text-gray-600">Total Points</div>
+                </div>
+                {section.settings?.timeLimit && (
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {section.settings.timeLimit}
+                    </div>
+                    <div className="text-sm text-gray-600">Minutes</div>
+                  </div>
+                )}
+                <div className="bg-white rounded-lg p-4">
+                  <div className="text-2xl font-bold text-green-600">
+                    {section.settings?.passingScore || 70}%
+                  </div>
+                  <div className="text-sm text-gray-600">Passing Score</div>
+                </div>
+              </div>
+
+              <button
+                onClick={startQuiz}
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg"
+              >
+                Start Quiz
+              </button>
+            </div>
+          );
+        }
+
+        // Results view
+        if (quizState.submitted) {
+          const passed = quizState.score.percentage >= (section.settings?.passingScore || 70);
+          
+          return (
+            <div className="space-y-6">
+              <div className={`rounded-xl p-8 text-center ${
+                passed ? 'bg-gradient-to-br from-green-50 to-emerald-50' : 'bg-gradient-to-br from-red-50 to-orange-50'
+              }`}>
+                <div className="text-6xl mb-4">{passed ? '🎉' : '📚'}</div>
+                <h3 className="text-3xl font-bold text-gray-900 mb-2">
+                  {passed ? 'Congratulations!' : 'Keep Learning!'}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {passed ? 'You passed the quiz!' : `You need ${section.settings?.passingScore || 70}% to pass.`}
+                </p>
+                
+                <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto">
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-3xl font-bold text-blue-600">
+                      {quizState.score.percentage}%
+                    </div>
+                    <div className="text-sm text-gray-600">Score</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-3xl font-bold text-purple-600">
+                      {quizState.score.points}/{totalPoints}
+                    </div>
+                    <div className="text-sm text-gray-600">Points</div>
+                  </div>
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="text-3xl font-bold text-green-600">
+                      {Object.keys(quizState.userAnswers).length}/{totalQuestions}
+                    </div>
+                    <div className="text-sm text-gray-600">Answered</div>
+                  </div>
+                </div>
+
+                {section.settings?.allowRetake && !passed && (
+                  <button
+                    onClick={retakeQuiz}
+                    className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                  >
+                    Retake Quiz
+                  </button>
+                )}
+              </div>
+
+              {/* Review Answers */}
+              {section.settings?.showCorrectAnswers && (
+                <div className="space-y-4">
+                  <h4 className="text-xl font-bold text-gray-900">Review Your Answers</h4>
+                  {(section.questions || []).map((q, idx) => {
+                    const userAnswer = quizState.userAnswers[idx];
+                    let isCorrect = false;
+
+                    if (q.type === 'multiple-choice') {
+                      isCorrect = userAnswer === q.correctAnswer;
+                    } else if (q.type === 'multiple-select') {
+                      const correctSet = new Set(q.correctAnswers || []);
+                      const userSet = new Set(userAnswer || []);
+                      isCorrect = correctSet.size === userSet.size && 
+                                [...correctSet].every(a => userSet.has(a));
+                    } else if (q.type === 'true-false') {
+                      isCorrect = userAnswer === q.correctAnswer;
+                    } else if (q.type === 'fill-blank') {
+                      isCorrect = (userAnswer || '').toLowerCase().trim() === 
+                                 (q.correctAnswer || '').toLowerCase().trim();
+                    }
+
+                    return (
+                      <div key={idx} className={`border-2 rounded-lg p-4 ${
+                        isCorrect ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50'
+                      }`}>
+                        <div className="flex items-start gap-3">
+                          <div className="text-2xl">
+                            {isCorrect ? '✅' : '❌'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-900 mb-2">
+                              Question {idx + 1}: {q.question}
+                            </div>
+                            
+                            <div className="text-sm space-y-1">
+                              <div>
+                                <span className="font-medium">Your answer: </span>
+                                {q.type === 'multiple-choice' && q.options?.[userAnswer]}
+                                {q.type === 'multiple-select' && (userAnswer || []).map(i => q.options?.[i]).join(', ')}
+                                {q.type === 'true-false' && String(userAnswer)}
+                                {q.type === 'fill-blank' && userAnswer}
+                              </div>
+                              {!isCorrect && (
+                                <div className="text-green-700">
+                                  <span className="font-medium">Correct answer: </span>
+                                  {q.type === 'multiple-choice' && q.options?.[q.correctAnswer]}
+                                  {q.type === 'multiple-select' && (q.correctAnswers || []).map(i => q.options?.[i]).join(', ')}
+                                  {q.type === 'true-false' && String(q.correctAnswer)}
+                                  {q.type === 'fill-blank' && q.correctAnswer}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {q.explanation && (
+                              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded">
+                                <div className="text-sm font-medium text-blue-900 mb-1">Explanation:</div>
+                                <div className="text-sm text-blue-800">{q.explanation}</div>
+                              </div>
+                            )}
+                            
+                            <div className="mt-2 text-xs text-gray-600">
+                              Points: {isCorrect ? q.points : 0}/{q.points}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        // Taking quiz view
+        return (
+          <div className="space-y-6">
+            {/* Progress bar */}
+            <div className="bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all"
+                style={{ width: `${((quizState.currentQuestion + 1) / totalQuestions) * 100}%` }}
+              />
+            </div>
+
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>Question {quizState.currentQuestion + 1} of {totalQuestions}</span>
+              <span>{Object.keys(quizState.userAnswers).length} answered</span>
+            </div>
+
+            {/* Current Question */}
+            {currentQ && (
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+                <div className="text-lg font-semibold text-gray-900 mb-4">
+                  {currentQ.question}
+                </div>
+
+                {/* Multiple Choice */}
+                {currentQ.type === 'multiple-choice' && (
+                  <div className="space-y-2">
+                    {(currentQ.options || []).map((opt, optIdx) => (
+                      <label
+                        key={optIdx}
+                        className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                          quizState.userAnswers[quizState.currentQuestion] === optIdx
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${quizState.currentQuestion}`}
+                          checked={quizState.userAnswers[quizState.currentQuestion] === optIdx}
+                          onChange={() => answerQuestion(optIdx)}
+                          className="w-5 h-5 text-blue-600"
+                        />
+                        <span className="flex-1">{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Multiple Select */}
+                {currentQ.type === 'multiple-select' && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600 mb-3">Select all that apply:</p>
+                    {(currentQ.options || []).map((opt, optIdx) => {
+                      const selected = (quizState.userAnswers[quizState.currentQuestion] || []).includes(optIdx);
+                      return (
+                        <label
+                          key={optIdx}
+                          className={`flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                            selected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-300'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={(e) => {
+                              const current = quizState.userAnswers[quizState.currentQuestion] || [];
+                              const newAnswer = e.target.checked
+                                ? [...current, optIdx]
+                                : current.filter(i => i !== optIdx);
+                              answerQuestion(newAnswer);
+                            }}
+                            className="w-5 h-5 text-blue-600 rounded"
+                          />
+                          <span className="flex-1">{opt}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* True/False */}
+                {currentQ.type === 'true-false' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {[true, false].map((value) => (
+                      <label
+                        key={String(value)}
+                        className={`flex items-center justify-center gap-3 p-6 border-2 rounded-lg cursor-pointer transition-all ${
+                          quizState.userAnswers[quizState.currentQuestion] === value
+                            ? 'border-blue-600 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${quizState.currentQuestion}`}
+                          checked={quizState.userAnswers[quizState.currentQuestion] === value}
+                          onChange={() => answerQuestion(value)}
+                          className="w-5 h-5 text-blue-600"
+                        />
+                        <span className="text-lg font-semibold">{value ? 'True' : 'False'}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Fill in the Blank */}
+                {currentQ.type === 'fill-blank' && (
+                  <input
+                    type="text"
+                    value={quizState.userAnswers[quizState.currentQuestion] || ''}
+                    onChange={(e) => answerQuestion(e.target.value)}
+                    placeholder="Type your answer here..."
+                    className="w-full border-2 border-gray-300 rounded-lg px-4 py-3 text-lg focus:border-blue-600 focus:outline-none"
+                  />
+                )}
+
+                <div className="mt-4 text-sm text-gray-600">
+                  Points: {currentQ.points || 0}
+                </div>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => saveQuizState({ ...quizState, currentQuestion: quizState.currentQuestion - 1 })}
+                disabled={quizState.currentQuestion === 0}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+
+              {quizState.currentQuestion < totalQuestions - 1 ? (
+                <button
+                  onClick={() => saveQuizState({ ...quizState, currentQuestion: quizState.currentQuestion + 1 })}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Next →
+                </button>
+              ) : (
+                <button
+                  onClick={submitQuiz}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                >
+                  Submit Quiz
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      case 'video':
+        // Auto-complete video sections after viewing
+        if (!progress.completedSections.includes(section.id)) {
+          setTimeout(() => {
+            if (!progress.completedSections.includes(section.id)) {
+              markSectionComplete(section.id);
+            }
+          }, 5000); // Auto-complete after 5 seconds
+        }
+        
+        return (
+          <div className="space-y-4">
+            {(section.media_url || section.media_path) && (
+              <video 
+                controls 
+                className="w-full rounded-lg shadow-lg"
+                src={section.media_url || section.media_path}
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
+            {section.caption && (
+              <p className="text-gray-600 text-center italic">{section.caption}</p>
+            )}
+          </div>
+        );
+
+      case 'dropdowns': {
+        const allRequiredAnswered = (section.questions || []).every(q => 
+          !q.required || (answers[q.id] && answers[q.id].toString().trim() !== '')
+        );
+        
+        return (
+          <div className="space-y-4">
+            <div className="space-y-4">
+              {(section.questions || []).map((question, idx) => (
+                <div key={question.id || idx} className="space-y-2">
+                  <label className="block text-gray-700 font-medium">
+                    {question.q || question.text}
+                    {question.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  
+                  <select
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    value={answers[question.id] || ''}
+                    onChange={(e) => {
+                      saveAnswer(question.id, e.target.value);
+                      // Check completion after saving answer
+                      setTimeout(() => {
+                        const allAnswered = (section.questions || []).every(q => 
+                          !q.required || (answers[q.id] && answers[q.id].toString().trim() !== '')
+                        );
+                        if (allAnswered && !progress.completedSections.includes(section.id)) {
+                          markSectionComplete(section.id);
+                        }
+                      }, 100);
+                    }}
+                    disabled={isCompleted}
+                  >
+                    <option value="">Select an option...</option>
+                    {(question.options || []).map((option, optIdx) => (
+                      <option key={optIdx} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            {allRequiredAnswered && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mt-4">
+                <div className="text-emerald-700 text-sm font-medium">
+                  ✅ All required dropdowns answered!
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      case 'checklist': {
+        const totalItems = section.items?.length || 0;
+        const checkedCount = section.items?.filter((item) => 
+          checkedItems.has(`${section.id}-${item.id}`)
+        ).length || 0;
+        const allChecked = totalItems > 0 && checkedCount === totalItems;
+        
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {(section.items || []).map((item) => (
+                <label 
+                  key={item.id} 
+                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checkedItems.has(`${section.id}-${item.id}`)}
+                    onChange={() => toggleChecklistItem(section.id, item.id)}
+                    disabled={isCompleted}
+                    className="mt-1 h-5 w-5 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                  />
+                  <span className="text-gray-700 flex-1">{item.text || item.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">
+                Progress: {checkedCount}/{totalItems} items checked
+              </span>
+              {allChecked && (
+                <span className="text-emerald-600 font-medium">
+                  ✅ All items completed!
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      case 'embed':
+        // Auto-complete embed sections after viewing
+        if (!progress.completedSections.includes(section.id)) {
+          setTimeout(() => {
+            if (!progress.completedSections.includes(section.id)) {
+              markSectionComplete(section.id);
+            }
+          }, 3000); // Auto-complete after 3 seconds
+        }
+        
+        return (
+          <div className="space-y-4">
+            {section.url ? (
+              <div className="space-y-2">
+                <iframe
+                  src={section.url}
+                  className="w-full h-96 rounded-lg shadow-lg border-2 border-gray-200"
+                  title={section.title || section.note || 'Embedded Content'}
+                  allowFullScreen
+                />
+                {section.note && (
+                  <p className="text-gray-600 text-sm italic">{section.note}</p>
+                )}
+              </div>
+            ) : (
+              <div className="text-gray-500 italic">No URL provided for this embed</div>
+            )}
+            {section.caption && (
+              <p className="text-gray-600 text-center italic">{section.caption}</p>
+            )}
+          </div>
+        );
+
+      // File Download Section
+      case "file":
+        return (
+          <div className="space-y-4">
+            {section.title && (
+              <h3 className="text-xl font-bold text-emerald-900">{section.title}</h3>
+            )}
+            {section.description && (
+              <p className="text-gray-700">{section.description}</p>
+            )}
+            
+            {section.file_url ? (
+              <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-xl p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-emerald-600 text-white rounded-lg p-3">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-emerald-900 text-lg">
+                        {section.file_name || "Download File"}
+                      </div>
+                      {section.file_size > 0 && (
+                        <div className="text-sm text-emerald-700">
+                          {section.file_size > 1024 * 1024 
+                            ? `${(section.file_size / (1024 * 1024)).toFixed(2)} MB`
+                            : `${(section.file_size / 1024).toFixed(2)} KB`
+                          }
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <a
+                    href={section.file_url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => handleSectionComplete(sectionIndex)}
+                    className="px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-semibold flex items-center gap-2 transition-all"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Download
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-4">
+                No file available for download
+              </div>
+            )}
+          </div>
+        );
 
       default:
         return (

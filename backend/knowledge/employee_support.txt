@@ -1,0 +1,15 @@
+HR Support:
+- Employees can contact HR through the app's Feedback or Questions section.
+- For urgent matters, employees should directly email the HR team.
+
+Technical Support:
+- Issues with login, modules, or app access should be reported using the Feedback page.
+- Employees may also restart the app or clear cache if issues continue.
+
+Training Support:
+- Employees should complete modules assigned to their role.
+- If training content is unclear, they can report issues inside the modules.
+
+Confidentiality Note:
+- All employee questions are treated confidentially.
+- The AI Assistant does not reveal information about other employees or internal decisions.
