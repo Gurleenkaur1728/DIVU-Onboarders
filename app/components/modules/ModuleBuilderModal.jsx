@@ -18,8 +18,10 @@ export const SECTION_TYPES = [
   { key: "flashcards", label: "Flashcards" },
   { key: "dropdowns", label: "Dropdowns" },
   { key: "questionnaire", label: "Questionnaire" },
+  { key: "quiz", label: "Quiz/Assessment" },
   { key: "checklist", label: "Checklist" },
   { key: "embed", label: "Embed (URL)" },
+  { key: "file", label: "File Download" },
 ];
 
 export const defaultSection = (type) => {
@@ -27,11 +29,11 @@ export const defaultSection = (type) => {
     case "text":
       return { id: uid(), type, title: "", body: "" };
     case "photo":
-      return { id: uid(), type, media_path: "", caption: "" };
+      return { id: uid(), type, media_url: "", caption: "" };
     case "video":
-      return { id: uid(), type, media_path: "", transcript: "" };
+      return { id: uid(), type, media_url: "", transcript: "" };
     case "flashcards":
-      return { id: uid(), type, cards: [{ id: uid(), title: "", info: "" }] };
+      return { id: uid(), type, cards: [{ id: uid(), front: "", back: "" }] };
     case "dropdowns":
       return { id: uid(), type, items: [{ id: uid(), header: "", info: "" }] };
     case "questionnaire":
@@ -40,10 +42,38 @@ export const defaultSection = (type) => {
         type,
         questions: [{ id: uid(), q: "", kind: "mcq", options: ["", ""], correctIndex: 0 }],
       };
+    case "quiz":
+      return {
+        id: uid(),
+        type,
+        title: "Quiz",
+        description: "",
+        settings: {
+          passingScore: 70,
+          showCorrectAnswers: true,
+          allowRetake: true,
+          maxAttempts: 3,
+          shuffleQuestions: false,
+          timeLimit: null
+        },
+        questions: [
+          {
+            id: uid(),
+            type: "multiple-choice",
+            question: "",
+            options: ["", "", "", ""],
+            correctAnswer: 0,
+            points: 10,
+            explanation: ""
+          }
+        ]
+      };
     case "checklist":
       return { id: uid(), type, items: [{ id: uid(), text: "", required: true }] };
     case "embed":
       return { id: uid(), type, url: "", note: "" };
+    case "file":
+      return { id: uid(), type, file_url: "", file_name: "", title: "", description: "", file_size: 0 };
     default:
       return { id: uid(), type: "text", title: "", body: "" };
   }
@@ -222,7 +252,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
             break;
           case "photo":
           case "video":
-            if (!s.media_path || !s.media_path.trim()) {
+            if (!s.media_url || !s.media_url.trim()) {
               showToast(`Page ${pIndex + 1} — ${s.type} section ${sIndex + 1} requires an upload.`, "error");
               return false;
             }
@@ -652,6 +682,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
               ) : (
                 <PageEditor
                   page={pages[activePageIndex]}
+                  pages={pages}
                   onRename={async (name) => updateActivePage({ name })}
                   onAddSection={onAddSection}
                   onRemoveSection={onRemoveSection}

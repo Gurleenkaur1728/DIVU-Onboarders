@@ -54,17 +54,15 @@ export default function Feedback() {
       // Load existing feedback
       const { data: feedbackData, error: feedbackError } = await supabase
         .from("module_feedback")
-        .select("module_id, rating, difficulty_level, feedback_text, suggestions, created_at")
-        .eq("user_id", user.profile_id);
+        .select("*")
+        .eq("user_id", user.profile_id)
+        .order("created_at", { ascending: false });
 
       if (feedbackError) {
         console.error("Error loading feedback:", feedbackError);
       }
 
-      // Combine data
-      const completedModuleIds = progressData?.filter(p => p.is_completed).map(p => p.module_id) || [];
-      const feedbackModuleIds = feedbackData?.map(f => f.module_id) || [];
-
+      // Combine data - set modules and feedbacks
       setModules(modulesData || []);
       setFeedbacks(feedbackData || []);
 
@@ -75,11 +73,11 @@ export default function Feedback() {
     }
   };
 
-  // Get completed modules (those that can have feedback)
+  // Get completed modules (those that have feedback submitted)
   const getCompletedModules = () => {
+    if (!feedbacks || feedbacks.length === 0) return [];
+    
     return modules.filter(module => {
-      // Check if module is completed based on progress
-      // For now, we'll check if feedback exists (since that means module was completed)
       return feedbacks.some(f => f.module_id === module.id);
     });
   };

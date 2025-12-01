@@ -1,0 +1,19 @@
+Onboarding Steps:
+
+Step 1: Profile Setup
+- Employees must update their basic details inside the Account > Profile section.
+
+Step 2: Submit Required Documents
+- Documents such as ID, bank details, and employment forms must be uploaded.
+
+Step 3: Complete Assigned Modules
+- Modules include company overview, workplace safety, culture, and job-specific training.
+
+Step 4: Attend Orientation Events
+- Employees must attend scheduled onboarding events.
+
+Step 5: Ask Questions
+- Employees can use the Questions section or AI Assistant for support.
+
+Completion:
+- Once all steps are complete, employees receive a digital certificate.
