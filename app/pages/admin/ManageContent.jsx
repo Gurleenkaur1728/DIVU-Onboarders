@@ -239,21 +239,15 @@ export default function ManageContent() {
 
   return (
     <AppLayout>
-      <div className="p-6">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
-          <span className="font-semibold text-emerald-950">
-            Admin – Manage Content
-          </span>
-        </div>
-
-        {/* Title */}
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
-          MANAGE CONTENT
+      <div className="bg-white min-h-screen p-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Content</h1>
+          <p className="text-gray-600">Edit homepage content for Welcome, Culture, and About sections</p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-8">
           <Tab
             label="Welcome"
             active={activeTab === "welcome"}
@@ -272,7 +266,7 @@ export default function ManageContent() {
         </div>
 
         {/* Section Editor */}
-        <div className="bg-white rounded-xl p-6 shadow-lg max-w-5xl">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 max-w-5xl">
           {/* Loop sections */}
           {sections.map((s, idx) => {
             const isFirst = s.sort_order === 0;
@@ -280,17 +274,17 @@ export default function ManageContent() {
             return (
               <div
                 key={s.id ?? `draft-${idx}`}
-                className="border rounded-xl p-4 mb-5"
+                className="border border-gray-200 rounded-lg p-4 mb-5"
               >
                 {/* Header row */}
                 <div className="flex justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm px-2 py-1 rounded bg-emerald-50 border border-emerald-200 text-emerald-900">
+                    <span className="text-sm px-2 py-1 rounded bg-gray-100 border border-gray-300 text-gray-700">
                       #{s.sort_order}
                     </span>
 
                     {isFirst && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800">
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600">
                         <Lock size={14} /> First section (locked)
                       </span>
                     )}
@@ -299,7 +293,7 @@ export default function ManageContent() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => saveSection(idx)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
                     >
                       <Save size={16} />
                       Save
@@ -308,10 +302,10 @@ export default function ManageContent() {
                     <button
                       disabled={isFirst}
                       onClick={() => deleteSection(idx)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded ${
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
                         isFirst
-                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          : "bg-red-600 text-white hover:bg-red-700"
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-red-600 text-white hover:bg-red-700 transition"
                       }`}
                     >
                       <Trash2 size={16} />
@@ -324,7 +318,7 @@ export default function ManageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Title */}
                   <label className="block">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold text-gray-700">
                       Title
                     </span>
                     <input
@@ -333,13 +327,13 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { title: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Subtitle */}
                   <label className="block">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold text-gray-700">
                       Subtitle
                     </span>
                     <input
@@ -348,13 +342,13 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { subtitle: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Description */}
                   <label className="block md:col-span-2">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold text-gray-700">
                       Description
                     </span>
                     <textarea
@@ -363,13 +357,13 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { description: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* CTA label */}
                   <label className="block">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold text-gray-700">
                       CTA Label
                     </span>
                     <input
@@ -378,13 +372,13 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { cta_label: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* CTA link */}
                   <label className="block">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold text-gray-700">
                       CTA Link
                     </span>
                     <input
@@ -393,13 +387,13 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { cta_href: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Media Upload */}
                   <div className="md:col-span-2">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold text-gray-700">
                       Media
                     </span>
                     <div className="flex items-center gap-3 mt-2">
@@ -420,8 +414,9 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { is_active: e.target.checked })
                       }
+                      className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     />
-                    <span>Active</span>
+                    <span className="text-gray-700">Active</span>
                   </label>
                 </div>
               </div>
@@ -432,43 +427,43 @@ export default function ManageContent() {
           {!addOpen ? (
             <button
               onClick={() => setAddOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded mt-4"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition mt-4"
             >
               <Plus size={18} />
               Add Section
             </button>
           ) : (
-            <div className="border rounded-xl p-4 mt-4">
-              <h3 className="font-semibold text-emerald-900 mb-2">
+            <div className="border border-gray-200 rounded-lg p-4 mt-4">
+              <h3 className="font-semibold text-gray-900 mb-2">
                 Add New Section
               </h3>
 
               <label className="block mb-3">
-                <span className="font-semibold text-emerald-900">Title</span>
+                <span className="font-semibold text-gray-700">Title</span>
                 <input
                   type="text"
                   value={newDraft.title}
                   onChange={(e) =>
                     setNewDraft((p) => ({ ...p, title: e.target.value }))
                   }
-                  className="w-full border rounded px-3 py-2 mt-1"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </label>
 
               <label className="block mb-3">
-                <span className="font-semibold text-emerald-900">Subtitle</span>
+                <span className="font-semibold text-gray-700">Subtitle</span>
                 <input
                   type="text"
                   value={newDraft.subtitle}
                   onChange={(e) =>
                     setNewDraft((p) => ({ ...p, subtitle: e.target.value }))
                   }
-                  className="w-full border rounded px-3 py-2 mt-1"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </label>
 
               <label className="block mb-3">
-                <span className="font-semibold text-emerald-900">
+                <span className="font-semibold text-gray-700">
                   Description
                 </span>
                 <textarea
@@ -477,21 +472,21 @@ export default function ManageContent() {
                   onChange={(e) =>
                     setNewDraft((p) => ({ ...p, description: e.target.value }))
                   }
-                  className="w-full border rounded px-3 py-2 mt-1"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </label>
 
               <div className="flex items-center gap-3 mt-4">
                 <button
                   onClick={addDraftSection}
-                  className="flex items-center bg-emerald-600 text-white px-4 py-2 rounded"
+                  className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition"
                 >
                   <Save size={18} />
                   Add
                 </button>
                 <button
                   onClick={() => setAddOpen(false)}
-                  className="px-4 py-2 border rounded"
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
                 >
                   Cancel
                 </button>
@@ -501,10 +496,10 @@ export default function ManageContent() {
 
           {message && (
             <p
-              className={`mt-4 font-medium ${
+              className={`mt-4 px-4 py-2 rounded-lg font-medium ${
                 message.includes("⚠️")
-                  ? "text-red-600"
-                  : "text-emerald-700"
+                  ? "bg-red-50 text-red-700 border border-red-200"
+                  : "bg-green-50 text-green-700 border border-green-200"
               }`}
             >
               {message}
@@ -520,10 +515,10 @@ function Tab({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg font-semibold ${
+      className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
         active
-          ? "bg-DivuLightGreen text-emerald-950 shadow-md"
-          : "bg-DivuDarkGreen/90 text-emerald-100 hover:bg-DivuBlue hover:text-black"
+          ? "bg-emerald-600 text-white shadow-sm"
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
       }`}
     >
       {label}

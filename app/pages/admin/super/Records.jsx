@@ -106,64 +106,62 @@ export default function Records() {
 
   return (
     <AppLayout>
-
-      <div className="flex-1 flex flex-col p-6 overflow-y-auto">
+      <div className="bg-white min-h-screen p-8">
         {/* Header */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
-          <span className="font-semibold text-emerald-950">
-            Super Admin – Audit Records
-          </span>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-emerald-950 mb-2">Audit Records</h1>
+            <p className="text-gray-600">Track all user activity and system events</p>
+          </div>
           <button
             onClick={loadAllLogs}
-            className="flex items-center gap-2 text-emerald-800 hover:text-DivuBlue text-sm font-semibold"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
             title="Refresh Logs"
           >
             <RefreshCcw size={16} /> Refresh
           </button>
         </div>
 
-        {/* Title */}
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
-          USER ACTIVITY RECORDS
-        </div>
-
         {/* Search */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-6">
           <input
             type="text"
             placeholder="Search by name, email, or action..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-4 py-2 border border-emerald-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
           />
           <button
             onClick={() => setSearch("")}
-            className="px-4 py-2 bg-DivuLightGreen text-black hover:text-white rounded-md hover:bg-DivuBlue"
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
           >
             Clear
           </button>
         </div>
 
         {/* Logs */}
-        <div className="bg-white rounded-2xl shadow-xl p-4 border border-emerald-200/60">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
           {loading ? (
-            <p className="text-gray-600 text-center py-6">Loading logs…</p>
+            <div className="text-center py-10">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading logs…</p>
+            </div>
           ) : Object.keys(grouped).length === 0 ? (
-            <p className="text-gray-600 text-center py-6">No logs found.</p>
+            <p className="text-gray-500 text-center py-6">No logs found.</p>
           ) : (
             Object.entries(grouped).map(([name, entries]) => (
               <div
                 key={name}
-                className="mb-3 border border-emerald-200 rounded-lg overflow-hidden transition-all duration-300"
+                className="mb-3 border border-gray-200 rounded-lg overflow-hidden transition-all duration-300"
               >
                 <button
                   onClick={() =>
                     setExpanded((prev) => ({ ...prev, [name]: !prev[name] }))
                   }
-                  className={`w-full flex justify-between items-center px-4 py-3 font-semibold text-emerald-900 ${
+                  className={`w-full flex justify-between items-center px-4 py-3 font-semibold transition ${
                     expanded[name]
-                      ? "bg-DivuBlue/60 hover:bg-DivuBlue/70 text-black"
-                      : "bg-DivuLightGreen/40 hover:bg-DivuBlue/50"
+                      ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "bg-gray-50 text-gray-900 hover:bg-gray-100"
                   }`}
                 >
                   <span>
@@ -181,17 +179,17 @@ export default function Records() {
                     {entries.map((log, i) => (
                       <div
                         key={i}
-                        className="border-b last:border-none py-2 text-sm flex justify-between items-start"
+                        className="border-b border-gray-200 last:border-none py-3 text-sm flex justify-between items-start gap-4"
                       >
-                        <div>
-                          <p className="font-medium text-emerald-800">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
                             {log.action}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-gray-500 mt-1">
                             By: {log.performed_by || "System"}
                           </p>
                         </div>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-gray-400 whitespace-nowrap">
                           {new Date(log.performed_at || log.created_at).toLocaleString()}
                         </p>
                       </div>

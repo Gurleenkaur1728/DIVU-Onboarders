@@ -207,25 +207,27 @@ export default function ManageEmployment() {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <p className="text-lg animate-pulse">Loading employees...</p>
-      </div>
+      <AppLayout>
+        <div className="bg-white min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading employees...</p>
+          </div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
 
     <AppLayout>
-    {/* // // <div className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60"> */}
-      {/* <Sidebar role={roleId} /> */}
-      
-      <div className="flex-1 p-6">
+      <div className="bg-white min-h-screen p-8">
         <div className="mb-6 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-emerald-900 mb-2">
-              👥 Manage Employment Details
+            <h1 className="text-3xl font-bold text-emerald-950 mb-2">
+              Manage Employment Details
             </h1>
-            <p className="text-emerald-600">
+            <p className="text-gray-600">
               Assign and manage employment information for all users
             </p>
           </div>
@@ -233,43 +235,43 @@ export default function ManageEmployment() {
           <div className="flex gap-3">
             <button
               onClick={bulkEditAll}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               disabled={filteredEmployees.length === 0}
             >
-              📝 Edit All ({filteredEmployees.length})
+              Edit All ({filteredEmployees.length})
             </button>
             
             <button
               onClick={bulkCancelAll}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               disabled={Object.keys(editingEmployees).length === 0}
             >
-              ❌ Cancel All
+              Cancel All
             </button>
 
             <button
               onClick={bulkSaveAll}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               disabled={Object.keys(editingEmployees).length === 0}
             >
-              ✅ Save All Changes ({Object.keys(editingEmployees).length})
+              Save All ({Object.keys(editingEmployees).length})
             </button>
 
             <button
               onClick={loadEmployees}
-              className="px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
             >
-              🔄 Refresh
+              Refresh
             </button>
           </div>
         </div>
 
         {/* Search and Filter Controls */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">🔍 Search Employees</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Search Employees</label>
               <input
                 type="text"
                 placeholder="Search by name, email, or employee ID..."
@@ -281,7 +283,7 @@ export default function ManageEmployment() {
             
             {/* Department Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">🏢 Department</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
@@ -299,7 +301,7 @@ export default function ManageEmployment() {
             
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">📊 Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -339,7 +341,7 @@ export default function ManageEmployment() {
                 onChange={(e) => setAutoSaveEnabled(e.target.checked)}
                 className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
               />
-              <span className="text-gray-700">💾 Auto-save changes</span>
+              <span className="text-gray-700">Auto-save changes</span>
             </label>
           </div>
         </div>
@@ -351,7 +353,6 @@ export default function ManageEmployment() {
                 <p className="text-2xl font-bold">{filteredEmployees.length}</p>
                 <p className="text-xs opacity-80">({employees.length} total)</p>
               </div>
-              <div className="text-3xl opacity-80">👥</div>
             </div>
           </div>
           
@@ -368,7 +369,6 @@ export default function ManageEmployment() {
                   }% complete
                 </p>
               </div>
-              <div className="text-3xl opacity-80">✅</div>
             </div>
           </div>
           
@@ -381,7 +381,6 @@ export default function ManageEmployment() {
                 </p>
                 <p className="text-xs opacity-80">Need attention</p>
               </div>
-              <div className="text-3xl opacity-80">⚠️</div>
             </div>
           </div>
           
@@ -394,20 +393,19 @@ export default function ManageEmployment() {
                   {autoSaveEnabled ? "Auto-save ON" : "Manual save"}
                 </p>
               </div>
-              <div className="text-3xl opacity-80">📝</div>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           {Object.keys(editingEmployees).length > 0 && (
             <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
               <div className="flex items-center justify-between">
                 <span className="text-blue-800 font-medium">
-                  📝 Currently editing {Object.keys(editingEmployees).length} employee(s)
+                  Currently editing {Object.keys(editingEmployees).length} employee(s)
                 </span>
                 <span className="text-blue-600 text-sm">
-                  Make your changes and click "Save" for each employee or "Save All Changes"
+                  Make your changes and click "Save" for each employee or "Save All"
                 </span>
               </div>
             </div>
@@ -415,17 +413,17 @@ export default function ManageEmployment() {
           
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-emerald-50 border-b border-emerald-200">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Employee</th>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Employee ID</th>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Hire Date</th>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Department</th>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Position</th>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Manager</th>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Type</th>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Salary</th>
-                  <th className="text-left p-4 font-semibold text-emerald-900">Actions</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Employee</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Employee ID</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Hire Date</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Department</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Position</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Manager</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Type</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Salary</th>
+                  <th className="text-left p-4 font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -586,7 +584,7 @@ export default function ManageEmployment() {
                         <td className="p-4">
                           <button
                             onClick={() => startEditing(employee)}
-                            className="px-3 py-1 bg-DivuLightGreen text-black rounded text-sm hover:bg-emerald-600"
+                            className="px-3 py-1 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700"
                           >
                             Edit
                           </button>

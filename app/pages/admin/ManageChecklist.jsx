@@ -275,33 +275,34 @@ export default function ManageChecklist() {
 
   return (
     <AppLayout>
-    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}> */}
-      {/* // <Sidebar active="manage-checklist" role={roleId} /> */}
-
-      <div className="flex-1 flex flex-col p-6 z-10">
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
-          <span className="font-semibold text-emerald-950">Admin Panel – Manage Checklist</span>
+      <div className="bg-white min-h-screen p-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Checklist</h1>
+            <p className="text-gray-600">Create and manage checklist groups and items for employee onboarding</p>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={openNewGroup}
-              className="flex items-center gap-2 px-3 py-1.5 rounded bg-DivuLightGreen text-black  font-semibold text-sm hover:bg-DivuBlue"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition"
             >
               <Plus size={16} /> New Group
             </button>
           </div>
         </div>
 
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">
-          MANAGE CHECKLIST TEMPLATES
-        </div>
-
-        {notice && <div className="mb-4 px-4 py-2 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded">{notice}</div>}
+        {notice && <div className="mb-6 px-4 py-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg">{notice}</div>}
 
         <div className="space-y-4">
           {loading ? (
-            <div className="text-emerald-900">Loading…</div>
+            <div className="flex items-center justify-center py-10">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading…</p>
+              </div>
+            </div>
           ) : groups.length === 0 ? (
-            <div className="text-emerald-900 bg-white/95 rounded-lg p-6 shadow border border-emerald-200">
+            <div className="text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
               No groups yet. Create your first group.
             </div>
           ) : (
@@ -309,34 +310,34 @@ export default function ManageChecklist() {
               const open = !!expanded[g.id];
               const items = itemsByGroup[g.id] || [];
               return (
-                <div key={g.id} className="bg-white/95 rounded-xl shadow border border-DivuDarkGreen/70">
-                  <div className="flex items-center justify-between px-4 py-3 bg-DivuLightGreen text-black rounded-t-xl">
+                <div key={g.id} className="bg-white border border-gray-200 rounded-lg shadow-sm">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 rounded-t-lg">
                     <button
-                      className="flex items-center gap-2 font-semibold"
+                      className="flex items-center gap-2 font-semibold text-gray-900"
                       onClick={() => setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))}
                       title={open ? "Collapse" : "Expand"}
                     >
-                      <span className="inline-block w-2 h-2 rounded-full bg-DivuBlue" />
+                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-600" />
                       {g.name}
                     </button>
                     <div className="flex gap-2">
                       <button
                         onClick={() => openNewItem(g.id)}
-                        className="px-2 py-1 rounded bg-DivuDarkGreen text-white text-sm hover:bg-emerald-500"
+                        className="px-2 py-1 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition"
                         title="Add checklist item"
                       >
                         <Plus size={14} />
                       </button>
                       <button
                         onClick={() => openEditGroup(g)}
-                        className="px-2 py-1 rounded bg-DivuBlue text-white text-sm hover:bg-blue-500"
+                        className="px-2 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition"
                         title="Rename group"
                       >
                         <Edit size={14} />
                       </button>
                       <button
                         onClick={() => deleteGroup(g)}
-                        className="px-2 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-500"
+                        className="px-2 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700 transition"
                         title={isSuperAdmin ? "Delete group" : "Request delete"}
                       >
                         <Trash2 size={14} />
@@ -348,7 +349,7 @@ export default function ManageChecklist() {
                     <div className="overflow-x-auto">
                       <table className="w-full table-auto border-collapse">
                         <thead>
-                          <tr className="bg-DivuBlue text-left w-auto text-emerald-100">
+                          <tr className="bg-gray-50 border-b border-gray-200 text-left">
                             <Th>Required</Th>
                             <Th>Module</Th>
                             <Th>Date Assigned</Th>
@@ -358,34 +359,34 @@ export default function ManageChecklist() {
                         <tbody>
                           {items.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="px-4 py-4 text-emerald-900">
+                              <td colSpan={5} className="px-4 py-4 text-gray-500 text-center">
                                 No items in this group yet.
                               </td>
                             </tr>
                           ) : (
                             items.map((it, idx) => (
-                              <tr key={it.item_id} className={idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"}>
+                              <tr key={it.item_id} className="border-b border-gray-200 hover:bg-gray-50 transition">
                                 <td className="px-4 py-3">
                                   {it.is_required ? (
-                                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                                    <CheckCircle className="w-5 h-5 text-emerald-600" />
                                   ) : (
                                     <Circle className="w-5 h-5 text-gray-400" />
                                   )}
                                 </td>
-                                <td className="px-4 py-3">{it.title}</td>
-                                <td className="px-4 py-3">{it.assigned || "-"}</td>
+                                <td className="px-4 py-3 text-gray-900">{it.title}</td>
+                                <td className="px-4 py-3 text-gray-600">{it.assigned || "-"}</td>
                                 <td className="px-4 py-3">
                                   <div className="flex gap-2 justify-end pr-1">
                                     <button
                                       onClick={() => openEditItem(it)}
-                                      className="p-2 rounded bg-DivuBlue/80 text-white hover:bg-blue-500"
+                                      className="p-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition"
                                       title="Edit item"
                                     >
                                       <Edit size={16} />
                                     </button>
                                     <button
                                       onClick={() => deleteItem(it)}
-                                      className="p-2 rounded bg-red-500/80 text-white hover:bg-red-500"
+                                      className="p-2 rounded bg-red-600 text-white hover:bg-red-700 transition"
                                       title={isSuperAdmin ? "Delete item" : "Request delete"}
                                     >
                                       <Trash2 size={16} />
@@ -409,18 +410,18 @@ export default function ManageChecklist() {
       {groupModal.open && (
         <Modal onClose={closeGroupModal} title={groupModal.id ? "Edit Group" : "New Group"}>
           <div className="space-y-3">
-            <label className="block text-sm">Group title</label>
+            <label className="block text-sm text-gray-700 font-medium">Group title</label>
             <input
               value={groupModal.title}
               onChange={(e) => setGroupModal((m) => ({ ...m, title: e.target.value }))}
-              className="w-full rounded-lg border border-emerald-700 bg-White px-3 py-2 text-black placeholder-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="e.g. Complete within first week of employment"
             />
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={closeGroupModal} className="px-4 py-2 rounded bg-gray-600/70 text-white text-sm hover:bg-gray-500">
+              <button onClick={closeGroupModal} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200 transition">
                 Cancel
               </button>
-              <button onClick={saveGroup} disabled={savingGroup} className="px-4 py-2 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500">
+              <button onClick={saveGroup} disabled={savingGroup} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition">
                 { savingGroup ? "Saving..." : "Save" }
               </button>
             </div>
@@ -431,33 +432,34 @@ export default function ManageChecklist() {
       {itemModal.open && (
         <Modal onClose={closeItemModal} title={itemModal.id ? "Edit Checklist Item" : "Add Checklist Item"}>
           <div className="space-y-3">
-            <label className="block text-sm">Title</label>
+            <label className="block text-sm text-gray-700 font-medium">Title</label>
             <input
               value={itemModal.title}
               onChange={(e) => setItemModal((m) => ({ ...m, title: e.target.value }))}
-              className="w-full rounded-lg border border-emerald-700 bg-white px-3 py-2 text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
               placeholder="e.g. Security Training"
             />
-            <label className="block text-sm mt-2">Date Assigned (optional)</label>
+            <label className="block text-sm text-gray-700 font-medium mt-2">Date Assigned (optional)</label>
             <input
               type="date"
               value={itemModal.assigned_on || ""}
               onChange={(e) => setItemModal((m) => ({ ...m, assigned_on: e.target.value }))}
-              className="w-full rounded-lg border border-emerald-700 bg-emerald-900/60 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-emerald-400"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
             />
             <label className="inline-flex items-center gap-2 mt-2">
               <input
                 type="checkbox"
                 checked={itemModal.is_required}
                 onChange={(e) => setItemModal((m) => ({ ...m, is_required: e.target.checked }))}
+                className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
               />
-              <span className="text-sm">Required</span>
+              <span className="text-sm text-gray-700">Required</span>
             </label>
             <div className="flex justify-end gap-2 pt-2">
-              <button onClick={closeItemModal} className="px-4 py-2 rounded bg-gray-600/70 text-white text-sm hover:bg-gray-500">
+              <button onClick={closeItemModal} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200 transition">
                 Cancel
               </button>
-              <button onClick={saveItem} className="px-4 py-2 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500">
+              <button onClick={saveItem} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition">
                 Save
               </button>
             </div>
@@ -470,16 +472,16 @@ export default function ManageChecklist() {
 
 /* ---------- UI helpers ---------- */
 function Th({ children, className = "" }) {
-  return <th className={`px-4 py-3 font-bold border-r border-emerald-800/50 ${className}`}>{children}</th>;
+  return <th className={`px-4 py-3 font-semibold text-gray-700 ${className}`}>{children}</th>;
 }
 function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="w-full max-w-md bg-DivuDarkGreen text-white rounded-xl shadow-lg border border-emerald-700 backdrop-blur-xl p-6 relative">
-        <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-emerald-700/50 hover:bg-emerald-600" title="Close">
-          <X size={18} />
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6 relative">
+        <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100 transition" title="Close">
+          <X size={18} className="text-gray-600" />
         </button>
-        <h2 className="text-lg font-bold mb-4">{title}</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">{title}</h2>
         {children}
       </div>
     </div>
