@@ -372,62 +372,62 @@ export default function Progress() {
               {/* Stats Cards Row */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 {/* Total XP */}
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg p-4 shadow">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium opacity-90">Total XP</h3>
-                      <p className="text-2xl font-bold">{userStats.xp}</p>
-                      <p className="text-xs opacity-80">Level {userStats.level}</p>
+                      <h3 className="text-sm font-medium text-gray-600">Total XP</h3>
+                      <p className="text-2xl font-bold text-gray-900">{userStats.xp}</p>
+                      <p className="text-xs text-gray-500">Level {userStats.level}</p>
                     </div>
-                    <div className="text-2xl opacity-80">💫</div>
+                    <div className="text-2xl">💫</div>
                   </div>
                 </div>
                 
                 {/* Completion Rate */}
-                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-4 shadow">
+                <div className="bg-white border border-emerald-200 rounded-lg p-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium opacity-90">Completion</h3>
-                      <p className="text-2xl font-bold">
+                      <h3 className="text-sm font-medium text-gray-600">Completion</h3>
+                      <p className="text-2xl font-bold text-emerald-600">
                         {modules.length > 0 ? Math.round((userProgress.filter(p => p.is_completed).length / modules.length) * 100) : 0}%
                       </p>
-                      <p className="text-xs opacity-80">
+                      <p className="text-xs text-gray-500">
                         {userProgress.filter(p => p.is_completed).length}/{modules.length} modules
                       </p>
                     </div>
-                    <div className="text-2xl opacity-80">🎯</div>
+                    <div className="text-2xl">🎯</div>
                   </div>
                 </div>
                 
                 {/* Average Rating */}
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium opacity-90">Avg Rating</h3>
-                      <p className="text-2xl font-bold">
+                      <h3 className="text-sm font-medium text-gray-600">Avg Rating</h3>
+                      <p className="text-2xl font-bold text-gray-900">
                         {userStats.averageRating > 0 ? userStats.averageRating : '--'}
                       </p>
-                      <p className="text-xs opacity-80">
+                      <p className="text-xs text-gray-500">
                         {feedback.length} feedback given
                       </p>
                     </div>
-                    <div className="text-2xl opacity-80">⭐</div>
+                    <div className="text-2xl">⭐</div>
                   </div>
                 </div>
                 
                 {/* Time Spent */}
-                <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg p-4 shadow">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium opacity-90">Time Invested</h3>
-                      <p className="text-2xl font-bold">
+                      <h3 className="text-sm font-medium text-gray-600">Time Invested</h3>
+                      <p className="text-2xl font-bold text-gray-900">
                         {Math.floor(userStats.totalTimeSpent / 60)}h
                       </p>
-                      <p className="text-xs opacity-80">
+                      <p className="text-xs text-gray-500">
                         {userStats.totalTimeSpent % 60}m estimated
                       </p>
                     </div>
-                    <div className="text-2xl opacity-80">⏱️</div>
+                    <div className="text-2xl">⏱️</div>
                   </div>
                 </div>
               </div>
@@ -543,7 +543,7 @@ export default function Progress() {
                     </td>
                     <td className="p-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        module.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        module.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
                         module.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
                         'bg-gray-100 text-gray-600'
                       }`}>
@@ -557,7 +557,7 @@ export default function Progress() {
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
                           <div 
                             className={`h-2 rounded-full transition-all ${
-                              module.status === 'completed' ? 'bg-green-500' :
+                              module.status === 'completed' ? 'bg-emerald-500' :
                               module.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-400'
                             }`}
                             style={{ width: `${module.progress.completion_percentage || 0}%` }}
@@ -578,11 +578,11 @@ export default function Progress() {
             {/* Gamification Summary */}
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* XP + Level */}
-              <div className="bg-gradient-to-br from-emerald-50 to-green-100 rounded-xl shadow-lg p-6 text-center border border-emerald-200">
-                <h3 className="text-lg font-bold text-emerald-800 mb-3">
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">
                   Your XP Level
                 </h3>
-                <p className="text-2xl font-extrabold text-emerald-700">
+                <p className="text-2xl font-extrabold text-emerald-600">
                   {userStats.xp} XP
                 </p>
                 <div className="w-full mt-3 bg-gray-200 h-2 rounded-full overflow-hidden">
@@ -599,23 +599,23 @@ export default function Progress() {
               </div>
 
               {/* Achievements */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold text-emerald-800 mb-3 text-center">
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
                   🏆 Achievements
                 </h3>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {achievements.length > 0 ? (
                     achievements.map((achievement) => (
-                      <div key={achievement.id} className="flex items-center p-2 bg-white/50 rounded-lg">
+                      <div key={achievement.id} className="flex items-center p-2 bg-gray-50 rounded-lg">
                         <span className="text-lg mr-2">{achievement.icon}</span>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-emerald-800">{achievement.title}</p>
-                          <p className="text-xs text-emerald-600">{achievement.description}</p>
+                          <p className="text-sm font-medium text-gray-900">{achievement.title}</p>
+                          <p className="text-xs text-gray-600">{achievement.description}</p>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-center text-emerald-600 text-sm">
+                    <p className="text-center text-gray-600 text-sm">
                       Complete modules to earn achievements! 🎯
                     </p>
                   )}
@@ -623,26 +623,26 @@ export default function Progress() {
               </div>
 
               {/* Quick Stats */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl shadow-lg p-6">
-                <h3 className="text-lg font-bold text-blue-800 mb-3 text-center">
+              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
                   📈 Quick Stats
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Completed Modules:</span>
-                    <span className="font-semibold text-blue-800">{userProgress.filter(p => p.is_completed).length}</span>
+                    <span className="text-sm text-gray-600">Completed Modules:</span>
+                    <span className="font-semibold text-gray-900">{userProgress.filter(p => p.is_completed).length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Feedback Given:</span>
-                    <span className="font-semibold text-blue-800">{feedback.length}</span>
+                    <span className="text-sm text-gray-600">Feedback Given:</span>
+                    <span className="font-semibold text-gray-900">{feedback.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Certificates:</span>
-                    <span className="font-semibold text-blue-800">{certificates.length}</span>
+                    <span className="text-sm text-gray-600">Certificates:</span>
+                    <span className="font-semibold text-gray-900">{certificates.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-blue-700">Learning Streak:</span>
-                    <span className="font-semibold text-blue-800">{userStats.streakDays} days</span>
+                    <span className="text-sm text-gray-600">Learning Streak:</span>
+                    <span className="font-semibold text-gray-900">{userStats.streakDays} days</span>
                   </div>
                 </div>
               </div>
@@ -660,10 +660,10 @@ export default function Progress() {
             {achievements.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {achievements.map((achievement) => (
-                  <div key={achievement.id} className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-6 border border-emerald-200 hover:shadow-md transition-shadow">
+                  <div key={achievement.id} className="bg-white rounded-lg p-6 border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all">
                     <div className="text-center">
                       <div className="text-4xl mb-3">{achievement.icon}</div>
-                      <h3 className="text-lg font-bold text-emerald-800 mb-2">{achievement.title}</h3>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">{achievement.title}</h3>
                       <p className="text-sm text-gray-600">{achievement.description}</p>
                     </div>
                   </div>
@@ -689,10 +689,10 @@ export default function Progress() {
             {certificates.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {certificates.map((certificate) => (
-                  <div key={certificate.id} className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-6 border border-emerald-200 hover:shadow-md transition-shadow">
+                  <div key={certificate.id} className="bg-white rounded-lg p-6 border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all">
                     <div className="text-center">
                       <div className="text-4xl mb-3">🎓</div>
-                      <h3 className="text-lg font-bold text-emerald-800 mb-2">Certificate of Completion</h3>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">Certificate of Completion</h3>
                       <p className="text-gray-700 font-medium mb-2">{certificate.module_title}</p>
                       <p className="text-sm text-gray-500 mb-4">
                         Earned: {new Date(certificate.completion_date).toLocaleDateString()}

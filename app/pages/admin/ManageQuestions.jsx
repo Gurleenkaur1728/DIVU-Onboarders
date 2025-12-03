@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../../../src/AppLayout.jsx";
+import Toast from "../../components/Toast.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
 import {
   PlusCircle,
@@ -9,6 +10,7 @@ import {
   CalendarDays,
   X,
   Send,
+  Archive,
 } from "lucide-react";
 
 /**
@@ -47,6 +49,12 @@ export default function ManageQuestions() {
 
   // Archive
   const [answeredGroups, setAnsweredGroups] = useState([]);
+  
+  // Toast and confirmModal
+  const [toast, setToast] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: "", onConfirm: null });
+  
+  const showToast = (msg, type = "info") => setToast({ msg, type });
 
   /* ========== Helpers ========== */
   function mapUsers(rows, usersById) {
@@ -203,7 +211,10 @@ export default function ManageQuestions() {
       })
       .eq("id", id);
 
-    if (error) return alert(error.message);
+    if (error) {
+      showToast('Error: ' + error.message, 'error');
+      return;
+    }
 
     // optimistic UI
     setEmployeeQuestions((prev) =>
@@ -216,23 +227,44 @@ export default function ManageQuestions() {
   };
 
   const moveToArchive = async (id) => {
-    const { error } = await supabase
-      .from("user_questions")
-      .update({ status: "closed", updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (error) return alert(error.message);
-    setEmployeeQuestions((prev) => prev.filter((q) => q.id !== id));
+    setConfirmModal({
+      show: true,
+      message: 'Are you sure you want to move this question to archive?',
+      onConfirm: async () => {
+        const { error } = await supabase
+          .from("user_questions")
+          .update({ status: "closed", updated_at: new Date().toISOString() })
+          .eq("id", id);
+        if (error) {
+          showToast('Error: ' + error.message, 'error');
+        } else {
+          setEmployeeQuestions((prev) => prev.filter((q) => q.id !== id));
+          showToast('Question moved to archive', 'success');
+        }
+        setConfirmModal({ show: false, message: "", onConfirm: null });
+      }
+    });
     // archive list will refresh via realtime/loader when the tab is opened
   };
 
   const deleteQuestion = async (id) => {
-    if (!confirm("Delete this question?")) return;
-    const { error } = await supabase.from("user_questions").delete().eq("id", id);
-    if (error) return alert(error.message);
-    setEmployeeQuestions((prev) => prev.filter((q) => q.id !== id));
-    setAnsweredGroups((prev) =>
-      prev.map((g) => ({ ...g, items: g.items.filter((i) => i.id !== id) })).filter((g) => g.items.length)
-    );
+    setConfirmModal({
+      show: true,
+      message: 'Are you sure you want to delete this question?',
+      onConfirm: async () => {
+        const { error } = await supabase.from("user_questions").delete().eq("id", id);
+        if (error) {
+          showToast('Error: ' + error.message, 'error');
+        } else {
+          setEmployeeQuestions((prev) => prev.filter((q) => q.id !== id));
+          setAnsweredGroups((prev) =>
+            prev.map((g) => ({ ...g, items: g.items.filter((i) => i.id !== id) })).filter((g) => g.items.length)
+          );
+          showToast('Question deleted successfully', 'success');
+        }
+        setConfirmModal({ show: false, message: "", onConfirm: null });
+      }
+    });
   };
 
   /* ========== FAQ actions ========== */
@@ -247,10 +279,14 @@ export default function ManageQuestions() {
       .select("id, question, answer, is_published, created_at")
       .single();
 
-    if (error) return alert(error.message);
+    if (error) {
+      showToast('Error: ' + error.message, 'error');
+      return;
+    }
     setFaqs((prev) => [data, ...prev]);
     setNewQ("");
     setNewA("");
+    showToast('FAQ added successfully', 'success');
   };
 
   const saveEditFaq = async () => {
@@ -260,16 +296,30 @@ export default function ManageQuestions() {
       .from("faqs")
       .update({ question, answer })
       .eq("id", id);
-    if (error) return alert(error.message);
+    if (error) {
+      showToast('Error: ' + error.message, 'error');
+      return;
+    }
     setFaqs((prev) => prev.map((f) => (f.id === id ? { ...f, question, answer } : f)));
     setEditingFaq(null);
+    showToast('FAQ updated successfully', 'success');
   };
 
   const deleteFaq = async (id) => {
-    if (!confirm("Delete this FAQ?")) return;
-    const { error } = await supabase.from("faqs").delete().eq("id", id);
-    if (error) return alert(error.message);
-    setFaqs((prev) => prev.filter((f) => f.id !== id));
+    setConfirmModal({
+      show: true,
+      message: 'Are you sure you want to delete this FAQ?',
+      onConfirm: async () => {
+        const { error } = await supabase.from("faqs").delete().eq("id", id);
+        if (error) {
+          showToast('Error: ' + error.message, 'error');
+        } else {
+          setFaqs((prev) => prev.filter((f) => f.id !== id));
+          showToast('FAQ deleted successfully', 'success');
+        }
+        setConfirmModal({ show: false, message: "", onConfirm: null });
+      }
+    });
   };
 
   /* ========== Render ========== */
@@ -282,14 +332,10 @@ export default function ManageQuestions() {
       {/* <Sidebar role={roleId} active="manage-questions" /> */}
 
       <div className="flex-1 flex flex-col p-6">
-        <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
-          <span className="text-emerald-950 font-semibold">
-            Admin Panel – Manage Questions
-          </span>
-        </div>
-
-        <div className="bg-emerald-900/95 px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
-          MANAGE QUESTIONS
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4 mb-6">
+          <h1 className="text-2xl font-bold text-emerald-950">
+            Manage Questions
+          </h1>
         </div>
 
         <div className="flex gap-2 mb-6">
@@ -337,9 +383,48 @@ export default function ManageQuestions() {
             onChange={(e) => setAnswerText(e.target.value)}
             rows={4}
             placeholder="Type your answer here…"
-            className="w-full px-3 py-2 rounded-md border border-emerald-700 bg-emerald-900/60 text-white"
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           />
         </Modal>
+      )}
+      
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.msg}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Confirmation Modal */}
+      {confirmModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Action</h3>
+              <p className="text-gray-700 mb-6">{confirmModal.message}</p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConfirmModal({ show: false, message: "", onConfirm: null })}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmModal.onConfirm}
+                  className={`px-4 py-2 rounded-lg text-white transition-colors ${
+                    confirmModal.message.includes('archive') 
+                      ? 'bg-emerald-600 hover:bg-emerald-700' 
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                >
+                  {confirmModal.message.includes('archive') ? 'Archive' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </AppLayout>
   );
@@ -350,17 +435,17 @@ export default function ManageQuestions() {
 function EmployeeQuestionsTab({ employeeQuestions, onAnswer, onCloseQuestion, onDeleteQuestion }) {
   if ((employeeQuestions || []).length === 0) {
     return (
-      <div className="px-4 py-3 rounded-md bg-white border border-emerald-200 text-gray-600 italic">
+      <div className="px-4 py-3 rounded-lg bg-white border border-gray-200 text-gray-600 italic">
         No employee questions yet.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-emerald-400/70 shadow-lg bg-white">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
       <table className="min-w-[720px] w-full border-collapse" aria-label="Employee Questions">
         <thead>
-          <tr className="bg-emerald-900/95 text-left text-emerald-100">
+          <tr className="bg-gray-100 text-left text-gray-900">
             <Th>Employee</Th>
             <Th>Question</Th>
             <Th>Answer</Th>
@@ -372,8 +457,8 @@ function EmployeeQuestionsTab({ employeeQuestions, onAnswer, onCloseQuestion, on
           {employeeQuestions.map((r, idx) => (
             <tr
               key={r.id}
-              className={`text-emerald-950 text-sm ${
-                idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"
+              className={`text-gray-900 text-sm ${
+                idx % 2 === 0 ? "bg-white" : "bg-gray-50"
               }`}
             >
               <td className="px-4 py-3">
@@ -386,21 +471,21 @@ function EmployeeQuestionsTab({ employeeQuestions, onAnswer, onCloseQuestion, on
                 <div className="flex gap-2">
                   <button
                     onClick={() => onAnswer(r)}
-                    className="px-2 py-1 rounded-md bg-emerald-700 text-white hover:bg-emerald-600"
+                    className="p-1.5 rounded hover:bg-gray-100 text-emerald-600"
                     title="Answer / Edit"
                   >
                     <Pencil size={16} />
                   </button>
                   <button
                     onClick={() => onCloseQuestion(r.id)}
-                    className="px-2 py-1 rounded-md bg-blue-700 text-white hover:bg-blue-600"
-                    title="Move to archive (close)"
+                    className="p-1.5 rounded hover:bg-gray-100 text-gray-600"
+                    title="Move to archive"
                   >
-                    Close
+                    <Archive size={16} />
                   </button>
                   <button
                     onClick={() => onDeleteQuestion(r.id)}
-                    className="px-2 py-1 rounded-md bg-red-600 text-white hover:bg-red-500"
+                    className="p-1.5 rounded hover:bg-gray-100 text-red-600"
                     title="Delete"
                   >
                     <Trash2 size={16} />
@@ -418,7 +503,7 @@ function EmployeeQuestionsTab({ employeeQuestions, onAnswer, onCloseQuestion, on
 function AnsweredArchiveTab({ groups }) {
   if (!groups || groups.length === 0) {
     return (
-      <div className="px-4 py-3 rounded-md bg-white border border-emerald-200 text-gray-600 italic">
+      <div className="px-4 py-3 rounded-lg bg-white border border-gray-200 text-gray-600 italic">
         No answered questions yet.
       </div>
     );
@@ -426,19 +511,17 @@ function AnsweredArchiveTab({ groups }) {
   return (
     <div className="space-y-4">
       {groups.map(({ date, items }) => (
-        <div key={date} className="rounded-xl border border-emerald-200 bg-white shadow">
-          <div className="flex items-center gap-2 px-4 py-3 bg-emerald-900/95 text-emerald-100 rounded-t-xl">
-            <Folder size={16} className="text-emerald-300" />
-            <span className="font-semibold flex items-center gap-2">
-              <CalendarDays size={16} /> {date}
-            </span>
-            <span className="ml-2 text-emerald-200/80 text-sm">({items.length})</span>
+        <div key={date} className="rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 border-b border-gray-200">
+            <CalendarDays size={16} className="text-emerald-600" />
+            <span className="font-semibold text-gray-900">{date}</span>
+            <span className="ml-2 text-gray-500 text-sm">({items.length} {items.length === 1 ? 'question' : 'questions'})</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="min-w-[640px] w-full border-collapse">
               <thead>
-                <tr className="bg-emerald-800 text-left text-emerald-100">
+                <tr className="bg-gray-50 text-left text-gray-900">
                   <Th>Employee</Th>
                   <Th>Question</Th>
                   <Th>Answer</Th>
@@ -449,17 +532,17 @@ function AnsweredArchiveTab({ groups }) {
                 {items.map((r, idx) => (
                   <tr
                     key={r.id}
-                    className={`text-emerald-950 text-sm ${
-                      idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"
+                    className={`text-gray-900 text-sm ${
+                      idx % 2 === 0 ? "bg-white" : "bg-gray-50"
                     }`}
                   >
                     <td className="px-4 py-3">
                       {r.name} <span className="text-xs text-gray-500">({r.email})</span>
                     </td>
                     <td className="px-4 py-3">{r.question}</td>
-                    <td className="px-4 py-3">{r.answer}</td>
-                    <td className="px-4 py-3">
-                      {(r.updated_at || r.created_at || "").slice(0, 19).replace("T", " ")}
+                    <td className="px-4 py-3 text-gray-700">{r.answer}</td>
+                    <td className="px-4 py-3 text-gray-600 text-xs">
+                      {new Date(r.updated_at || r.created_at).toLocaleString()}
                     </td>
                   </tr>
                 ))}
@@ -475,27 +558,27 @@ function AnsweredArchiveTab({ groups }) {
 function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, setEditingFaq }) {
   return (
     <div className="space-y-6">
-      <div className="bg-emerald-900/90 text-emerald-100 rounded-lg shadow-lg p-4 border border-emerald-400/60 space-y-3">
-        <h3 className="font-bold flex items-center gap-2">
-          <PlusCircle size={18} className="text-emerald-300" /> Add New FAQ
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <PlusCircle size={18} className="text-emerald-600" /> Add New FAQ
         </h3>
         <input
           type="text"
           value={newQ}
           onChange={(e) => setNewQ(e.target.value)}
           placeholder="Enter FAQ question"
-          className="w-full px-3 py-2 rounded-md border border-emerald-700 bg-emerald-900/40 text-white"
+          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
         />
         <textarea
           value={newA}
           onChange={(e) => setNewA(e.target.value)}
           placeholder="Enter FAQ answer"
           rows={3}
-          className="w-full px-3 py-2 rounded-md border border-emerald-700 bg-emerald-900/40 text-white"
+          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
         />
         <button
           onClick={addFaq}
-          className="px-4 py-2 rounded-md bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold shadow hover:scale-105 transition"
+          className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors"
         >
           Add FAQ
         </button>
@@ -505,23 +588,23 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, setEdi
         {faqs.map((faq) => (
           <div
             key={faq.id}
-            className="bg-emerald-900/80 text-emerald-100 rounded-lg shadow-lg p-4 border border-emerald-400/40"
+            className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 hover:border-emerald-300 transition-colors"
           >
             <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-bold">{faq.question}</h3>
-                <p className="text-sm text-emerald-200/80 mt-1">{faq.answer}</p>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-900">{faq.question}</h3>
+                <p className="text-sm text-gray-600 mt-1">{faq.answer}</p>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditingFaq({ ...faq })}
-                  className="p-2 rounded-md bg-emerald-700 hover:bg-emerald-600"
+                  className="p-1.5 rounded hover:bg-gray-100 text-emerald-600"
                 >
                   <Pencil size={16} />
                 </button>
                 <button
                   onClick={() => deleteFaq(faq.id)}
-                  className="p-2 rounded-md bg-red-600 hover:bg-red-500"
+                  className="p-1.5 rounded hover:bg-gray-100 text-red-600"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -538,10 +621,10 @@ function Tab({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-md text-sm font-semibold transition-all duration-300 ${
+      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors border-b-2 ${
         active
-          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
+          ? "border-emerald-600 text-emerald-600 bg-emerald-50"
+          : "border-transparent text-gray-600 hover:text-emerald-600 hover:bg-gray-50"
       }`}
     >
       {label}
@@ -549,22 +632,22 @@ function Tab({ label, active, onClick }) {
   );
 }
 function Th({ children }) {
-  return <th className="px-4 py-3 font-bold border-r border-emerald-800/50">{children}</th>;
+  return <th className="px-4 py-3 font-semibold text-gray-900 border-r border-gray-200">{children}</th>;
 }
 function Modal({ title, onClose, onSave, children }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="w-full max-w-md bg-emerald-950/95 text-white rounded-xl shadow-lg border border-emerald-700 backdrop-blur-xl p-6 relative">
-        <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full bg-emerald-700/50 hover:bg-emerald-600">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-xl p-6 relative">
+        <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100">
           <X size={18} />
         </button>
-        <h2 className="text-lg font-bold mb-4">{title}</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">{title}</h2>
         {children}
         <div className="flex justify-end gap-2 mt-4">
-          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-600/70 hover:bg-gray-500">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
             Cancel
           </button>
-          <button onClick={onSave} className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 flex items-center gap-2">
+          <button onClick={onSave} className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-2">
             <Send size={16} /> Save
           </button>
         </div>
