@@ -1,4 +1,4 @@
-import { CheckCircle, Timer, PlayCircle, Lock } from "lucide-react";
+import { CheckCircle, Timer, PlayCircle, Lock, FileText, Sparkles } from "lucide-react";
 
 export default function StatusPill({ status }) {
   const info =
@@ -8,6 +8,10 @@ export default function StatusPill({ status }) {
       ? { color: "text-amber-500", label: "In Progress", icon: Timer }
       : status === "available"
       ? { color: "text-emerald-700", label: "Available", icon: PlayCircle }
+      : status === "draft"
+      ? { color: "text-gray-600", label: "Draft", icon: FileText }
+      : status === "published"
+      ? { color: "text-emerald-600", label: "Published", icon: Sparkles }
       : { color: "text-gray-500", label: "Locked", icon: Lock };
 
   const Icon = info.icon;
