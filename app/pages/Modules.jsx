@@ -137,31 +137,17 @@ export default function Modules() {
 
   return (
     <AppLayout>
-    {/* <div
-      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 relative"
-      style={{
-        backgroundImage: "url('/bg.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    > */}
-      {/* Main */}
       <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 mb-6 shadow-sm border border-emerald-200/50">
-          <span className="text-emerald-950 font-semibold text-base sm:text-lg">
-            Welcome {localStorage.getItem("profile_name") || "<name>"} to DIVU!
-          </span>
-          <AppWindow className="w-5 h-5 text-emerald-900" />
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Culture Modules</h1>
+          <p className="text-gray-600 mt-2">
+            Welcome {localStorage.getItem("profile_name") || "there"}! Explore and complete your learning modules
+          </p>
         </div>
 
-        {/* Title */}
-        <h1 className="text-2xl md:text-3xl font-extrabold text-emerald-950 mb-6 tracking-wide">
-          CULTURE MODULES
-        </h1>
-
         {/* Search and Filter Section */}
-        <div className="bg-white/95 rounded-xl shadow-md p-4 mb-6 border border-emerald-200">
+        <div className="bg-white/95 rounded-xl shadow-md p-4 mb-6 border border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search Bar */}
             <div className="relative">
@@ -207,19 +193,19 @@ export default function Modules() {
 
         {loading ? (
           <div className="flex justify-center items-center py-12">
-            <div className="text-emerald-700 text-lg">Loading modules...</div>
+            <div className="text-gray-700 text-lg">Loading modules...</div>
           </div>
         ) : (
           /* Table */
-          <div className="overflow-x-auto rounded-2xl shadow-lg bg-white/95 border border-emerald-200">
-            <table className="min-w-[700px] w-full text-left border-collapse text-sm md:text-base">
-              <thead className="bg-DivuLightGreen text-white">
+          <div className="overflow-x-auto rounded-xl shadow-lg bg-white border border-gray-200">
+            <table className="w-full text-left border-collapse text-sm table-fixed">
+              <thead className="bg-gray-100 border-b border-gray-200">
                 <tr>
-                  <th className="p-4 font-semibold">Status</th>
-                  <th className="p-4 font-semibold">Module</th>
-                  <th className="p-4 font-semibold">Date Assigned</th>
-                  <th className="p-4 font-semibold">Date Completed</th>
-                  <th className="p-4 font-semibold">Feedback</th>
+                  <th className="p-4 font-semibold text-gray-700 text-center" style={{width: '80px'}}>Status</th>
+                  <th className="p-4 font-semibold text-gray-700">Module</th>
+                  <th className="p-4 font-semibold text-gray-700" style={{width: '150px'}}>Date Assigned</th>
+                  <th className="p-4 font-semibold text-gray-700" style={{width: '150px'}}>Date Completed</th>
+                  <th className="p-4 font-semibold text-gray-700 text-center" style={{width: '150px'}}>Feedback</th>
                 </tr>
               </thead>
               <tbody>
@@ -233,58 +219,53 @@ export default function Modules() {
                   </tr>
                 ) : (
                   filteredModules.map((m, idx) => (
-                    <tr
+                    <tr 
                       key={m.id}
-                      className={`transition-colors duration-200 ${
-                        idx % 2 === 0
-                          ? "bg-emerald-50/90 hover:bg-emerald-100/80"
-                          : "bg-emerald-100/70 hover:bg-emerald-200/70"
-                      }`}
+                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                     >
                       {/* Status */}
-                      <td className="p-3 text-center">
+                      <td className="p-4 text-center" style={{width: '80px'}}>
                         {m.status === "completed" ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 inline-block" />
                         ) : m.status === "in-progress" ? (
-                          <Clock className="w-5 h-5 text-amber-500" />
+                          <Clock className="w-5 h-5 text-amber-500 inline-block" />
                         ) : (
-                          <Circle className="w-5 h-5 text-gray-400" />
+                          <Circle className="w-5 h-5 text-gray-400 inline-block" />
                         )}
                       </td>
 
                       {/* Title */}
-                      <td className="p-3 font-medium text-emerald-900">
+                      <td className="p-4 font-medium text-gray-900">
                         <Link
                           to={`/modules/${m.id}`}
-                          className="text-emerald-700 hover:text-emerald-900 hover:underline transition-colors duration-200"
+                          className="text-emerald-600 hover:text-emerald-700 hover:underline transition-colors duration-200"
                         >
                           {m.title}
                         </Link>
                       </td>
 
                       {/* Dates */}
-                      <td className="p-3 text-sm text-emerald-800">{m.assigned}</td>
-                      <td className="p-3 text-sm text-emerald-800">{m.completed}</td>
+                      <td className="p-4 text-sm text-gray-700" style={{width: '150px'}}>{m.assigned}</td>
+                      <td className="p-4 text-sm text-gray-700" style={{width: '150px'}}>{m.completed}</td>
 
                       {/* Feedback */}
-                      <td className="p-3">
+                      <td className="p-4 text-center" style={{width: '150px'}}>
                         {m.hasFeedback ? (
                           <button
                             onClick={() => navigate('/feedback')}
-                            className="text-emerald-600 font-semibold hover:underline flex items-center gap-1"
+                            className="text-emerald-600 font-medium hover:text-emerald-700 hover:underline"
                           >
-                            <MessageSquare className="w-4 h-4" />
                             View
                           </button>
                         ) : m.isCompleted ? (
                           <button
                             onClick={() => navigate(`/feedback/${m.id}`)}
-                            className="text-amber-600 font-semibold hover:underline"
+                            className="text-orange-500 font-medium hover:text-orange-600 hover:underline"
                           >
                             Give Feedback
                           </button>
                         ) : (
-                          <span className="text-gray-400 italic">-</span>
+                          <span className="text-gray-400">-</span>
                         )}
                       </td>
                     </tr>

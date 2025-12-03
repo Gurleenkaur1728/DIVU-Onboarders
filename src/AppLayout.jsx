@@ -18,12 +18,11 @@ export default function AppLayout({ children }) {
 
       <main
         className={`
-          bg-cover bg-center bg-fixed relative
+          bg-gray-50 relative
           flex-1 min-h-screen overflow-y-auto
           transition-all duration-300
           ${collapsed ? "ml-20" : "ml-64"}
         `}
-        style={{ backgroundImage: "url('/bg.png')" }}
       >
         
         {children}

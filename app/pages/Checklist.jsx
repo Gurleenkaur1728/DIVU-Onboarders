@@ -35,11 +35,8 @@ export default function Checklist() {
   // Wait for auth to load before showing content
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+      <div className="ds-loading-full">
+        <div className="ds-spinner"></div>
       </div>
     );
   }
@@ -194,23 +191,12 @@ export default function Checklist() {
  
   return (
     <AppLayout>
-    <div
-      className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between h-12 rounded-lg bg-emerald-100/90 px-4 shadow-sm border border-emerald-200/50 mb-6">
-          <span className="font-semibold text-emerald-950 text-sm sm:text-base">
-            Welcome {me.name || "Employee"}!
-          </span>
-        </div>
- 
+    <div className="p-6 bg-white min-h-screen">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between bg-DivuDarkGreen px-4 py-3 rounded-lg mb-6 shadow-md border border-emerald-800/70">
-          <h2 className="text-lg md:text-xl font-bold text-emerald-100 tracking-wide">
-            ONBOARDING CHECKLIST 
-          </h2>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Onboarding Checklist</h1>
+          <p className="text-gray-600">Track and complete your onboarding tasks, {me.name || "Employee"}!</p>
         </div>
  
         {/* Notice */}
@@ -236,44 +222,38 @@ export default function Checklist() {
               return (
                 <div
                   key={g.id}
-                  className="bg-white/95 rounded-xl shadow-md border border-emerald-200 overflow-hidden transition-all duration-300"
+                  className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden"
                 >
                   {/* Group header */}
-                  <div className="flex items-center justify-between px-4 py-3 bg-DivuLightGreen text-black rounded-t-xl">
-                    <button
-                      className="flex items-center gap-2 font-semibold hover:text-white transition-colors duration-200"
-                      onClick={() =>
-                        setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))
-                      }
-                    >
-                      {open ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                      {g.name}
-                    </button>
-                  </div>
+                  <button
+                    className="w-full flex items-center gap-3 px-6 py-4 bg-emerald-100 text-gray-900 hover:bg-emerald-200 transition-colors duration-200"
+                    onClick={() =>
+                      setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))
+                    }
+                  >
+                    {open ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                    <span className="font-semibold text-lg">{g.name}</span>
+                  </button>
  
                   {/* Group table */}
                   {open && (
                     <div className="overflow-x-auto">
-                      <table className=" w-full border-collapse text-emerald-950 text-sm">
+                      <table className="w-full border-collapse text-sm">
                         <thead>
-                          <tr className="bg-DivuBlue text-left text-emerald-100">
-                            <Th>Completed</Th>
-                            <Th>Module</Th>
-                            <Th>Date Assigned</Th>
-                            <Th>Date Completed</Th>
+                          <tr className="bg-gray-100 text-gray-700 text-left border-b border-gray-200">
+                            <th className="px-4 py-3 text-center" style={{width: '100px'}}>Completed</th>
+                            <th className="px-4 py-3">Module</th>
+                            <th className="px-4 py-3" style={{width: '150px'}}>Date Assigned</th>
+                            <th className="px-4 py-3" style={{width: '150px'}}>Date Completed</th>
                           </tr>
                         </thead>
                         <tbody>
                           {g.items.map((it, idx) => (
                             <tr
                               key={it.assignedId}
-                              className={`transition-colors duration-200 ${
-                                idx % 2 === 0
-                                  ? "bg-emerald-50/90 hover:bg-emerald-100"
-                                  : "bg-emerald-100/80 hover:bg-emerald-200/80"
-                              }`}
+                              className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                             >
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-4 py-3 text-center" style={{width: '100px'}}>
                                 <button
                                   onClick={() => toggleDone(it)}
                                   className="focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-full"
@@ -286,10 +266,10 @@ export default function Checklist() {
                                   )}
                                 </button>
                               </td>
- 
-                              <td className="px-4 py-3">{it.title}</td>
-                              <td className="px-4 py-3">{fmt(it.assigned_on)}</td>
-                              <td className="px-4 py-3">{fmt(it.completed_at)}</td>
+
+                              <td className="px-4 py-3 text-gray-900">{it.title}</td>
+                              <td className="px-4 py-3 text-gray-700" style={{width: '150px'}}>{fmt(it.assigned_on)}</td>
+                              <td className="px-4 py-3 text-gray-700" style={{width: '150px'}}>{fmt(it.completed_at)}</td>
                             </tr>
                           ))}
                         </tbody>

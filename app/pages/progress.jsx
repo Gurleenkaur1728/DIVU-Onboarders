@@ -88,14 +88,42 @@ export default function Progress() {
       if (feedbackError) throw feedbackError;
       setFeedback(feedbackData || []);
 
-      // Load certificates
-      const { data: certificatesData, error: certificatesError } = await supabase
+      // Load certificates - try both direct query and fallback to generating from completed modules
+      let certificatesData = [];
+      
+      // First, try loading from certificates table
+      const { data: certsFromTable, error: certificatesError } = await supabase
         .from("certificates")
         .select("*")
         .eq("user_id", userId);
 
-      if (certificatesError) throw certificatesError;
-      setCertificates(certificatesData || []);
+      if (!certificatesError && certsFromTable && certsFromTable.length > 0) {
+        certificatesData = certsFromTable;
+      } else {
+        // Fallback: Generate certificates from completed modules with feedback
+        const completedModules = progressData?.filter(p => p.is_completed) || [];
+        const feedbackData = await supabase
+          .from("module_feedback")
+          .select("module_id")
+          .eq("user_id", userId);
+        
+        const modulesWithFeedback = completedModules.filter(cm => 
+          feedbackData.data?.some(f => f.module_id === cm.module_id)
+        );
+        
+        certificatesData = modulesWithFeedback.map(m => {
+          const module = modulesData?.find(mod => mod.id === m.module_id);
+          return {
+            id: m.module_id,
+            user_id: userId,
+            module_id: m.module_id,
+            module_title: module?.title || 'Unknown Module',
+            completion_date: m.completed_at || new Date().toISOString()
+          };
+        });
+      }
+      
+      setCertificates(certificatesData);
 
       // Calculate user stats
       const completedModules = progressData?.filter(p => p.is_completed) || [];
@@ -297,35 +325,35 @@ export default function Progress() {
 
   return (      
     <AppLayout>
-      <div className="p-6">
+      <div className="p-6 bg-white min-h-screen">
+        <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-emerald-900 mb-2">
-            📊 Your Learning Progress
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Your Learning Progress
           </h1>
-          <p className="text-emerald-700 text-lg">
+          <p className="text-gray-600">
             Track your journey, celebrate achievements, and stay motivated!
           </p>
         </div>
 
         {/* Enhanced Navigation Tabs */}
-        <div className="bg-white/90 rounded-xl shadow-md p-2 mb-8 border border-emerald-200">
-          <div className="flex space-x-2">
+        <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-8">
+          <div className="flex border-b border-gray-200">
             {[
-              { id: "progress", label: "📊 Progress", icon: "📈" },
-              { id: "achievements", label: "🏆 Achievements", icon: "🎖️" },
-              { id: "certificates", label: "📜 Certificates", icon: "🎓" },
+              { id: "progress", label: "Progress" },
+              { id: "achievements", label: "Achievements" },
+              { id: "certificates", label: "Certificates" },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
+                className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
                   activeTab === tab.id
-                    ? "bg-emerald-600 text-white shadow-lg"
-                    : "text-emerald-700 hover:bg-emerald-100"
+                    ? "border-emerald-600 text-emerald-600"
+                    : "border-transparent text-gray-600 hover:text-emerald-600"
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
                 {tab.label}
               </button>
             ))}
@@ -335,140 +363,77 @@ export default function Progress() {
         {/* Progress Tab */}
         {activeTab === "progress" && (
           <>
-            {/* Enhanced Stats Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              {/* Total XP */}
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium opacity-90">Total XP</h3>
-                    <p className="text-2xl font-bold">{userStats.xp}</p>
-                    <p className="text-xs opacity-80">Level {userStats.level}</p>
-                  </div>
-                  <div className="text-3xl opacity-80">💫</div>
-                </div>
-              </div>
-              
-              {/* Completion Rate */}
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium opacity-90">Completion</h3>
-                    <p className="text-2xl font-bold">
-                      {modules.length > 0 ? Math.round((userProgress.filter(p => p.is_completed).length / modules.length) * 100) : 0}%
-                    </p>
-                    <p className="text-xs opacity-80">
-                      {userProgress.filter(p => p.is_completed).length}/{modules.length} modules
-                    </p>
-                  </div>
-                  <div className="text-3xl opacity-80">🎯</div>
-                </div>
-              </div>
-              
-              {/* Average Rating */}
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium opacity-90">Avg Rating</h3>
-                    <p className="text-2xl font-bold">
-                      {userStats.averageRating > 0 ? userStats.averageRating : '--'}
-                    </p>
-                    <p className="text-xs opacity-80">
-                      {feedback.length} feedback given
-                    </p>
-                  </div>
-                  <div className="text-3xl opacity-80">⭐</div>
-                </div>
-              </div>
-              
-              {/* Time Spent */}
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium opacity-90">Time Invested</h3>
-                    <p className="text-2xl font-bold">
-                      {Math.floor(userStats.totalTimeSpent / 60)}h
-                    </p>
-                    <p className="text-xs opacity-80">
-                      {userStats.totalTimeSpent % 60}m estimated
-                    </p>
-                  </div>
-                  <div className="text-3xl opacity-80">⏱️</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Module Progress Details */}
-            <div className="bg-white/95 rounded-2xl shadow-lg p-6 mb-8 border border-emerald-200">
-              <h2 className="text-xl md:text-2xl font-semibold text-emerald-900 mb-6 flex items-center gap-2">
-                📚 Module Progress Details
+            {/* Enhanced Charts Section - Moved to Top */}
+            <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Progress Analytics Dashboard
               </h2>
-              
-              <div className="space-y-4">
-                {moduleDetails.map((module) => (
-                  <div key={module.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-800">{module.title}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{module.description}</p>
-                        
-                        {/* Progress Bar */}
-                        <div className="mt-3 flex items-center gap-3">
-                          <div className="flex-1 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full transition-all duration-500 ${
-                                module.status === 'completed' ? 'bg-green-500' :
-                                module.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-400'
-                              }`}
-                              style={{ width: `${module.progress.completion_percentage || 0}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-xs text-gray-500 min-w-[40px]">
-                            {Math.round(module.progress.completion_percentage || 0)}%
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 ml-4">
-                        {/* Status Badge */}
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          module.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          module.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
-                          'bg-gray-100 text-gray-600'
-                        }`}>
-                          {module.status === 'completed' ? '✓ Complete' :
-                           module.status === 'in-progress' ? '🔄 In Progress' : 
-                           '⏳ Not Started'}
-                        </span>
-                        
-                        {/* Feedback Indicator */}
-                        {module.feedback && (
-                          <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs">
-                            💬 {module.feedback.rating}★
-                          </span>
-                        )}
-                        
-                        {/* Certificate Indicator */}
-                        {module.certificate && (
-                          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                            🏆 Certified
-                          </span>
-                        )}
-                      </div>
+
+              {/* Stats Cards Row */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                {/* Total XP */}
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg p-4 shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium opacity-90">Total XP</h3>
+                      <p className="text-2xl font-bold">{userStats.xp}</p>
+                      <p className="text-xs opacity-80">Level {userStats.level}</p>
                     </div>
+                    <div className="text-2xl opacity-80">💫</div>
                   </div>
-                ))}
+                </div>
+                
+                {/* Completion Rate */}
+                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-4 shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium opacity-90">Completion</h3>
+                      <p className="text-2xl font-bold">
+                        {modules.length > 0 ? Math.round((userProgress.filter(p => p.is_completed).length / modules.length) * 100) : 0}%
+                      </p>
+                      <p className="text-xs opacity-80">
+                        {userProgress.filter(p => p.is_completed).length}/{modules.length} modules
+                      </p>
+                    </div>
+                    <div className="text-2xl opacity-80">🎯</div>
+                  </div>
+                </div>
+                
+                {/* Average Rating */}
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg p-4 shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium opacity-90">Avg Rating</h3>
+                      <p className="text-2xl font-bold">
+                        {userStats.averageRating > 0 ? userStats.averageRating : '--'}
+                      </p>
+                      <p className="text-xs opacity-80">
+                        {feedback.length} feedback given
+                      </p>
+                    </div>
+                    <div className="text-2xl opacity-80">⭐</div>
+                  </div>
+                </div>
+                
+                {/* Time Spent */}
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg p-4 shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium opacity-90">Time Invested</h3>
+                      <p className="text-2xl font-bold">
+                        {Math.floor(userStats.totalTimeSpent / 60)}h
+                      </p>
+                      <p className="text-xs opacity-80">
+                        {userStats.totalTimeSpent % 60}m estimated
+                      </p>
+                    </div>
+                    <div className="text-2xl opacity-80">⏱️</div>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            {/* Enhanced Charts Section */}
-            <div className="bg-white/95 rounded-2xl shadow-lg p-6 sm:p-10 border border-emerald-200">
-              <h2 className="text-xl md:text-2xl font-semibold text-emerald-900 mb-6">
-                📊 Progress Analytics Dashboard
-              </h2>
 
               {/* Charts Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Module Status Pie Chart */}
                 <div className="bg-gray-50 rounded-xl p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
@@ -544,33 +509,71 @@ export default function Progress() {
                   </ResponsiveContainer>
                 </div>
               </div>
-
-              {/* Module Performance Bar Chart */}
-              <div className="mt-8 bg-gray-50 rounded-xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
-                  📈 Module Performance Overview
-                </h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={moduleDetails.slice(0, 8).map(module => ({
-                      name: module.title.length > 20 
-                        ? module.title.substring(0, 20) + '...'
-                        : module.title,
-                      completion: module.progress.completion_percentage || 0,
-                      rating: module.feedback?.rating || 0,
-                    }))}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="completion" fill="#10b981" name="Completion %" />
-                    <Bar dataKey="rating" fill="#f59e0b" name="Rating (★)" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
             </div>
+
+        {/* Simplified Module Progress */}
+        <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden mb-8">
+          <div className="p-4 bg-gray-50 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Module Progress
+            </h2>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead className="bg-gray-100 border-b border-gray-200">
+                <tr>
+                  <th className="p-4 font-semibold text-gray-700">Module</th>
+                  <th className="p-4 font-semibold text-gray-700" style={{width: '150px'}}>Status</th>
+                  <th className="p-4 font-semibold text-gray-700" style={{width: '120px'}}>Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {moduleDetails.map((module) => (
+                  <tr key={module.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="p-4">
+                      <div className="font-medium text-gray-900">{module.title}</div>
+                      {module.description && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {module.description.length > 60 
+                            ? module.description.substring(0, 60) + '...' 
+                            : module.description}
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        module.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        module.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {module.status === 'completed' ? 'Complete' :
+                         module.status === 'in-progress' ? 'In Progress' : 
+                         'Not Started'}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all ${
+                              module.status === 'completed' ? 'bg-green-500' :
+                              module.status === 'in-progress' ? 'bg-blue-500' : 'bg-gray-400'
+                            }`}
+                            style={{ width: `${module.progress.completion_percentage || 0}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-gray-500 min-w-[40px]">
+                          {Math.round(module.progress.completion_percentage || 0)}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
             {/* Gamification Summary */}
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -649,27 +652,27 @@ export default function Progress() {
 
         {/* Achievements Tab */}
         {activeTab === "achievements" && (
-          <div className="bg-white/95 rounded-2xl shadow-lg p-6 sm:p-10 border border-emerald-200">
-            <h2 className="text-xl md:text-2xl font-semibold text-emerald-900 mb-6">
-              🏆 Your Achievements
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              Your Achievements
             </h2>
             
             {achievements.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {achievements.map((achievement) => (
-                  <div key={achievement.id} className="bg-gradient-to-br from-yellow-50 to-amber-100 rounded-xl p-6 border border-yellow-200 shadow-md">
+                  <div key={achievement.id} className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-6 border border-emerald-200 hover:shadow-md transition-shadow">
                     <div className="text-center">
                       <div className="text-4xl mb-3">{achievement.icon}</div>
-                      <h3 className="text-lg font-bold text-amber-800 mb-2">{achievement.title}</h3>
-                      <p className="text-sm text-amber-700">{achievement.description}</p>
+                      <h3 className="text-lg font-bold text-emerald-800 mb-2">{achievement.title}</h3>
+                      <p className="text-sm text-gray-600">{achievement.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
+              <div className="text-center py-16">
                 <div className="text-6xl mb-4">🎯</div>
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No achievements yet!</h3>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No achievements yet!</h3>
                 <p className="text-gray-500">Start completing modules to unlock achievements.</p>
               </div>
             )}
@@ -678,42 +681,42 @@ export default function Progress() {
 
         {/* Certificates Tab */}
         {activeTab === "certificates" && (
-          <div className="bg-white/95 rounded-2xl shadow-lg p-6 sm:p-10 border border-emerald-200">
-            <h2 className="text-xl md:text-2xl font-semibold text-emerald-900 mb-6">
-              📜 Your Certificates
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              Your Certificates
             </h2>
             
             {certificates.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {certificates.map((certificate) => (
-                  <div key={certificate.id} className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-6 border border-blue-200 shadow-md">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center mb-2">
-                          <span className="text-2xl mr-2">🎓</span>
-                          <h3 className="text-lg font-bold text-blue-800">Certificate of Completion</h3>
-                        </div>
-                        <p className="text-blue-700 font-medium mb-1">{certificate.module_title}</p>
-                        <p className="text-sm text-blue-600">
-                          Earned on: {new Date(certificate.completion_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
-                        View
-                      </button>
+                  <div key={certificate.id} className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg p-6 border border-emerald-200 hover:shadow-md transition-shadow">
+                    <div className="text-center">
+                      <div className="text-4xl mb-3">🎓</div>
+                      <h3 className="text-lg font-bold text-emerald-800 mb-2">Certificate of Completion</h3>
+                      <p className="text-gray-700 font-medium mb-2">{certificate.module_title}</p>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Earned: {new Date(certificate.completion_date).toLocaleDateString()}
+                      </p>
+                      <Link 
+                        to={`/certificate/${certificate.module_id || certificate.id}`}
+                        className="block px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm hover:bg-emerald-700 transition-colors text-center"
+                      >
+                        View Certificate
+                      </Link>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
+              <div className="text-center py-16">
                 <div className="text-6xl mb-4">📜</div>
-                <h3 className="text-xl font-semibold text-gray-600 mb-2">No certificates yet!</h3>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No certificates yet!</h3>
                 <p className="text-gray-500">Complete modules and provide feedback to earn certificates.</p>
               </div>
             )}
           </div>
         )}
+        </div>
       </div>
     </AppLayout>
   );

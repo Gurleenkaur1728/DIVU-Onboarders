@@ -144,30 +144,18 @@ export default function Questions() {
  
   return (
     <AppLayout>
-
-    {/* // <div
-    //   className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 bg-cover bg-center relative"
-    //   style={{ backgroundImage: "url('/bg.png')" }}
-    // >
-    //   <Sidebar role={roleId} active="questions" />
-  */}
-
-      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
+      <div className="bg-white min-h-screen p-8">
         {/* Header */}
-        <div className="flex items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 mb-6 shadow-sm border border-emerald-200/50">
-          <span className="text-2xl font-extrabold text-emerald-950 tracking-wide">
-            Questions & FAQs
-          </span>
-        </div>
+        <h1 className="text-3xl font-bold text-emerald-950 mb-6">Questions & FAQs</h1>
  
         {notice && (
-          <div className="mb-4 px-4 py-2 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded">
+          <div className="mb-6 px-4 py-3 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg">
             {notice}
           </div>
         )}
  
         {/* Tabs */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex gap-2 mb-6">
           <Tab label="FAQs" active={tab === "faqs"} onClick={() => setTab("faqs")} />
           <Tab label="Ask Question" active={tab === "ask"} onClick={() => setTab("ask")} />
         </div>
@@ -196,18 +184,18 @@ function FaqsTab({ faqs }) {
       {faqs.map((faq) => (
         <div
           key={faq.id}
-          className="bg-white/95 text-emerald-900 rounded-xl shadow-md p-5 border border-emerald-300 hover:shadow-lg transition-all duration-200"
+          className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow"
         >
-          <h3 className="font-bold flex items-center gap-2 text-emerald-800">
-            <HelpCircle size={18} className="text-emerald-500" /> {faq.question}
+          <h3 className="font-semibold flex items-center gap-2 text-gray-900 text-lg">
+            <HelpCircle size={18} className="text-emerald-600" /> {faq.question}
           </h3>
-          <p className="text-sm text-emerald-700 mt-2 leading-relaxed">
-            {faq.answer || <span className="italic text-gray-500">No answer yet.</span>}
+          <p className="text-gray-700 mt-3 leading-relaxed">
+            {faq.answer || <span className="italic text-gray-400">No answer yet.</span>}
           </p>
         </div>
       ))}
       {faqs.length === 0 && (
-        <div className="text-emerald-800 italic text-center py-4">No FAQs yet.</div>
+        <div className="text-gray-500 italic text-center py-8">No FAQs yet.</div>
       )}
     </div>
   );
@@ -216,27 +204,27 @@ function FaqsTab({ faqs }) {
 function AskQuestionTab({ myQuestions, newQ, setNewQ, askQuestion, loading }) {
   return (
     <div className="space-y-6">
-      <div className="bg-white/95 text-emerald-900 rounded-xl shadow-md p-6 border border-emerald-300 space-y-3">
-        <h3 className="font-bold flex items-center gap-2 text-emerald-800">
-          <MessageSquare size={18} className="text-emerald-500" /> Ask a New Question
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+        <h3 className="font-semibold flex items-center gap-2 text-gray-900 text-lg mb-4">
+          <MessageSquare size={18} className="text-emerald-600" /> Ask a New Question
         </h3>
         <textarea
           value={newQ}
           onChange={(e) => setNewQ(e.target.value)}
           placeholder="Type your question here..."
-          rows={3}
-          className="w-full px-3 py-2 rounded-md border border-emerald-300 bg-emerald-50 text-emerald-900 focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+          rows={4}
+          className="w-full px-4 py-3 rounded-lg border border-gray-300 text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 focus:outline-none"
         />
         <button
           onClick={askQuestion}
           disabled={loading}
-          className="px-5 py-2 rounded-md bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold shadow-md hover:scale-[1.03] transition disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          className="mt-3 px-6 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
         >
-          <Send size={16} className="inline mr-1" /> {loading ? "Submitting..." : "Submit"}
+          <Send size={16} className="inline mr-2" /> {loading ? "Submitting..." : "Submit Question"}
         </button>
       </div>
  
-      <div className="overflow-x-auto rounded-xl border border-emerald-300 shadow-md bg-white/95">
+      <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm">
         <table className="min-w-[500px] w-full border-collapse text-sm md:text-base" aria-label="My questions">
           <thead>
             <tr className="bg-emerald-800 text-left text-white">
@@ -282,10 +270,10 @@ function Tab({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-5 py-2 rounded-md text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 ${
+      className={`px-5 py-2 rounded-lg text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-600 ${
         active
-          ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-          : "bg-emerald-800/70 text-emerald-100 hover:bg-emerald-700/80 hover:scale-105"
+          ? "bg-emerald-600 text-white shadow-sm"
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
       }`}
     >
       {label}
@@ -295,7 +283,7 @@ function Tab({ label, active, onClick }) {
  
 function Th({ children }) {
   return (
-    <th className="px-4 py-3 font-bold border-r border-emerald-800/50">{children}</th>
+    <th className="px-4 py-3 font-semibold text-gray-700">{children}</th>
   );
 }
  
