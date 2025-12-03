@@ -81,22 +81,22 @@ export default function Home() {
   return (
   
   <AppLayout>
-    <div className="flex min-h-dvh bg-cover bg-center relative bg-emerald-50">
-      <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
-          <div className="flex items-center gap-2">
-            <Menu className="w-5 h-5 text-emerald-900 cursor-pointer md:hidden" />
-            <span className="text-emerald-950 font-semibold">
+    <div className="bg-white min-h-screen">
+      <div className="p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-emerald-950">
               Welcome {name ? name : "to DIVU"}!
-            </span>
-            <span className="text-emerald-800 italic">{role}</span>
+            </h1>
+            {role && (
+              <span className="text-gray-600 text-sm">{role}</span>
+            )}
           </div>
-          <AppWindow className="w-5 h-5 text-emerald-900" />
         </div>
  
         {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-8">
           <Tab label="Welcome" to="/home" active />
           <Tab label="Culture" to="/culture" />
           <Tab label="About" to="/about" />
@@ -105,12 +105,12 @@ export default function Home() {
         </div>
  
         {/* HERO (first section) */}
-        <div className="bg-white/95 rounded-2xl shadow-2xl p-10 max-w-6xl mx-auto mb-8">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-10 max-w-6xl mx-auto mb-8">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h1 className="text-4xl font-extrabold text-emerald-900 mb-4">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
                 {loading ? "…" : (hero?.title || "Welcome to DIVU")}
-              </h1>
+              </h2>
               <p className="text-lg text-gray-700 leading-relaxed mb-6">
                 {loading ? "Loading…" : (hero?.subtitle || "Your onboarding journey starts here.")}
               </p>
@@ -156,12 +156,12 @@ export default function Home() {
                 <div className="grid md:grid-cols-2 gap-8 items-center">
                   <div>
                     {s.title ? (
-                      <h2 className="text-2xl font-bold text-emerald-900 mb-2">
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">
                         {s.title}
                       </h2>
                     ) : null}
                     {s.subtitle ? (
-                      <p className="text-emerald-800 font-medium mb-3">
+                      <p className="text-gray-700 font-medium mb-3">
                         {s.subtitle}
                       </p>
                     ) : null}
@@ -209,11 +209,11 @@ function Tab({ label, to, active }) {
   return (
     <Link
       to={to}
-      className={`px-5 py-2 rounded-lg text-sm font-semibold transition shadow
+      className={`px-5 py-2 rounded-lg text-sm font-medium transition
         ${
           active
-            ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950"
-            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+            ? "bg-emerald-600 text-white shadow-sm"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
         }`}
     >
       {label}
@@ -247,7 +247,7 @@ function CTAButton({ href, label }) {
  
 function SectionBlock({ children }) {
   return (
-    <div className="bg-white/95 rounded-2xl shadow-lg p-8">{children}</div>
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-8">{children}</div>
   );
 }
  

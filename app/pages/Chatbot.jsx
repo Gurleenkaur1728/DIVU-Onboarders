@@ -36,39 +36,60 @@ export default function Chatbot() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col items-center p-6 min-h-screen bg-emerald-50">
-
-        <h1 className="text-3xl font-bold text-emerald-900 mb-6">
-          DIVU AI Assistant
+      <div className="bg-white min-h-screen p-8">
+        <h1 className="text-3xl font-bold text-emerald-950 mb-6">
+          AI Assistant
         </h1>
 
-        <div className="w-full max-w-xl bg-white rounded-xl shadow-lg border p-4 flex flex-col">
+        <div className="max-w-4xl">
+          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+            {/* Chat Messages Area */}
+            <div className="h-[500px] overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <p className="text-center">
+                    Ask me anything about your onboarding process!
+                  </p>
+                </div>
+              ) : (
+                messages.map((m, i) => (
+                  <div key={i} className={`mb-4 ${m.from === "user" ? "text-right" : "text-left"}`}>
+                    <div className={`inline-block max-w-[80%] ${
+                      m.from === "user" 
+                        ? "bg-emerald-600 text-white rounded-lg px-4 py-2" 
+                        : "bg-white border border-gray-200 rounded-lg px-4 py-2"
+                    }`}>
+                      <p className={`text-xs font-semibold mb-1 ${
+                        m.from === "user" ? "text-emerald-100" : "text-emerald-600"
+                      }`}>
+                        {m.from === "user" ? "You" : "AI Assistant"}
+                      </p>
+                      <p className={m.from === "user" ? "text-white" : "text-gray-900"}>
+                        {m.text}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
 
-          <div className="flex-1 h-[400px] overflow-y-auto border rounded-md p-3 mb-3 bg-emerald-50">
-            {messages.map((m, i) => (
-              <div key={i} className="mb-4">
-                <p className="font-bold text-emerald-800">
-                  {m.from === "user" ? "You:" : "AI Assistant:"}
-                </p>
-                <p className="text-emerald-900">{m.text}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything about onboarding..."
-              className="flex-1 px-3 py-2 border rounded-md focus:ring-2 ring-emerald-400"
-            />
-
-            <button
-              onClick={sendMessage}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
-            >
-              Send
-            </button>
+            {/* Input Area */}
+            <div className="flex gap-3">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                placeholder="Ask anything about onboarding..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 focus:outline-none"
+              />
+              <button
+                onClick={sendMessage}
+                disabled={!input.trim()}
+                className="px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+              >
+                Send
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -74,16 +74,14 @@ export default function Events() {
   /* Render */
   return (
     <AppLayout>
- 
-      <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
-          <span className="font-semibold text-emerald-950">Events</span>
-        </div>
- 
-        {/* Title banner */}
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">
-          EVENTS
+      <div className="p-6 bg-white min-h-screen">
+        <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Events Calendar</h1>
+          <p className="text-gray-600 mt-2">
+            Stay updated with upcoming events and activities
+          </p>
         </div>
  
         {/* Controls row (right controls fixed; left shows month nav in month view) */}
@@ -210,6 +208,7 @@ export default function Events() {
             )}
           </div>
         )}
+        </div>
       </div>
     </AppLayout>
   );

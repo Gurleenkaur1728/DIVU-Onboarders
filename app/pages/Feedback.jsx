@@ -3,7 +3,6 @@ import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { supabase } from "../../src/lib/supabaseClient.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { H1, Text } from "../components/ui/Typography.jsx";
 
 export default function Feedback() {
   const { user } = useAuth();
@@ -95,17 +94,18 @@ export default function Feedback() {
 
   return (
     <AppLayout>
-      <div className="ds-container ds-p-6">
+      <div className="p-6 bg-white min-h-screen">
+        <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="ds-mb-8">
-          <H1>Feedback Center</H1>
-          <Text className="ds-text-muted ds-mt-2">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Feedback Center</h1>
+          <p className="text-gray-600 mt-2">
             Share your thoughts and view your submitted feedback
-          </Text>
+          </p>
         </div>
 
         {/* Tabs */}
-        <div className="ds-mb-6" style={{borderBottom: '2px solid var(--ds-border)'}}>
+        <div className="mb-6" style={{borderBottom: '2px solid #e5e7eb'}}>
           <div className="flex gap-1">
             <button
               onClick={() => setActiveTab("submitted")}
@@ -118,7 +118,6 @@ export default function Feedback() {
               Feedback Submitted
             </button>
             <button
-              <button
               onClick={() => setActiveTab("create")}
               className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
                 activeTab === "create"
@@ -133,20 +132,20 @@ export default function Feedback() {
 
         {/* ✅ Submitted Feedback Table */}
         {activeTab === "submitted" && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl shadow-lg bg-white border border-gray-200">
             {loading ? (
-              <div className="ds-loading">
-                <div className="ds-spinner"></div>
+              <div className="p-8 text-center text-gray-600">
+                Loading feedback...
               </div>
             ) : (
-              <table className="ds-table">
-                <thead>
+              <table className="w-full text-left border-collapse text-sm table-fixed">
+                <thead className="bg-gray-100 border-b border-gray-200">
                   <tr>
-                    <th style={{color: 'var(--ds-primary)'}}>Module Name</th>
-                    <th style={{color: 'var(--ds-primary)'}}>Rating</th>
-                    <th style={{color: 'var(--ds-primary)'}}>Difficulty</th>
-                    <th style={{color: 'var(--ds-primary)'}}>Feedback Date</th>
-                    <th style={{color: 'var(--ds-primary)'}}>Action</th>
+                    <th className="p-4 font-semibold text-gray-700">Module Name</th>
+                    <th className="p-4 font-semibold text-gray-700" style={{width: '180px'}}>Rating</th>
+                    <th className="p-4 font-semibold text-gray-700" style={{width: '120px'}}>Difficulty</th>
+                    <th className="p-4 font-semibold text-gray-700" style={{width: '150px'}}>Feedback Date</th>
+                    <th className="p-4 font-semibold text-gray-700 text-center" style={{width: '100px'}}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,27 +155,27 @@ export default function Feedback() {
                       return (
                         <tr
                           key={module.id}
-                          className="border-b last:border-0 hover:bg-emerald-50 transition-colors duration-200"
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
                         >
-                          <td className="p-4 text-emerald-900 font-medium">{module.title}</td>
-                          <td className="p-4 text-emerald-800">
+                          <td className="p-4 text-gray-900">{module.title}</td>
+                          <td className="p-4 text-gray-700">
                             <div className="flex items-center">
                               {'⭐'.repeat(feedback?.rating || 0)}
                               <span className="ml-2 text-sm">({feedback?.rating || 0}/5)</span>
                             </div>
                           </td>
-                          <td className="p-4 text-emerald-800">
+                          <td className="p-4 text-gray-700 text-center">
                             {feedback?.difficulty_level ? `${feedback.difficulty_level}/5` : '-'}
                           </td>
-                          <td className="p-4 text-emerald-800">
+                          <td className="p-4 text-gray-700">
                             {feedback?.created_at ? new Date(feedback.created_at).toLocaleDateString() : "-"}
                           </td>
-                          <td className="p-4">
+                          <td className="p-4 text-center">
                             <button
                               onClick={() => viewFeedbackDetails(feedback)}
-                              className="text-emerald-700 font-medium hover:underline"
+                              className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
                             >
-                              View Details
+                              View
                             </button>
                           </td>
                         </tr>
@@ -184,7 +183,7 @@ export default function Feedback() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="5" className="p-6 text-center text-gray-500">
+                      <td colSpan="5" className="p-8 text-center text-gray-500">
                         No feedback submitted yet. Complete a module to provide feedback!
                       </td>
                     </tr>
@@ -249,6 +248,7 @@ export default function Feedback() {
             onClose={() => setSelectedFeedback(null)}
           />
         )}
+        </div>
       </div>
     </AppLayout>
   );
