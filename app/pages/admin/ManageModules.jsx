@@ -148,14 +148,14 @@ export default function ManageModules() {
   const renderModuleCard = (m) => (
     <div
       key={m.id}
-      className="bg-white/95 rounded-lg shadow border border-gray-200 p-5 flex flex-col"
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 flex flex-col hover:shadow-md transition"
     >
       <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-bold text-emerald-950">{m.title}</h2>
+        <h2 className="text-lg font-bold text-gray-900">{m.title}</h2>
         <StatusPill status={m.status} />
       </div>
-      <p className="text-sm text-emerald-950/80 mb-3">{m.description}</p>
-      <div className="flex gap-6 text-xs text-emerald-700 mb-4">
+      <p className="text-sm text-gray-600 mb-3">{m.description}</p>
+      <div className="flex gap-6 text-xs text-gray-500 mb-4">
         <span>
           <span className="font-semibold">Progress:</span> {m.progress ?? 0}%
         </span>
@@ -164,7 +164,7 @@ export default function ManageModules() {
         <div className="flex-1 h-2 rounded-full bg-gray-200 overflow-hidden">
           <div
             className={`h-full ${
-              m.status === "published" ? "bg-emerald-500" : "bg-emerald-700"
+              m.status === "published" ? "bg-emerald-600" : "bg-yellow-500"
             }`}
             style={{ width: `${m.progress ?? 0}%` }}
           />
@@ -175,7 +175,7 @@ export default function ManageModules() {
       <div className="flex gap-2 mt-auto">
         <button
           onClick={() => openBuilder(m.status === "draft" ? m.id : null)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded bg-DivuBlue/80 text-white text-sm font-semibold hover:bg-DivuBlue"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
         >
           <Edit size={14} /> Edit / Build
         </button>
@@ -197,7 +197,7 @@ export default function ManageModules() {
               showToast("Delete failed.", "error");
             }
           }}
-          className="flex items-center gap-1 px-3 py-1.5 rounded bg-red-500 text-white text-sm font-semibold hover:bg-red-600"
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700 transition"
         >
           <Trash2 size={14} /> Delete
         </button>
@@ -207,43 +207,33 @@ export default function ManageModules() {
 
   return (
     <AppLayout>
-    {/* // <div
-    //   className="flex min-h-dvh bg-cover bg-center relative"
-    //   style={{ backgroundImage: "url('/bg.png')" }}
-    // > */}
-      {/* <Sidebar active="manage-modules" role={roleId} /> */}
-
-      <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Ribbon Header */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 shadow mb-4">
-          <span className="text-emerald-950 font-semibold">
-            Admin Panel – Manage Modules
-          </span>
+      <div className="bg-white min-h-screen p-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Modules</h1>
+            <p className="text-gray-600">Create, edit, and publish training modules for employees</p>
+          </div>
           <button
             onClick={() => openBuilder(null)} // always create new draft
-            className="flex items-center gap-2 px-3 py-1.5 rounded bg-DivuLightGreen text-black text-sm font-semibold hover:bg-DivuBlue"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition"
           >
             <Plus size={16} /> Create New Module
           </button>
         </div>
 
-        {/* Title */}
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg">
-          MANAGE MODULES
-        </div>
-
         {/* Stats */}
-        <p className="text-sm text-emerald-700 mb-3">
+        <p className="text-sm text-gray-600 mb-6">
           {`${totals.count} modules • ${totals.minutes} min total`}
         </p>
 
         {/* Draft Modules Section */}
         <section className="mb-8">
-          <h3 className="text-xl font-bold text-yellow-700 mb-3">
-            📝 Draft Modules
+          <h3 className="text-xl font-bold text-yellow-600 mb-4 flex items-center gap-2">
+            <span className="text-2xl">📝</span> Draft Modules
           </h3>
           {draftModules.length === 0 ? (
-            <p className="text-gray-500 italic">
+            <p className="text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
               No draft modules. Start creating one!
             </p>
           ) : (
@@ -255,11 +245,13 @@ export default function ManageModules() {
 
         {/* Published Modules Section */}
         <section>
-          <h3 className="text-xl font-bold text-green-700 mb-3">
-            ✅ Published Modules
+          <h3 className="text-xl font-bold text-emerald-700 mb-4 flex items-center gap-2">
+            <span className="text-2xl">✅</span> Published Modules
           </h3>
           {publishedModules.length === 0 ? (
-            <p className="text-gray-500 italic">No published modules yet.</p>
+            <p className="text-gray-500 italic bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+              No published modules yet.
+            </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {publishedModules.map(renderModuleCard)}
