@@ -155,7 +155,7 @@ export default function ProgressDashboard() {
                   No badges earned yet. Keep going!
                 </p>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {achievements.map((a) => (
                     <div
                       key={a.id}

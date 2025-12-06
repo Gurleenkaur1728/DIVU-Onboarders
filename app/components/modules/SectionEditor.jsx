@@ -512,7 +512,7 @@ export default function SectionEditor({ section, onChange, uploadToBucket, allPa
                       // Extract all text content from the module pages
                       const moduleContent = extractModuleContent(allPages || []);
                       
-                      const response = await fetch("http://localhost:5050/api/ai/generate-quiz", {
+                      const response = await fetch("/api/ai/generate-quiz", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({

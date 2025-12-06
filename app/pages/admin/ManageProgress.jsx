@@ -446,7 +446,7 @@ export default function ManageProgress() {
       };
 
       // AI Summary backend placeholder call
-      const res = await fetch("http://localhost:5050/api/ai/summary", {
+      const res = await fetch("/api/ai/summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ summary, selectedEmployee, timeRange }),

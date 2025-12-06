@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import AppLayout from "../../../src/AppLayout.jsx";
-import Toast from "../../components/Toast.jsx";
 import { Trash2, Star, Eye, Filter, Download, BarChart3, TrendingUp, Users, Calendar, CheckCircle2, Bell, X } from "lucide-react";
 import { useRole } from "../../../src/lib/hooks/useRole.js";
 import { supabase } from "../../../src/lib/supabaseClient.js";
+import { useToast } from "../../context/ToastContext.jsx";
 
 export default function ManageFeedback() {
   const { roleId } = useRole();
@@ -27,10 +27,9 @@ export default function ManageFeedback() {
   });
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [toast, setToast] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ show: false, message: "", onConfirm: null });
-
-  const showToast = (msg, type = "info") => setToast({ msg, type });
+  
+  const { showToast } = useToast();
 
   // Load all feedback with user and module details
   useEffect(() => {
@@ -950,16 +949,7 @@ export default function ManageFeedback() {
         )}
       </div>
 
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.msg}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-
-      {/* Confirmation Modal */}
+      {/* Confirm Modal */}
       {confirmModal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">

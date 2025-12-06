@@ -263,13 +263,13 @@ export default function ManageEvents() {
               Loading events...
             </div>
           ) : (
-          <div className="bg-white border border-gray-200 rounded-xl shadow w-full overflow-hidden">
-            <div className="grid grid-cols-7 bg-gray-100 text-gray-700 text-[11px] font-bold uppercase">
+          <div className="bg-white border border-gray-200 rounded-xl shadow w-full overflow-x-auto">
+            <div className="grid grid-cols-7 bg-gray-100 text-gray-700 text-[11px] font-bold uppercase min-w-[600px]">
               {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
                 <div key={d} className="px-2 py-2 text-center border-r border-gray-200 last:border-r-0">{d}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7">
+            <div className="grid grid-cols-7 min-w-[600px]">
               {grid.map((d, i) => {
                 const inMonth = d.getMonth() === cursor.getMonth();
                 const dayKey = ymd(d);
@@ -382,7 +382,7 @@ export default function ManageEvents() {
                 <label className="text-sm font-semibold text-emerald-900">Name of the event</label>
                 <input className="w-full border rounded px-3 py-2" value={name} onChange={(e)=>setName(e.target.value)} placeholder="e.g., Town Hall"/>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-semibold text-emerald-900">Start time</label>
                   <input type="time" className="w-full border rounded px-3 py-2" value={startTime} onChange={(e)=>setStartTime(e.target.value)}/>

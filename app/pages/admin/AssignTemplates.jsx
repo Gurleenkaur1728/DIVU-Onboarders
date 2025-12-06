@@ -9,6 +9,7 @@ export default function AssignTemplates() {
   const [loading, setLoading] = useState(false);
 
   // ----- auth/role -----
+  const ROLES = { ADMIN: 2, SUPER_ADMIN: 3 };
   const [roleId] = useState(() => {
     const r = localStorage.getItem("role_id");
     return r ? parseInt(r, 10) : ROLES.ADMIN;

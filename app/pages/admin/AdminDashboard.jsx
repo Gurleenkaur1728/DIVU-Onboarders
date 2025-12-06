@@ -17,7 +17,7 @@ import {
   Legend,
 } from "recharts";
 
-const COLORS = ["#61e965", "#3b82f6", "#ff3f34"];
+const COLORS = ["#10b981", "#3b82f6", "#f59e0b"];
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
   // ⭐⭐ SEND REMINDERS FUNCTION (added)
   const sendReminders = async () => {
     try {
-      const res = await fetch("http://localhost:4000/api/reminders/sendNow", {
+      const res = await fetch("/api/reminders/sendNow", {
         method: "POST",
       });
 
@@ -208,7 +208,7 @@ export default function AdminDashboard() {
         context: "admin_global_summary",
       };
 
-      const res = await fetch("http://localhost:5050/api/ai/summary", {
+      const res = await fetch("/api/ai/summary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -229,13 +229,13 @@ export default function AdminDashboard() {
   return (
     <AppLayout>
       <main
-        className="flex-1 min-h-dvh p-6 space-y-6 bg-gradient-to-br 
-        from-emerald-50 to-green-100/60 bg-cover bg-center"
-        style={{ backgroundImage: "url('/bg.png')" }}
+        className="flex-1 min-h-dvh p-6 space-y-6 bg-gray-50"
       >
-        <h1 className="text-3xl font-extrabold text-white bg-DivuDarkGreen border border-DivuLightGreen rounded-xl px-6 py-4 shadow-lg tracking-wide">
-          Admin Dashboard
-        </h1>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4 mb-6">
+          <h1 className="text-2xl font-bold text-emerald-950">
+            Admin Dashboard
+          </h1>
+        </div>
 
         {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -249,17 +249,23 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ChartCard title="Completions Over Time">
             {loading ? (
-              <p className="text-emerald-100 italic">Loading chart…</p>
+              <p className="text-gray-600 italic">Loading chart…</p>
             ) : charts.completionsOverTime.length === 0 ? (
-              <p className="text-emerald-100 italic">No completions recorded yet.</p>
+              <p className="text-gray-600 italic">No completions recorded yet.</p>
             ) : (
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={charts.completionsOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#065f46" />
-                  <XAxis dataKey="date" stroke="#d1fae5" />
-                  <YAxis stroke="#d1fae5" />
-                  <Tooltip />
-                  <Bar dataKey="count" fill="#61e965" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="date" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Bar dataKey="count" fill="#10b981" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -280,23 +286,23 @@ export default function AdminDashboard() {
         </div>
 
         {/* AI Summary */}
-        <div className="bg-DivuWhite/60 p-6 rounded-lg shadow-lg text-black border-4 border-DivuLightGreen">
-          <h2 className="text-xl font-semibold mb-4">AI Summary</h2>
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">AI Summary</h2>
           <button
             onClick={generateAISummary}
             disabled={aiLoading || loading}
-            className="px-4 py-2 bg-DivuLightGreen hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-black rounded-lg mb-4"
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg mb-4 transition-colors"
           >
             {aiLoading ? "Analyzing…" : "Generate AI Summary"}
           </button>
 
           {aiSummary ? (
             <div
-              className="prose prose-invert max-w-none text-black"
+              className="prose max-w-none text-gray-900"
               dangerouslySetInnerHTML={{ __html: aiSummary }}
             />
           ) : (
-            <p className="text-slate-800 italic">
+            <p className="text-gray-600 italic">
               {loading
                 ? "Loading data…"
                 : "No AI summary generated yet. Click the button above to create one."}
@@ -305,12 +311,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* ⭐⭐ SEND REMINDERS BUTTON SECTION ⭐⭐ */}
-        <div className="mt-6 bg-purple-600 p-6 rounded-lg shadow-lg text-white border border-purple-300">
-          <h2 className="text-xl font-bold mb-4">Send Email Reminders</h2>
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Send Email Reminders</h2>
 
           <button
             onClick={sendReminders}
-            className="bg-green-600 hover:bg-green-700 px-5 py-2 rounded-lg text-white shadow-lg"
+            className="bg-emerald-600 hover:bg-emerald-700 px-5 py-2 rounded-lg text-white shadow-sm transition-colors"
           >
             Send Reminders Now
           </button>
@@ -323,17 +329,17 @@ export default function AdminDashboard() {
 // Small reusable components
 function StatCard({ label, value }) {
   return (
-    <div className="bg-DivuLightGreen/60 rounded-2xl shadow-lg border border-emerald-200 p-4 md:p-5">
-      <h2 className="text-lg font-semibold">{label}</h2>
-      <p className="text-2xl font-bold">{value}</p>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+      <h2 className="text-sm font-medium text-gray-600 mb-1">{label}</h2>
+      <p className="text-3xl font-bold text-gray-900">{value}</p>
     </div>
   );
 }
 
 function ChartCard({ title, children }) {
   return (
-    <div className="bg-DivuDarkGreen p-4 rounded-lg shadow-lg text-emerald-100 border border-emerald-400/60">
-      <h2 className="font-semibold mb-2">{title}</h2>
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <h2 className="font-semibold text-gray-900 mb-4">{title}</h2>
       {children}
     </div>
   );

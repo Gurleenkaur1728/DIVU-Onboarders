@@ -15,6 +15,12 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      // ✅ Proxy all /api requests to backend server
+      "/api": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+        secure: false,
+      },
       // ✅ Proxy rule to fix CORS for LibreTranslate
       "/translate": {
         target: "https://libretranslate.com",

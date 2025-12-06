@@ -133,7 +133,7 @@ export default function ManageAdmins() {
                 Current Admins
               </h3>
 
-              <div className="max-h-[500px] overflow-y-auto overflow-x-hidden">
+              <div className="max-h-[500px] overflow-y-auto overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
                     <tr>
@@ -199,7 +199,7 @@ export default function ManageAdmins() {
                 Add Admin
               </h3>
 
-              <div className="max-h-[500px] overflow-y-auto overflow-x-hidden">
+              <div className="max-h-[500px] overflow-y-auto overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
                     <tr>

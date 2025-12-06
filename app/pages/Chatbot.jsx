@@ -16,7 +16,7 @@ export default function Chatbot() {
     setInput("");
 
     try {
-      const res = await axios.post("http://localhost:8080/chat", {
+      const res = await axios.post("/api/chat", {
         message: userMessage,
       });
 

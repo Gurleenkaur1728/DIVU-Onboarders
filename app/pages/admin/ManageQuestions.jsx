@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AppLayout from "../../../src/AppLayout.jsx";
-import Toast from "../../components/Toast.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
+import { useToast } from "../../context/ToastContext.jsx";
 import {
   PlusCircle,
   Pencil,
@@ -51,10 +51,9 @@ export default function ManageQuestions() {
   const [answeredGroups, setAnsweredGroups] = useState([]);
   
   // Toast and confirmModal
-  const [toast, setToast] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ show: false, message: "", onConfirm: null });
   
-  const showToast = (msg, type = "info") => setToast({ msg, type });
+  const { showToast } = useToast();
 
   /* ========== Helpers ========== */
   function mapUsers(rows, usersById) {
@@ -386,15 +385,6 @@ export default function ManageQuestions() {
             className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           />
         </Modal>
-      )}
-      
-      {/* Toast Notification */}
-      {toast && (
-        <Toast
-          message={toast.msg}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
       )}
 
       {/* Confirmation Modal */}

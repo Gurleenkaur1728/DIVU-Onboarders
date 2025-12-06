@@ -435,13 +435,13 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
     );
   }
   return (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50">
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 sm:p-6 z-50">
     {/* fixed-size modal */}
-    <div className="w-full max-w-5xl h-[80vh] bg-white border border-gray-200 rounded-2xl shadow-xl overflow-visible flex flex-col">
+    <div className="w-full max-w-5xl h-[90vh] sm:h-[80vh] bg-white border border-gray-200 rounded-2xl shadow-xl overflow-visible flex flex-col">
       {/* header */}
-      <div className="flex items-center justify-between bg-white border-b border-gray-200 rounded-t-2xl p-4">
+      <div className="flex items-center justify-between bg-white border-b border-gray-200 rounded-t-2xl p-3 sm:p-4">
         {/* progress dots w/ connectors */}
-        <div className="flex items-center gap-3 overflow-x-auto">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
           <ProgressDot label="Info" active={step === 0} done={step > 0} onClick={goInfo} />
           <div className="h-[2px] w-6 bg-gray-300 rounded self-center" />
           {pages.map((p, i) => (

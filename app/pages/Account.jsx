@@ -287,11 +287,6 @@ localStorage.setItem("lang", val);
       // Update localStorage to keep auth context in sync
       localStorage.setItem("user_name", name);
 
-      // Update user context if setUser function is available
-      if (setUser) {
-        setUser({ ...user, name });
-      }
-
       alert("✅ Changes saved successfully!");
     } catch (e) {
       console.error("Save error:", e);

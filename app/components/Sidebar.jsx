@@ -22,6 +22,7 @@ import {
   CalendarDays,
   CalendarPlus,
   Users,
+  X,
 } from "lucide-react";
  
 // Example role IDs (match your DB)
@@ -59,29 +60,53 @@ function Item({ icon: Icon, label, route, isActive, collapsed, disabled }) {
   );
 }
  
-export default function Sidebar({ role, collapsed, setCollapsed }) {
+export default function Sidebar({ role, collapsed, setCollapsed, mobileOpen, setMobileOpen }) {
   const location = useLocation();
  
   return (
-    <aside
-      className={`
-        fixed top-0 left-0
-        h-screen
-        ${collapsed ? "w-20" : "w-64"}
-        flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950
-        z-40
-        transition-all duration-300
-        overflow-y-auto custom-scrollbar
-      `}
-    >
+    <>
+      {/* Mobile Overlay Backdrop */}
+      {mobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`
+          fixed top-0 left-0
+          h-screen
+          ${collapsed ? "w-20" : "w-64"}
+          flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950
+          z-40
+          transition-all duration-300
+          overflow-y-auto custom-scrollbar
+          
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:translate-x-0
+        `}
+      >
 
       {/* Header with Logo + Collapse Toggle */}
       <div className="flex items-center justify-between px-4 py-6">
         <Logo size={collapsed ? "" : 140} />
 
+        {/* Mobile Close Button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="text-emerald-300 hover:text-white transition lg:hidden"
+          aria-label="Close menu"
+        >
+          <X size={24} />
+        </button>
+
+        {/* Desktop Collapse Toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="text-emerald-300 hover:text-white transition"
+          className="text-emerald-300 hover:text-white transition hidden lg:block"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {collapsed ? <ChevronRight size={30} /> : <ChevronLeft size={30} />}
         </button>
@@ -139,6 +164,7 @@ export default function Sidebar({ role, collapsed, setCollapsed }) {
         )}
       </nav>
     </aside>
+    </>
   );
 }
 
