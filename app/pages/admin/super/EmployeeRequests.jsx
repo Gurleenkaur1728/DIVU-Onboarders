@@ -100,16 +100,36 @@ export default function AccessRequests() {
     try {
       const fullName = `${req.first_name} ${req.last_name}`.trim();
 
-      // 1. Insert into users
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          name: fullName,
-          email: req.email,
-          password: req.password_hash,
-          employee_id: req.id,
-        },
-      ]);
-      if (insertError) throw insertError;
+      // 1. Check if user already exists
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", req.email)
+        .single();
+
+      if (existingUser) {
+        // User exists, update their info
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            name: fullName,
+            password: req.password_hash,
+            employee_id: req.id,
+          })
+          .eq("email", req.email);
+        if (updateError) throw updateError;
+      } else {
+        // New user, insert
+        const { error: insertError } = await supabase.from("users").insert([
+          {
+            name: fullName,
+            email: req.email,
+            password: req.password_hash,
+            employee_id: req.id,
+          },
+        ]);
+        if (insertError) throw insertError;
+      }
 
       // 2. Update invitation
       await supabase
