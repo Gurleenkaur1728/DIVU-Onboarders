@@ -119,7 +119,7 @@ const html = `
 
             <tr>
               <td style="padding-top:25px;">
-                <a href="http://localhost:5173/login"
+                <a href="https://divu-onboarders.vercel.app/login"
                   style="background:#10B981; color:#ffffff; padding:12px 20px; 
                   border-radius:10px; text-decoration:none; font-size:15px; font-weight:bold;">
                   Open Onboarding Portal

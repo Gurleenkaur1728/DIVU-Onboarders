@@ -135,11 +135,11 @@ export default function AccessRequests() {
                 Your account is now active.
               </p>
               <p style="font-size:0.95rem;color:#666;margin-top:24px;">
-                Let’s get started on your onboarding journey.
+                Let's get started on your onboarding journey.
               </p>
             `,
             buttonText: "Open App",
-            buttonLink: "http://localhost:5173/",
+            buttonLink: "https://divu-onboarders.vercel.app/",
           }),
         }),
       });
