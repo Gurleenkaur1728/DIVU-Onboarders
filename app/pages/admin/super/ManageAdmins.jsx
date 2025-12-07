@@ -58,13 +58,27 @@ export default function ManageAdmins() {
 
   // ✅ Promote a user to Admin
   async function promote(user) {
+    // Add confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to promote "${user.name}" to Admin?\n\nThis will give them access to admin features.`
+    );
+    
+    if (!confirmed) return;
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
         .update({ role_id: 1 })
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Promote error:", error);
+        setBanner(`Failed to promote user: ${error.message}`);
+        return;
+      }
+
+      console.log("User promoted successfully:", data);
 
       await logAction({
         employee_name: user.name,
@@ -72,23 +86,37 @@ export default function ManageAdmins() {
         action: `${me.name} promoted ${user.name} to Admin`,
       });
 
-      setBanner(`${user.name} is now an Admin.`);
+      setBanner(`✅ ${user.name} is now an Admin.`);
       await loadUsers();
     } catch (err) {
-      console.error(err);
-      setBanner("Failed to promote user.");
+      console.error("Promote exception:", err);
+      setBanner(`Error: ${err.message || "Failed to promote user."}`);
     }
   }
 
   // ✅ Demote an Admin to User
   async function demote(user) {
+    // Add confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to remove "${user.name}" from the Admin role?\n\nThey will lose access to admin features.`
+    );
+    
+    if (!confirmed) return;
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
         .update({ role_id: 0 })
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Demote error:", error);
+        setBanner(`Failed to demote user: ${error.message}`);
+        return;
+      }
+
+      console.log("User demoted successfully:", data);
 
       await logAction({
         employee_name: user.name,
@@ -96,11 +124,11 @@ export default function ManageAdmins() {
         action: `${me.name} removed ${user.name} from Admin role`,
       });
 
-      setBanner(`${user.name} removed from Admin role.`);
+      setBanner(`✅ ${user.name} removed from Admin role.`);
       await loadUsers();
     } catch (err) {
-      console.error(err);
-      setBanner("Failed to remove admin.");
+      console.error("Demote exception:", err);
+      setBanner(`Error: ${err.message || "Failed to demote user."}`);
     }
   }
 

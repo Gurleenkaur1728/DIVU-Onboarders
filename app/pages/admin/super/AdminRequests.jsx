@@ -41,38 +41,54 @@ export default function AdminRequests() {
 
   async function approve(id) {
     setBanner("");
-    const decider =
-      me.profileId || (await supabase.auth.getUser()).data.user?.id || null;
+    try {
+      const decider =
+        me.profileId || (await supabase.auth.getUser()).data.user?.id || null;
 
-    const { error } = await supabase.rpc("approve_admin_request", {
-      p_id: id,
-      p_decider: decider,
-    });
-    if (error) {
-      console.error(error);
-      setBanner(error.message || "Approve failed.");
-      return;
+      const { data, error } = await supabase.rpc("approve_admin_request", {
+        p_id: id,
+        p_decider: decider,
+      });
+      
+      if (error) {
+        console.error("RPC approve_admin_request error:", error);
+        setBanner(`Approve failed: ${error.message}. Check if RPC function exists in database.`);
+        return;
+      }
+      
+      console.log("Approve successful:", data);
+      setBanner("✅ Request approved.");
+      await load();
+    } catch (err) {
+      console.error("Approve exception:", err);
+      setBanner(`Error: ${err.message}`);
     }
-    setBanner("Request approved.");
-    await load();
   }
 
   async function reject(id) {
     setBanner("");
-    const decider =
-      me.profileId || (await supabase.auth.getUser()).data.user?.id || null;
+    try {
+      const decider =
+        me.profileId || (await supabase.auth.getUser()).data.user?.id || null;
 
-    const { error } = await supabase.rpc("reject_admin_request", {
-      p_id: id,
-      p_decider: decider,
-    });
-    if (error) {
-      console.error(error);
-      setBanner(error.message || "Reject failed.");
-      return;
+      const { data, error } = await supabase.rpc("reject_admin_request", {
+        p_id: id,
+        p_decider: decider,
+      });
+      
+      if (error) {
+        console.error("RPC reject_admin_request error:", error);
+        setBanner(`Reject failed: ${error.message}. Check if RPC function exists in database.`);
+        return;
+      }
+      
+      console.log("Reject successful:", data);
+      setBanner("✅ Request rejected.");
+      await load();
+    } catch (err) {
+      console.error("Reject exception:", err);
+      setBanner(`Error: ${err.message}`);
     }
-    setBanner("Request rejected.");
-    await load();
   }
 
   return (

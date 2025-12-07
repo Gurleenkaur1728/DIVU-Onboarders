@@ -85,12 +85,35 @@ export default function AddEmployee() {
   const [recentInvites, setRecentInvites] = useState([]);
   const [activeTab, setActiveTab] = useState("form");
   const [notification, setNotification] = useState("");
+  const [autoGenerateId, setAutoGenerateId] = useState(true);
 
   const hrEmail = localStorage.getItem("profile_email") || "HR Admin";
 
   useEffect(() => {
     fetchInvitations();
-  }, []);
+    if (autoGenerateId) {
+      generateEmployeeId();
+    }
+  }, [autoGenerateId]);
+
+  // ✅ Generate automatic employee ID
+  const generateEmployeeId = async () => {
+    try {
+      // Get the count of all employee invitations
+      const { count, error } = await supabase
+        .from("employee_invitations")
+        .select("*", { count: "exact", head: true });
+      
+      if (error) console.error("Error fetching employee count:", error);
+      
+      const nextNumber = (count || 0) + 1;
+      const generatedId = String(nextNumber).padStart(3, "0");
+      
+      setFormData(prev => ({ ...prev, employeeId: generatedId }));
+    } catch (err) {
+      console.error("Error generating employee ID:", err);
+    }
+  };
 
   // ✅ Fetch recent invitations
   const fetchInvitations = async () => {
@@ -204,16 +227,42 @@ export default function AddEmployee() {
 
         {activeTab === "form" && (
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 max-w-2xl space-y-4">
+            {/* Auto-generate toggle */}
+            <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <input 
+                type="checkbox" 
+                id="autoGenerate" 
+                checked={autoGenerateId} 
+                onChange={(e) => setAutoGenerateId(e.target.checked)}
+                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" 
+              />
+              <label htmlFor="autoGenerate" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Auto-generate Employee ID (Format: 001, 002, 003, ...)
+              </label>
+            </div>
+
+            {/* Employee ID */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Employee ID {!autoGenerateId && <span className="text-red-500">*</span>}
+              </label>
               <input 
                 name="employeeId" 
-                placeholder="Enter employee ID" 
+                placeholder={autoGenerateId ? "Auto-generated" : "Enter employee ID"} 
                 value={formData.employeeId} 
                 onChange={handleChange} 
-                className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                disabled={autoGenerateId}
+                className={`border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                  autoGenerateId ? "bg-gray-100 cursor-not-allowed" : ""
+                }`}
               />
+              {autoGenerateId && (
+                <p className="text-xs text-gray-500 mt-1">
+                  ✓ Next available ID: {formData.employeeId}
+                </p>
+              )}
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
               <input 

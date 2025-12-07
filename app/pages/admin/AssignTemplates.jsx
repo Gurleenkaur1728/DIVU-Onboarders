@@ -155,6 +155,12 @@ export default function AssignTemplates() {
       }
 
       setNotice(`✅ Assigned ${total} checklist item(s).`);
+      
+      // Clear form after successful assignment
+      setSelectedUsers([]);
+      setSelectedGroups([]);
+      setDueDate("");
+      setDueDays("");
     } finally {
       setLoading(false);
     }

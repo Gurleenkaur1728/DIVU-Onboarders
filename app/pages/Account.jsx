@@ -250,6 +250,12 @@ localStorage.setItem("lang", val);
     }
   };
 
+  const markNotificationAsRead = (notificationId) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+    );
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) setProfileImage(URL.createObjectURL(file));
@@ -574,7 +580,8 @@ const [collapsed, setCollapsed] = useState(false);
                     return (
                       <div
                         key={notification.id}
-                        className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition ${
+                        onClick={() => markNotificationAsRead(notification.id)}
+                        className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer ${
                           !notification.read
                             ? "border-l-4 border-l-emerald-600"
                             : ""
