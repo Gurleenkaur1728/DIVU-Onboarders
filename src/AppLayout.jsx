@@ -22,11 +22,12 @@ export default function AppLayout({ children }) {
 
       <main
         className={`
-          bg-gray-50 relative
+          bg-cover bg-center bg-fixed relative
           flex-1 min-h-screen overflow-y-auto
           transition-all duration-300
-          ml-0 lg:ml-20 ${!collapsed && "lg:ml-64"}
+          ${collapsed ? "ml-20" : "ml-64"}
         `}
+        style={{ backgroundImage: "url('/bg.png')" }}
       >
         {/* Mobile Menu Button */}
         <button
@@ -36,7 +37,7 @@ export default function AppLayout({ children }) {
         >
           <Menu size={20} />
         </button>
-        
+
         <div className="pt-14 lg:pt-0">
           {children}
         </div>
