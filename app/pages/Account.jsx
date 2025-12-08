@@ -697,7 +697,7 @@ const [collapsed, setCollapsed] = useState(false);
               <div className="grid grid-cols-1 gap-4 max-w-lg">
                 <label className="block">
                   <span className="block text-sm font-semibold text-gray-900 mb-1">
-                    Full Name
+                    Display Name
                   </span>
                   <input
                     type="text"
