@@ -16,8 +16,9 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { Bold } from "lucide-react";
 
-const COLORS = ["#10b981", "#3b82f6", "#f59e0b"];
+const COLORS = ["#61e965", "#6060e1", "#f59e0b"];
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -226,15 +227,61 @@ export default function AdminDashboard() {
     }
   }
 
+  function exportChartsCSV() {
+  const rows = [];
+
+  // --- Section 1: Completions Over Time ---
+  rows.push(["Completions Over Time"]);
+  rows.push(["Date", "Count"]);
+
+  charts.completionsOverTime.forEach((item) => {
+    rows.push([item.date, item.count]);
+  });
+
+  rows.push([]); // blank line to separate sections
+
+  // --- Section 2: Module Completion Breakdown ---
+  rows.push(["Module Completion Breakdown"]);
+  rows.push(["Status", "Value"]);
+
+  charts.modulePie.forEach((item) => {
+    rows.push([item.name, item.value]);
+  });
+
+  // Convert to CSV text
+  const csvContent =
+    "data:text/csv;charset=utf-8," +
+    rows.map((r) => r.join(",")).join("\n");
+
+  // Trigger download
+  const link = document.createElement("a");
+  link.href = encodeURI(csvContent);
+  link.download = "divu_charts_export.csv";
+  link.click();
+}
+
+
   return (
     <AppLayout>
       <main
-        className="flex-1 min-h-dvh p-6 space-y-6 bg-gray-50"
+        className="flex-1 min-h-dvh p-6 space-y-6 "
       >
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4 mb-6 flex items-center justify-between">
+          
+          {/* Title */}
           <h1 className="text-2xl font-bold text-emerald-950">
-            Admin Dashboard
+            Admin Dashboard - Overview
           </h1>
+
+          {/* Export CSV Button (same styling as ManageProgress) */}
+            <button
+              onClick={exportChartsCSV}
+              className="px-3 py-1.5 rounded-full text-xs md:text-sm font-medium border 
+                        bg-white/90 text-emerald-900 border-emerald-200 
+                        hover:bg-DivuBlue hover:text-black transition-all"
+            >
+              Export CSV
+            </button>
         </div>
 
         {/* Stats Section */}
@@ -265,7 +312,7 @@ export default function AdminDashboard() {
                       borderRadius: "8px",
                     }}
                   />
-                  <Bar dataKey="count" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="count" fill="#61e965" stroke="#223b34" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -276,7 +323,7 @@ export default function AdminDashboard() {
               <PieChart>
                 <Pie data={charts.modulePie} dataKey="value" cx="50%" cy="50%" outerRadius={80} label>
                   {charts.modulePie.map((entry, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} stroke="#223b34" fontWeight="bold" />
                   ))}
                 </Pie>
                 <Legend />
@@ -286,12 +333,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* AI Summary */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-DivuWhite p-6 rounded-lg shadow-sm border border-DivuLightGreen">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">AI Summary</h2>
           <button
             onClick={generateAISummary}
             disabled={aiLoading || loading}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg mb-4 transition-colors"
+            className="px-4 py-2 bg-DivuDarkGreen hover:bg-DivuBlue disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg mb-4 transition-colors"
           >
             {aiLoading ? "Analyzing…" : "Generate AI Summary"}
           </button>
@@ -311,12 +358,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* ⭐⭐ SEND REMINDERS BUTTON SECTION ⭐⭐ */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-DivuWhite p-6 rounded-lg shadow-sm border border-DivuLightGreen">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Send Email Reminders</h2>
 
           <button
             onClick={sendReminders}
-            className="bg-emerald-600 hover:bg-emerald-700 px-5 py-2 rounded-lg text-white shadow-sm transition-colors"
+            className="bg-DivuDarkGreen hover:bg-DivuBlue px-5 py-2 rounded-lg text-white shadow-sm transition-colors"
           >
             Send Reminders Now
           </button>
@@ -329,16 +376,16 @@ export default function AdminDashboard() {
 // Small reusable components
 function StatCard({ label, value }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-      <h2 className="text-sm font-medium text-gray-600 mb-1">{label}</h2>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
+    <div className="bg-DivuDarkGreen rounded-lg shadow-sm border border-gray-200 p-5">
+      <h2 className="text-sm font-bold text-slate-100 mb-1">{label}</h2>
+      <p className="text-3xl font-bold text-white">{value}</p>
     </div>
   );
 }
 
 function ChartCard({ title, children }) {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-DivuWhite p-6 rounded-lg shadow-sm border border-DivuLightGreen">
       <h2 className="font-semibold text-gray-900 mb-4">{title}</h2>
       {children}
     </div>
