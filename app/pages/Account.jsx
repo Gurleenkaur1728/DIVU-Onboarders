@@ -5,6 +5,9 @@ import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { supabase } from "../../src/lib/supabaseClient";
 import SiteTranslator from "../../src/SiteTranslator.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
+
+
 export default function Account() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -309,6 +312,7 @@ const [collapsed, setCollapsed] = useState(false);
 
   if (loading || authLoading) {
     return (
+      
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
@@ -319,10 +323,11 @@ const [collapsed, setCollapsed] = useState(false);
   }
 
   return (
+    <AppLayout>
     <div
       className={`
         flex min-h-screen bg-white
-        ${collapsed ? "ml-20" : "ml-64"}
+        ${collapsed ? "lg:ml-20" : "lg:ml-64"}
         transition-all duration-300
       `}
     >
@@ -1150,5 +1155,6 @@ const [collapsed, setCollapsed] = useState(false);
         </div>
       </div>
     </div>
+    </AppLayout>
   );
 }
