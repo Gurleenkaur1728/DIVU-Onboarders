@@ -17,3 +17,35 @@ Step 5: Ask Questions
 
 Completion:
 - Once all steps are complete, employees receive a digital certificate.
+
+What are Modules?
+Modules are interactive learning units in DIVU that help employees learn about:
+- Company Overview: Mission, vision, values, and organizational structure
+- Workplace Safety: Security protocols, emergency procedures, and safety guidelines
+- Company Culture: Core values, work culture, team collaboration, and expectations
+- Job-Specific Training: Role-specific skills, tools, and processes
+- HR Policies: Leave policies, benefits, code of conduct, and compliance
+- Technology & Tools: Software, systems, and platforms used in daily work
+
+Each module contains:
+- Learning content (text, images, videos)
+- Interactive elements
+- Quizzes to test understanding
+- Progress tracking
+- Completion certificates
+
+What are Modules?
+Modules are interactive learning units in DIVU that help employees learn about:
+- Company Overview: Mission, vision, values, and organizational structure
+- Workplace Safety: Security protocols, emergency procedures, and safety guidelines
+- Company Culture: Core values, work culture, team collaboration, and expectations
+- Job-Specific Training: Role-specific skills, tools, and processes
+- HR Policies: Leave policies, benefits, code of conduct, and compliance
+- Technology & Tools: Software, systems, and platforms used in daily work
+
+Each module contains:
+- Learning content (text, images, videos)
+- Interactive elements
+- Quizzes to test understanding
+- Progress tracking
+- Completion certificates

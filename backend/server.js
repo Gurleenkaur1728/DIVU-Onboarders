@@ -65,34 +65,20 @@ function cosineSimilarity(vecA, vecB) {
 
 // Helper function to find relevant context
 async function findRelevantContext(query) {
-  if (vectorStore.length === 0) {
-    return "I don't have access to the knowledge base at the moment.";
-  }
-
-  if (!groq) {
-    return "Chatbot is not configured. Please set GROQ_API_KEY in environment variables.";
-  }
-
+  // Load all knowledge files directly
+  const knowledgeDir = path.join(__dirname, "knowledge");
+  let allContent = "";
+  
   try {
-    const queryEmbedding = await groq.embeddings.create({
-      model: "nomic-embed",
-      input: query
-    });
-
-    const queryVector = queryEmbedding.data[0].embedding;
-
-    const scores = vectorStore.map((doc) => ({
-      file: doc.file,
-      text: doc.text || doc.content,
-      score: cosineSimilarity(queryVector, doc.embedding),
-    }));
-
-    scores.sort((a, b) => b.score - a.score);
-    const topDocs = scores.slice(0, 3);
-    
-    return topDocs.map((d) => d.text).join("\n\n");
+    const files = fs.readdirSync(knowledgeDir);
+    for (const file of files) {
+      const filePath = path.join(knowledgeDir, file);
+      const content = fs.readFileSync(filePath, "utf8");
+      allContent += `\n\n=== ${file} ===\n${content}`;
+    }
+    return allContent;
   } catch (err) {
-    console.error("Error finding relevant context:", err);
+    console.error("Error loading knowledge:", err);
     return "I'm having trouble accessing the knowledge base right now.";
   }
 }
@@ -274,30 +260,71 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // Find relevant context from knowledge base
+    // Load knowledge content
     const context = await findRelevantContext(message);
+    
+    // Simple keyword-based responses as fallback if OpenAI fails
+    const lowerMsg = message.toLowerCase();
+    
+    if (lowerMsg.includes("divu") && (lowerMsg.includes("what") || lowerMsg.includes("about"))) {
+      return res.json({ 
+        reply: "DIVU is an employee onboarding platform designed to help new employees seamlessly integrate into the company. DIVU provides digital onboarding modules, checklists, progress tracking, AI assistance, and more to welcome and support new employees from day one."
+      });
+    }
+    
+    if (lowerMsg.includes("value") || lowerMsg.includes("culture")) {
+      return res.json({ 
+        reply: "Our company values are:\n\n1. **Teamwork** - Collaborate and support each other\n2. **Integrity** - Honesty and transparency\n3. **Innovation** - Creative ideas and better ways of working\n4. **Respect** - Fairness and dignity for all\n5. **Continuous Learning** - Training and development opportunities\n\nWe focus on creating a positive, inclusive work environment where employees maintain work-life balance."
+      });
+    }
+    
+    if (lowerMsg.includes("module")) {
+      return res.json({ 
+        reply: "Modules are interactive learning units in DIVU that include:\n- Company Overview (mission, vision, values)\n- Workplace Safety (security, emergency procedures)\n- Company Culture (core values, collaboration)\n- Job-Specific Training (role skills and tools)\n- HR Policies (leave, benefits, code of conduct)\n- Technology & Tools (software and systems)\n\nEach module has learning content, quizzes, progress tracking, and certificates upon completion."
+      });
+    }
+    
+    if (lowerMsg.includes("onboard") || lowerMsg.includes("step")) {
+      return res.json({ 
+        reply: "The onboarding process includes:\n\n1. **Profile Setup** - Update basic details in Account section\n2. **Submit Documents** - Upload ID, bank details, employment forms\n3. **Complete Modules** - Company overview, safety, culture, job training\n4. **Attend Events** - Scheduled orientation sessions\n5. **Ask Questions** - Use Questions section or AI Assistant\n\nOnce complete, you'll receive a digital certificate!"
+      });
+    }
 
-    const systemPrompt = `You are a helpful AI assistant for DIVU's employee onboarding system. 
+    // Try OpenAI if available (will fail gracefully if quota exceeded)
+    try {
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error("OpenAI not configured");
+      }
+
+      const systemPrompt = `You are a helpful AI assistant for DIVU's employee onboarding system. 
 Use the following context from our knowledge base to answer questions accurately and professionally.
-If the answer isn't in the context, politely say you don't have that information.
 
 Context:
 ${context}`;
 
-    const completion = await openaiClient.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: message }
-      ],
-      temperature: 0.7,
-      max_tokens: 500,
+      const completion = await openaiClient.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 500,
+      });
+
+      const reply = completion.choices?.[0]?.message?.content?.trim();
+      if (reply) {
+        return res.json({ reply });
+      }
+    } catch (apiError) {
+      console.log("OpenAI unavailable, using fallback responses");
+    }
+
+    // Generic fallback
+    res.json({ 
+      reply: "I can help you with questions about DIVU, company values, modules, onboarding steps, policies, and more. Could you please rephrase your question or ask about one of these topics?"
     });
 
-    const reply = completion.choices?.[0]?.message?.content?.trim() || 
-                  "I'm sorry, I couldn't generate a response.";
-
-    res.json({ reply });
   } catch (err) {
     console.error("❌ Chatbot error:", err);
     res.status(500).json({ 

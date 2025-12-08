@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import AppLayout from "../../../src/AppLayout.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
 import { useToast } from "../../context/ToastContext.jsx";
@@ -110,7 +110,7 @@ export default function ManageQuestions() {
   }
 
   /* ========== Loaders ========== */
-  const loadEmployeeQuestions = async () => {
+  const loadEmployeeQuestions = useCallback(async () => {
     // show open or answered (still active)
     const { data, error } = await supabase
       .from("user_questions")
@@ -128,9 +128,9 @@ export default function ManageQuestions() {
       (data || []).map((r) => r.employee_id)
     );
     setEmployeeQuestions(mapUsers(data, usersById));
-  };
+  }, []);
 
-  const loadAnsweredArchive = async () => {
+  const loadAnsweredArchive = useCallback(async () => {
     const { data, error } = await supabase
       .from("user_questions")
       .select(
@@ -150,7 +150,7 @@ export default function ManageQuestions() {
     );
     const rows = mapUsers(data, usersById);
     setAnsweredGroups(groupByDay(rows));
-  };
+  }, []);
 
   const loadFaqs = async () => {
     const { data, error } = await supabase
@@ -192,7 +192,7 @@ export default function ManageQuestions() {
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [tab]);
+  }, [tab, loadEmployeeQuestions, loadAnsweredArchive]);
 
   /* ========== Employee actions ========== */
   const saveAnswer = async () => {
