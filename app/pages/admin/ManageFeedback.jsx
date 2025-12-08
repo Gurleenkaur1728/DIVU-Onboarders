@@ -437,11 +437,8 @@ export default function ManageFeedback() {
   };
 
   return (
-    <AppLayout>
-    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}> */}
-      {/* <Sidebar active="manage-feedback" role={roleId} /> */}
-    
-      <div className="bg-white min-h-screen p-8">
+    <AppLayout>    
+      <div className=" min-h-screen p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>

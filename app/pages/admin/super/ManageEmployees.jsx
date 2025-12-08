@@ -221,7 +221,7 @@ export default function ManageEmployment() {
   return (
 
     <AppLayout>
-      <div className="bg-white min-h-screen p-8">
+      <div className=" min-h-screen p-8">
         <div className="mb-6 flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-emerald-950 mb-2">
