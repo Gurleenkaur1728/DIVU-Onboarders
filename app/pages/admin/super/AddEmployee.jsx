@@ -208,7 +208,7 @@ export default function AddEmployee() {
 
   return (
     <AppLayout>
-      <div className="bg-white min-h-screen p-8">
+      <div className="bg-url/ min-h-screen p-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-emerald-950 mb-2">Add Employee</h1>
           <p className="text-gray-600">Send invitations to new employees</p>

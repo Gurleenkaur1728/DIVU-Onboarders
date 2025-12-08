@@ -325,7 +325,7 @@ const [collapsed, setCollapsed] = useState(false);
     <AppLayout>
     <div
       className={`
-        flex min-h-screen bg-white
+        flex min-h-screen
         transition-all duration-300
       `}
     >
