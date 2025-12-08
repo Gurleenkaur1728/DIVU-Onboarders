@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { supabase } from "../../src/lib/supabaseClient";
@@ -327,11 +326,9 @@ const [collapsed, setCollapsed] = useState(false);
     <div
       className={`
         flex min-h-screen bg-white
-        ${collapsed ? "lg:ml-20" : "lg:ml-64"}
         transition-all duration-300
       `}
     >
-      <Sidebar role={roleId} collapsed={collapsed} setCollapsed={setCollapsed} />
 
       <div className="flex-1 p-8">
         {/* Header */}
