@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
+import { useToast } from "../../../context/ToastContext.jsx";
 import AppLayout from "../../../../src/AppLayout.jsx";
 
 export default function ManageEmployment() {
+  const { showToast } = useToast();
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,8 +52,7 @@ export default function ManageEmployment() {
       if (error) throw error;
       setEmployees(data || []);
     } catch (error) {
-      console.error("Error loading employees:", error);
-      alert("Failed to load employees");
+      showToast("Failed to load employees", "error");
     } finally {
       setLoading(false);
     }
@@ -122,9 +123,9 @@ export default function ManageEmployment() {
     if (autoSaveEnabled && formData[employeeId]) {
       try {
         await saveEmployment(employeeId);
-        console.log(`Auto-saved data for employee ${employeeId}`);
+        showToast("Auto-saved successfully", "success");
       } catch (error) {
-        console.error('Auto-save failed:', error);
+        showToast("Auto-save failed", "error");
       }
     }
   };
@@ -196,12 +197,11 @@ export default function ManageEmployment() {
 
       if (error) throw error;
 
-      alert("✅ Employment details updated successfully!");
+      showToast("Employment details updated successfully!", "success");
       cancelEditing(employeeId);
       loadEmployees();
     } catch (error) {
-      console.error("Error updating employment:", error);
-      alert("❌ Failed to update employment details");
+      showToast("Failed to update employment details", "error");
     }
   };
 
@@ -221,73 +221,79 @@ export default function ManageEmployment() {
   return (
 
     <AppLayout>
-      <div className=" min-h-screen p-8">
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-emerald-950 mb-2">
-              Manage Employment Details
-            </h1>
-            <p className="text-gray-600">
-              Assign and manage employment information for all users
-            </p>
-          </div>
-          
-          <div className="flex gap-3">
-            <button
-              onClick={bulkEditAll}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              disabled={filteredEmployees.length === 0}
-            >
-              Edit All ({filteredEmployees.length})
-            </button>
-            
-            <button
-              onClick={bulkCancelAll}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              disabled={Object.keys(editingEmployees).length === 0}
-            >
-              Cancel All
-            </button>
+      <div className="bg-gradient-to-br from-gray-50 via-white to-emerald-50 min-h-screen p-8">
+        {/* Modern Header */}
+        <div className="mb-8 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl opacity-10"></div>
+          <div className="relative p-6 rounded-2xl bg-white/80 backdrop-blur-sm shadow-lg border border-emerald-100">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h1 className="text-4xl font-bold text-emerald-950 mb-2">
+                  Manage Employment Details
+                </h1>
+                <p className="text-gray-600">
+                  Assign and manage employment information for all users
+                </p>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={bulkEditAll}
+                  className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={filteredEmployees.length === 0}
+                >
+                  Edit All ({filteredEmployees.length})
+                </button>
+                
+                <button
+                  onClick={bulkCancelAll}
+                  className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={Object.keys(editingEmployees).length === 0}
+                >
+                  Cancel All
+                </button>
 
-            <button
-              onClick={bulkSaveAll}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              disabled={Object.keys(editingEmployees).length === 0}
-            >
-              Save All ({Object.keys(editingEmployees).length})
-            </button>
+                <button
+                  onClick={bulkSaveAll}
+                  className="px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={Object.keys(editingEmployees).length === 0}
+                >
+                  Save All ({Object.keys(editingEmployees).length})
+                </button>
 
-            <button
-              onClick={loadEmployees}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-            >
-              Refresh
-            </button>
+                <button
+                  onClick={loadEmployees}
+                  className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+                >
+                  Refresh
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Search and Filter Controls */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-white border-2 border-gray-100 rounded-2xl shadow-lg p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search Employees</label>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Search Employees</label>
               <input
                 type="text"
                 placeholder="Search by name, email, or employee ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition-all duration-200"
               />
             </div>
             
             {/* Department Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Department</label>
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition-all duration-200"
               >
                 <option value="">All Departments</option>
                 <option value="Technology">Technology</option>
@@ -301,11 +307,11 @@ export default function ManageEmployment() {
             
             {/* Status Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">Status</label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 transition-all duration-200"
               >
                 <option value="">All Employees</option>
                 <option value="complete">Complete Profiles</option>
@@ -345,25 +351,25 @@ export default function ManageEmployment() {
             </label>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium opacity-90">Total Employees</h3>
-                <p className="text-2xl font-bold">{filteredEmployees.length}</p>
-                <p className="text-xs opacity-80">({employees.length} total)</p>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium opacity-90 uppercase tracking-wide">Total Employees</h3>
+                <p className="text-3xl font-bold mt-2">{filteredEmployees.length}</p>
+                <p className="text-sm opacity-80 mt-1">({employees.length} total)</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-4">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium opacity-90">Complete Profiles</h3>
-                <p className="text-2xl font-bold">
+              <div className="flex-1">
+                <h3 className="text-sm font-medium opacity-90 uppercase tracking-wide">Complete Profiles</h3>
+                <p className="text-3xl font-bold mt-2">
                   {filteredEmployees.filter(emp => emp.department && emp.position && emp.manager).length}
                 </p>
-                <p className="text-xs opacity-80">
+                <p className="text-sm opacity-80 mt-1">
                   {filteredEmployees.length > 0 ? 
                     Math.round((filteredEmployees.filter(emp => emp.department && emp.position && emp.manager).length / filteredEmployees.length) * 100) : 0
                   }% complete
@@ -372,24 +378,24 @@ export default function ManageEmployment() {
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg p-4">
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium opacity-90">Missing Info</h3>
-                <p className="text-2xl font-bold">
+              <div className="flex-1">
+                <h3 className="text-sm font-medium opacity-90 uppercase tracking-wide">Missing Info</h3>
+                <p className="text-3xl font-bold mt-2">
                   {filteredEmployees.filter(emp => !emp.department || !emp.position || !emp.manager).length}
                 </p>
-                <p className="text-xs opacity-80">Need attention</p>
+                <p className="text-sm opacity-80 mt-1">Need attention</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-4">
+          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-2xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium opacity-90">Currently Editing</h3>
-                <p className="text-2xl font-bold">{Object.keys(editingEmployees).length}</p>
-                <p className="text-xs opacity-80">
+              <div className="flex-1">
+                <h3 className="text-sm font-medium opacity-90 uppercase tracking-wide">Currently Editing</h3>
+                <p className="text-3xl font-bold mt-2">{Object.keys(editingEmployees).length}</p>
+                <p className="text-sm opacity-80 mt-1">
                   {autoSaveEnabled ? "Auto-save ON" : "Manual save"}
                 </p>
               </div>
@@ -397,14 +403,14 @@ export default function ManageEmployment() {
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white border-2 border-gray-100 rounded-2xl shadow-xl overflow-hidden">
           {Object.keys(editingEmployees).length > 0 && (
-            <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200 px-6 py-4">
               <div className="flex items-center justify-between">
-                <span className="text-blue-800 font-medium">
+                <span className="text-blue-900 font-semibold text-lg">
                   Currently editing {Object.keys(editingEmployees).length} employee(s)
                 </span>
-                <span className="text-blue-600 text-sm">
+                <span className="text-blue-700 text-sm font-medium">
                   Make your changes and click "Save" for each employee or "Save All"
                 </span>
               </div>
@@ -607,22 +613,29 @@ export default function ManageEmployment() {
         {/* Confirmation Dialog */}
         {showConfirmDialog && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-md mx-4 shadow-2xl">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Confirm Action</h3>
-              <p className="text-gray-600 mb-6">{pendingAction?.message}</p>
-              <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  className="px-4 py-2 text-white bg-emerald-500 rounded-lg hover:bg-emerald-600 transition-colors"
-                >
-                  Confirm
-                </button>
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 mb-4">
+                  <svg className="h-8 w-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Confirm Action</h3>
+                <p className="text-gray-600 mb-6">{pendingAction?.message}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCancel}
+                    className="flex-1 px-6 py-3 rounded-xl font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirm}
+                    className="flex-1 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                  >
+                    Confirm
+                  </button>
+                </div>
               </div>
             </div>
           </div>

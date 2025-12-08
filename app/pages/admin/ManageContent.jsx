@@ -3,33 +3,22 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../src/AppLayout.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
 import { useRole } from "../../../src/lib/hooks/useRole.js";
+import { useToast } from "../../context/ToastContext.jsx";
 
 // Icons
 import { 
   Save,
   Trash2, 
-  Plus, 
-  Lock } from "lucide-react";
+  Plus } from "lucide-react";
 
 export default function ManageContent() {
   const navigate = useNavigate();
-  const { roleId, isAdmin } = useRole();
+  const { isAdmin } = useRole();
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState("welcome");
   const [sections, setSections] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const [addOpen, setAddOpen] = useState(false);
-  const [newType, setNewType] = useState("text");
-  const [newDraft, setNewDraft] = useState({
-    title: "",
-    subtitle: "",
-    description: "",
-    media_url: "",
-    cta_label: "",
-    cta_href: "",
-  });
+  const [_loading, setLoading] = useState(false);
 
   // Redirect non-admins
   useEffect(() => {
@@ -45,7 +34,6 @@ export default function ManageContent() {
   const fetchSections = useCallback(
     async (tab) => {
       setLoading(true);
-      setMessage("");
       const section = tabToSection(tab);
 
       try {
@@ -66,8 +54,8 @@ export default function ManageContent() {
             .insert([
               {
                 section,
-                sort_order: 0,
-                title: section === "hero" ? "Welcome" : "Section Title",
+                sort_order: 1,
+                title: section === "hero" ? "Welcome to DIVU!" : "Section Title",
                 subtitle: "",
                 description: "",
                 media_url: "",
@@ -77,7 +65,7 @@ export default function ManageContent() {
               },
             ])
             .select("*")
-            .maybeSingle();
+            .single();
 
           if (insertError) throw insertError;
           rows = inserted ? [inserted] : [];
@@ -85,13 +73,12 @@ export default function ManageContent() {
 
         setSections(rows);
       } catch (error) {
-        console.error("Error loading content:", error);
-        setMessage("⚠️ Failed to load content.");
+        showToast("Failed to load content: " + error.message, "error");
       } finally {
         setLoading(false);
       }
     },
-    [tabToSection]
+    [tabToSection, showToast]
   );
 
   useEffect(() => {
@@ -116,18 +103,36 @@ export default function ManageContent() {
       .toString(36)
       .slice(2)}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("assets")
-      .upload(filePath, file, { upsert: false });
+    try {
+      showToast("Uploading media...", "info");
+      
+      const { error: uploadError } = await supabase.storage
+        .from("assets")
+        .upload(filePath, file, { upsert: true });
 
-    if (uploadError) {
-      setMessage("⚠️ Upload failed.");
-      return;
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
+      const publicUrl = data.publicUrl;
+      
+      updateLocal(index, { media_url: publicUrl });
+      
+      // Auto-save after upload
+      const row = { ...sections[index], media_url: publicUrl };
+      
+      if (row.id) {
+        const { error: saveError } = await supabase
+          .from("home_content")
+          .update({ media_url: publicUrl })
+          .eq("id", row.id);
+          
+        if (saveError) throw saveError;
+      }
+      
+      showToast("Media uploaded and saved successfully!", "success");
+    } catch (error) {
+      showToast("Upload failed: " + error.message, "error");
     }
-
-    const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
-    updateLocal(index, { media_url: data.publicUrl });
-    setMessage("✅ Media uploaded!");
   }
 
   async function saveSection(index) {
@@ -135,10 +140,9 @@ export default function ManageContent() {
     const row = sections[index];
 
     try {
-      let result;
-
       if (row.id) {
-        result = await supabase
+        // UPDATE existing section
+        const { error } = await supabase
           .from("home_content")
           .update({
             title: row.title ?? "",
@@ -148,32 +152,40 @@ export default function ManageContent() {
             cta_label: row.cta_label ?? "",
             cta_href: row.cta_href ?? "",
             is_active: row.is_active ?? true,
-            sort_order: row.sort_order ?? 0,
+            sort_order: row.sort_order ?? 1,
           })
-          .eq("id", row.id)
-          .select("*")
-          .maybeSingle();
+          .eq("id", row.id);
+
+        if (error) throw error;
       } else {
-        result = await supabase
+        // INSERT new section - calculate next sort_order
+        const maxSort = sections.reduce((max, s) => 
+          (s.sort_order > max ? s.sort_order : max), 0
+        );
+
+        const { error } = await supabase
           .from("home_content")
           .insert([
             {
               section: tabToSection(activeTab),
-              ...row,
-              sort_order: sections.length,
+              title: row.title ?? "",
+              subtitle: row.subtitle ?? "",
+              description: row.description ?? "",
+              media_url: row.media_url ?? "",
+              cta_label: row.cta_label ?? "",
+              cta_href: row.cta_href ?? "",
+              is_active: row.is_active ?? true,
+              sort_order: maxSort + 1,
             },
-          ])
-          .select("*")
-          .maybeSingle();
+          ]);
+
+        if (error) throw error;
       }
 
-      if (result.error) throw result.error;
-
-      setMessage("✅ Section saved.");
-      fetchSections(activeTab);
+      showToast("Section saved successfully!", "success");
+      await fetchSections(activeTab);
     } catch (error) {
-      console.error(error);
-      setMessage("⚠️ Failed to save section.");
+      showToast("Failed to save: " + error.message, "error");
     } finally {
       setLoading(false);
     }
@@ -183,13 +195,14 @@ export default function ManageContent() {
     const row = sections[index];
     if (!row) return;
 
-    if (row.sort_order === 0) {
-      setMessage("⚠️ You cannot delete the first section.");
+    if (!row.id) {
+      // Remove unsaved draft
+      setSections((prev) => prev.filter((_, i) => i !== index));
+      showToast("Draft section removed", "info");
       return;
     }
 
-    if (!row.id) {
-      setSections((prev) => prev.filter((_, i) => i !== index));
+    if (!confirm("Are you sure you want to delete this section?")) {
       return;
     }
 
@@ -203,38 +216,49 @@ export default function ManageContent() {
 
       if (error) throw error;
 
-      setMessage("🗑️ Section deleted.");
-      fetchSections(activeTab);
+      showToast("Section deleted successfully", "success");
+      await fetchSections(activeTab);
     } catch (error) {
-      console.error(error);
-      setMessage("⚠️ Failed to delete section.");
+      showToast("Failed to delete: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   }
 
-  function addDraftSection() {
-    const newSection = {
-      id: null,
-      section: tabToSection(activeTab),
-      ...newDraft,
-      sort_order: sections.length,
-      is_active: true,
-    };
+  async function addDraftSection() {
+    setLoading(true);
 
-    setSections((prev) => [...prev, newSection]);
+    try {
+      // Calculate next sort_order
+      const maxSort = sections.reduce((max, s) => 
+        (s.sort_order > max ? s.sort_order : max), 0
+      );
 
-    setNewDraft({
-      title: "",
-      subtitle: "",
-      description: "",
-      media_url: "",
-      cta_label: "",
-      cta_href: "",
-    });
+      const { error } = await supabase
+        .from("home_content")
+        .insert([
+          {
+            section: tabToSection(activeTab),
+            title: "New Section",
+            subtitle: "",
+            description: "",
+            media_url: "",
+            cta_label: "",
+            cta_href: "",
+            is_active: true,
+            sort_order: maxSort + 1,
+          },
+        ]);
 
-    setNewType("text");
-    setAddOpen(false);
+      if (error) throw error;
+
+      showToast("New section added! Edit and save your changes.", "success");
+      await fetchSections(activeTab);
+    } catch (error) {
+      showToast("Failed to add section: " + error.message, "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -269,8 +293,6 @@ export default function ManageContent() {
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 max-w-5xl">
           {/* Loop sections */}
           {sections.map((s, idx) => {
-            const isFirst = s.sort_order === 0;
-
             return (
               <div
                 key={s.id ?? `draft-${idx}`}
@@ -279,15 +301,9 @@ export default function ManageContent() {
                 {/* Header row */}
                 <div className="flex justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm px-2 py-1 rounded bg-gray-100 border border-gray-300 text-gray-700">
-                      #{s.sort_order}
+                    <span className="text-sm px-2 py-1 rounded bg-emerald-100 border border-emerald-300 text-emerald-700 font-medium">
+                      Section #{s.sort_order}
                     </span>
-
-                    {isFirst && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-600">
-                        <Lock size={14} /> First section (locked)
-                      </span>
-                    )}
                   </div>
 
                   <div className="flex gap-2">
@@ -300,13 +316,8 @@ export default function ManageContent() {
                     </button>
 
                     <button
-                      disabled={isFirst}
                       onClick={() => deleteSection(idx)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
-                        isFirst
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-red-600 text-white hover:bg-red-700 transition"
-                      }`}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
                     >
                       <Trash2 size={16} />
                       Delete
@@ -424,87 +435,13 @@ export default function ManageContent() {
           })}
 
           {/* ADD NEW SECTION */}
-          {!addOpen ? (
-            <button
-              onClick={() => setAddOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition mt-4"
-            >
-              <Plus size={18} />
-              Add Section
-            </button>
-          ) : (
-            <div className="border border-gray-200 rounded-lg p-4 mt-4">
-              <h3 className="font-semibold text-gray-900 mb-2">
-                Add New Section
-              </h3>
-
-              <label className="block mb-3">
-                <span className="font-semibold text-gray-700">Title</span>
-                <input
-                  type="text"
-                  value={newDraft.title}
-                  onChange={(e) =>
-                    setNewDraft((p) => ({ ...p, title: e.target.value }))
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </label>
-
-              <label className="block mb-3">
-                <span className="font-semibold text-gray-700">Subtitle</span>
-                <input
-                  type="text"
-                  value={newDraft.subtitle}
-                  onChange={(e) =>
-                    setNewDraft((p) => ({ ...p, subtitle: e.target.value }))
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </label>
-
-              <label className="block mb-3">
-                <span className="font-semibold text-gray-700">
-                  Description
-                </span>
-                <textarea
-                  rows="3"
-                  value={newDraft.description}
-                  onChange={(e) =>
-                    setNewDraft((p) => ({ ...p, description: e.target.value }))
-                  }
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </label>
-
-              <div className="flex items-center gap-3 mt-4">
-                <button
-                  onClick={addDraftSection}
-                  className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition"
-                >
-                  <Save size={18} />
-                  Add
-                </button>
-                <button
-                  onClick={() => setAddOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          {message && (
-            <p
-              className={`mt-4 px-4 py-2 rounded-lg font-medium ${
-                message.includes("⚠️")
-                  ? "bg-red-50 text-red-700 border border-red-200"
-                  : "bg-green-50 text-green-700 border border-green-200"
-              }`}
-            >
-              {message}
-            </p>
-          )}
+          <button
+            onClick={addDraftSection}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition mt-4"
+          >
+            <Plus size={18} />
+            Add Section
+          </button>
         </div>
       </div>
     </AppLayout>

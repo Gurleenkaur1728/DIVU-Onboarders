@@ -3,6 +3,7 @@ import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
+import { supabase } from "../../src/lib/supabaseClient";
  
 export default function About() {
   const { roleId, role } = useRole();
@@ -23,42 +24,52 @@ export default function About() {
  
   // Load all active 'about' sections
   useEffect(() => {
-    setLoading(true);
-    try {
-      const storedSections = JSON.parse(localStorage.getItem("about_sections") || "[]");
-      if (Array.isArray(storedSections) && storedSections.length) {
-        setSections(storedSections);
-      } else {
-        // Fallback if no sections exist
-        setSections([{
-          id: "fallback",
-          title: "About DIVU",
-          subtitle: "Learn about our mission and how we onboard with care.",
-          description: "",
-          media_url: "/aboutdivu.jpg",
-          cta_label: "",
-          cta_href: "",
-          sort_order: 0,
-          is_active: true,
-        }]);
+    let active = true;
+    const fallback = [{
+      id: "fallback",
+      title: "About DIVU",
+      subtitle: "Learn about our mission and how we onboard with care.",
+      description: "",
+      media_url: "/aboutdivu.jpg",
+      cta_label: "",
+      cta_href: "",
+      sort_order: 1,
+      is_active: true,
+    }];
+
+    async function loadSections() {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("home_content")
+          .select("*")
+          .eq("section", "about")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        if (!active) return;
+
+        if (Array.isArray(data) && data.length > 0) {
+          setSections(data);
+        } else {
+          setSections(fallback);
+        }
+      } catch (error) {
+        console.error("Error loading about sections:", error);
+        if (active) setSections(fallback);
+      } finally {
+        if (active) setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading about sections:", error);
-      // Use fallback if local storage data is invalid
-      setSections([{
-        id: "fallback",
-        title: "About DIVU",
-        subtitle: "Learn about our mission and how we onboard with care.",
-        description: "",
-        media_url: "/aboutdivu.jpg",
-        cta_label: "",
-        cta_href: "",
-        sort_order: 0,
-        is_active: true,
-      }]);
-    } finally {
-      setLoading(false);
     }
+
+    loadSections();
+
+    return () => {
+      active = false;
+    };
   }, []);
  
   return (

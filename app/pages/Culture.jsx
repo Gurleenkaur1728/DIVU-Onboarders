@@ -3,6 +3,7 @@ import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
 import { Menu, AppWindow } from "lucide-react";
 import { useRole } from "../../src/lib/hooks/useRole.js";
+import { supabase } from "../../src/lib/supabaseClient";
  
 export default function Culture() {
   const { roleId, role } = useRole();
@@ -21,44 +22,54 @@ export default function Culture() {
   }, []);
  
   useEffect(() => {
-    setLoading(true);
-    try {
-      const storedSections = JSON.parse(localStorage.getItem("culture_sections") || "[]");
-      if (Array.isArray(storedSections) && storedSections.length) {
-        setSections(storedSections);
-      } else {
-        setSections([
-          {
-            id: "fallback",
-            title: "DIVU Culture",
-            subtitle: "We value growth, clarity, and care.",
-            description: "",
-            media_url: "/cultureglobe.jpg",
-            cta_label: "",
-            cta_href: "",
-            sort_order: 0,
-            is_active: true,
-          },
-        ]);
+    let active = true;
+    const fallback = [
+      {
+        id: "fallback",
+        title: "DIVU Culture",
+        subtitle: "We value growth, clarity, and care.",
+        description: "",
+        media_url: "/cultureglobe.jpg",
+        cta_label: "",
+        cta_href: "",
+        sort_order: 1,
+        is_active: true,
+      },
+    ];
+
+    async function loadSections() {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("home_content")
+          .select("*")
+          .eq("section", "culture")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true })
+          .order("created_at", { ascending: true });
+
+        if (error) throw error;
+
+        if (!active) return;
+
+        if (Array.isArray(data) && data.length > 0) {
+          setSections(data);
+        } else {
+          setSections(fallback);
+        }
+      } catch (error) {
+        console.error("Error loading culture sections:", error);
+        if (active) setSections(fallback);
+      } finally {
+        if (active) setLoading(false);
       }
-    } catch (error) {
-      console.error("Error loading culture sections:", error);
-      setSections([
-        {
-          id: "fallback",
-          title: "DIVU Culture",
-          subtitle: "We value growth, clarity, and care.",
-          description: "",
-          media_url: "/cultureglobe.jpg",
-          cta_label: "",
-          cta_href: "",
-          sort_order: 0,
-          is_active: true,
-        },
-      ]);
-    } finally {
-      setLoading(false);
     }
+
+    loadSections();
+
+    return () => {
+      active = false;
+    };
   }, []);
  
   return (
