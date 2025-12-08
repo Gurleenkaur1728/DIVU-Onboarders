@@ -25,7 +25,8 @@ export default function AppLayout({ children }) {
           bg-cover bg-center bg-fixed relative
           flex-1 min-h-screen overflow-y-auto
           transition-all duration-300
-          ${collapsed ? "ml-20" : "ml-64"}
+          ${collapsed ? "lg:ml-20" : "lg:ml-64"}
+
         `}
         style={{ backgroundImage: "url('/bg.png')" }}
       >
