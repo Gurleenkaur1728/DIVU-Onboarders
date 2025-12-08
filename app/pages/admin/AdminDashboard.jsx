@@ -209,11 +209,12 @@ export default function AdminDashboard() {
         context: "admin_global_summary",
       };
 
-      const res = await fetch("/api/ai/summary", {
+      const res = await fetch("http://localhost:5050/api/ai/summary", { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
+
 
       if (!res.ok) throw new Error(`API returned ${res.status}`);
 
@@ -333,7 +334,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* AI Summary */}
-        <div className="bg-DivuWhite p-6 rounded-lg shadow-sm border border-DivuLightGreen">
+        <div className="bg-white/60 p-6 rounded-lg shadow-sm border border-DivuLightGreen">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">AI Summary</h2>
           <button
             onClick={generateAISummary}
@@ -358,7 +359,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ⭐⭐ SEND REMINDERS BUTTON SECTION ⭐⭐ */}
-        <div className="bg-DivuWhite p-6 rounded-lg shadow-sm border border-DivuLightGreen">
+        <div className="bg-white/60 p-6 rounded-lg shadow-sm border border-DivuLightGreen">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Send Email Reminders</h2>
 
           <button
