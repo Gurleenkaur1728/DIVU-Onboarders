@@ -1,3 +1,4 @@
+//translation app
 import { useEffect } from "react";
 
 export default function SiteTranslator({ language }) {
