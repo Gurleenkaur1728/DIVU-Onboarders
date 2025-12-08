@@ -275,7 +275,7 @@ export default function ManageChecklist() {
 
   return (
     <AppLayout>
-      <div className="bg-white min-h-screen p-8">
+      <div className=" min-h-screen p-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Checklist</h1>

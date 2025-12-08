@@ -263,7 +263,7 @@ export default function ManageContent() {
 
   return (
     <AppLayout>
-      <div className="bg-white min-h-screen p-8">
+      <div className="min-h-screen p-8">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Content</h1>

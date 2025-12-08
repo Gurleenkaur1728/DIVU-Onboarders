@@ -1,11 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import { supabase } from "../../src/lib/supabaseClient";
 import SiteTranslator from "../../src/SiteTranslator.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
+
+
 export default function Account() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -385,6 +387,7 @@ const [collapsed, setCollapsed] = useState(false);
 
   if (loading || authLoading) {
     return (
+      
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
@@ -395,6 +398,7 @@ const [collapsed, setCollapsed] = useState(false);
   }
 
   return (
+    <AppLayout>
     <div
       className={`
         flex min-h-screen bg-gradient-to-br from-gray-50 via-white to-emerald-50
@@ -402,7 +406,6 @@ const [collapsed, setCollapsed] = useState(false);
         transition-all duration-300
       `}
     >
-      <Sidebar role={roleId} collapsed={collapsed} setCollapsed={setCollapsed} />
 
       <div className="flex-1 p-8">
         {/* Header with gradient */}
@@ -1022,5 +1025,6 @@ const [collapsed, setCollapsed] = useState(false);
         </div>
       )}
     </div>
+    </AppLayout>
   );
 }

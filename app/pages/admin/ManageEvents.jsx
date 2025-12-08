@@ -201,7 +201,7 @@ export default function ManageEvents() {
     <AppLayout>
     {/* <Sidebar active="manage-events" role={roleId} /> */}
  
-      <div className="bg-white min-h-screen p-8">
+      <div className=" min-h-screen p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
