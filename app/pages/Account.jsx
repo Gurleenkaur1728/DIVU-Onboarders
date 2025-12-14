@@ -347,13 +347,13 @@ const [collapsed, setCollapsed] = useState(false);
           {/* RIGHT — TABS */}
           <div className="flex flex-wrap gap-2">
             {[
-              ["dashboard", "📊 Dashboard"],
-              ["notifications", "🔔 Notifications"],
-              ["employment", "💼 Employment"],
-              ["role", "👤 Role"],
-              ["department", "🏢 Department"],
-              ["language", "🌐 Language"],
-              ["settings", "⚙️ Settings"],
+              ["dashboard", " Dashboard"],
+              ["notifications", " Notifications"],
+              ["employment", " Employment"],
+              ["role", " Role"],
+              ["department", " Department"],
+              ["language", " Language"],
+              ["settings", " Settings"],
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -376,6 +376,12 @@ const [collapsed, setCollapsed] = useState(false);
                   )}
               </button>
             ))}
+            <button
+              onClick={signOut}
+              className="px-4 py-2 rounded-md text-sm font-medium border transition bg-transparent border-gray-300 text-gray-700 dark:text-gray-200 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-600 dark:hover:text-white"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
 
