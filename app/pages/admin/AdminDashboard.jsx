@@ -283,7 +283,7 @@ export default function AdminDashboard() {
           {/* Export CSV Button (same styling as ManageProgress) */}
             <button
               onClick={exportChartsCSV}
-              className="px-3 py-1.5 rounded-full text-xs md:text-sm font-medium border 
+              className="px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border 
                         bg-black text-white border-DivuDarkGreen 
                         hover:bg-DivuBlue hover:text-black transition-all"
             >
@@ -398,7 +398,7 @@ function StatCard({ label, value }) {
     <div
       className="
         rounded-lg p-5 shadow-sm border transition
-        bg-white border-gray-300 text-gray-900
+        bg-white/10 border-gray-300 text-gray-900
         dark:bg-DivuDarkGreen/70 dark:border-black dark:text-white
       "
     >
@@ -414,7 +414,7 @@ function ChartCard({ title, children }) {
     <div
       className="
         rounded-lg p-6 shadow-sm border transition
-        bg-white border-gray-300 text-gray-900
+        bg-white/10 border-gray-300 text-gray-900
         dark:bg-black/60 dark:border-DivuDarkGreen dark:text-white
       "
     >

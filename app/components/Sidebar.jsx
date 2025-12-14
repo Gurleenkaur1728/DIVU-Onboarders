@@ -79,7 +79,10 @@ export default function Sidebar({ role, collapsed, setCollapsed, mobileOpen, set
           fixed top-0 left-0
           h-screen
           ${collapsed ? "w-20" : "w-64"}
-          flex flex-col bg-gradient-to-b from-[#101f1b] via-[#152f28] to-[#101f1b]
+          flex flex-col bg-gradient-to-b
+           from-[#0e1613]
+            via-[#152f28]
+             to-[#0e1613]
           z-40
           transition-all duration-300
           overflow-y-auto custom-scrollbar

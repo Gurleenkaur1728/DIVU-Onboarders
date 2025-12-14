@@ -101,7 +101,7 @@ export default function Login() {
 
       <div className="relative z-10 flex min-h-screen items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="backdrop-blur-xl bg-black/50 border border-DivuDarkGreen rounded-2xl p-8 shadow-2xl">
+          <div className="backdrop-blur-xl bg-black/0 border border-DivuDarkGreen rounded-2xl p-8 shadow-2xl">
             <div className="flex justify-center mb-8">
               <Logo />
             </div>
