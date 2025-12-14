@@ -74,7 +74,7 @@ export default function Culture() {
  
   return (
     <AppLayout>
-    <div className="bg-white min-h-screen">
+    <div className="min-h-screen">
       <div className="p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

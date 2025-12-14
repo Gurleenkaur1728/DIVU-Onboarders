@@ -94,7 +94,7 @@ export default function Feedback() {
 
   return (
     <AppLayout>
-      <div className="p-6 bg-white min-h-screen">
+      <div className="p-6 min-h-screen">
         <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">

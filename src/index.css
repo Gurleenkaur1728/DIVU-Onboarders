@@ -27,7 +27,7 @@ body,
 }
  
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(2, 90, 65, 0.9);
+  background: rgba(2, 90, 65, 0.341);
 }
  
 /* Firefox support */

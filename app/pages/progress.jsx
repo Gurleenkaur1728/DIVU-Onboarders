@@ -325,8 +325,8 @@ export default function Progress() {
 
   return (      
     <AppLayout>
-      <div className="p-6 bg-white min-h-screen">
-        <div className="max-w-7xl mx-auto">
+      <div className="p-6 min-h-screen">
+        <div className="maxb-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
