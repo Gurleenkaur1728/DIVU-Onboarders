@@ -580,14 +580,21 @@ export default function ManageProgress() {
 
   return (
     <AppLayout>
-      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10 space-y-6">
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
         {/* Header + filters */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div
+          className="
+            mb-6 px-6 py-4 rounded-lg border shadow-sm
+            flex flex-col gap-4 md:flex-row md:items-center md:justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-emerald-950 tracking-wide mb-1">
+            <h1 className="text-2xl font-bold">
               Employee Progress & Analytics
             </h1>
-            <p className="text-emerald-900/80 text-sm md:text-base">
+            <p className="text-gray-600 dark:text-gray-300">
               {selectedEmployee
                 ? `Viewing progress for ${selectedEmployee.first_name} ${selectedEmployee.last_name}`
                 : "Overview across all employees"}
@@ -595,30 +602,10 @@ export default function ManageProgress() {
           </div>
 
           <div className="flex flex-wrap gap-2 md:gap-3">
-            <TimeRangeButton
-              label="Last 30 days"
-              value="30"
-              current={timeRange}
-              onChange={setTimeRange}
-            />
-            <TimeRangeButton
-              label="Last 90 days"
-              value="90"
-              current={timeRange}
-              onChange={setTimeRange}
-            />
-            <TimeRangeButton
-              label="Last year"
-              value="365"
-              current={timeRange}
-              onChange={setTimeRange}
-            />
-            <TimeRangeButton
-              label="All time"
-              value="all"
-              current={timeRange}
-              onChange={setTimeRange}
-            />
+            <TimeRangeButton label="Last 30 days" value="30" current={timeRange} onChange={setTimeRange} />
+            <TimeRangeButton label="Last 90 days" value="90" current={timeRange} onChange={setTimeRange} />
+            <TimeRangeButton label="Last year" value="365" current={timeRange} onChange={setTimeRange} />
+            <TimeRangeButton label="All time" value="all" current={timeRange} onChange={setTimeRange} />
           </div>
         </div>
 
@@ -706,7 +693,7 @@ export default function ManageProgress() {
               </select>
             </div>
 
-            <div className="border-t border-emerald-100 flex-1 overflow-y-auto custom-scrollbar max-h-[calc(100vh-260px)]">
+            <div className="border-t border-emerald-100 flex-1 overflow-y-auto custom-scrollbar max-h-[calc(100vh-260px)] text-black">
               {filteredEmployees.length === 0 ? (
                 <div className="p-4 text-xs text-gray-500 italic">
                   No employees match your filters.
@@ -749,7 +736,7 @@ export default function ManageProgress() {
           {/* Right: charts */}
           <div className="space-y-6">
             {/* Row 1: Completions over time + checklist by group */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 text-black">
               <AnalyticsCard title="Checklist & Module Completions Over Time">
                 {chartData.completionsOverTime.length === 0 ? (
                   <EmptyChartState loading={loadingAnalytics} />
@@ -856,7 +843,7 @@ export default function ManageProgress() {
                       {chartData.moduleStatusBreakdown.map((slice) => (
                         <div
                           key={slice.name}
-                          className="flex items-center justify-between text-xs text-emerald-950"
+                          className="flex items-center justify-between text-xs"
                         >
                           <div className="flex items-center gap-2">
                             <span
@@ -906,6 +893,7 @@ export default function ManageProgress() {
                         dataKey="completed"
                         name="Completed"
                         fill="#22c55e"
+                        
                       />
                       <Bar
                         dataKey="inProgress"
@@ -977,10 +965,10 @@ function TimeRangeButton({ label, value, current, onChange }) {
     <button
       type="button"
       onClick={() => onChange(value)}
-      className={`px-3 py-1.5 rounded-full text-xs md:text-sm font-medium border transition-all ${
+      className={`px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border transition-all ${
         active
           ? "bg-DivuLightGreen text-black border-emerald-700 shadow-sm"
-          : "bg-white/90 text-emerald-900 border-emerald-200 hover:bg-DivuBlue hover:text-black"
+          : "bg-transparent border-black hover:bg-DivuBlue hover:text-black"
       }`}
     >
       {label}
@@ -990,11 +978,11 @@ function TimeRangeButton({ label, value, current, onChange }) {
 
 function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
   const base =
-    "rounded-2xl bg-DivuDarkGreen text-emerald-50 px-4 py-3 shadow-md border";
+    "rounded-2xl bg-white dark:bg-DivuDarkGreen/70 px-4 py-3 shadow-md border";
   const border =
     emphasis === "warning"
-      ? "border-amber-400/70"
-      : "border-emerald-400/70";
+      ? "border-red-400"
+      : "border-black";
 
   return (
     <div className={`${base} ${border} flex items-center gap-3`}>
@@ -1002,7 +990,7 @@ function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
         <Icon className="w-5 h-5 text-black" />
       </div>
       <div className="flex flex-col">
-        <span className="text-xs font-semibold text-emerald-100/90">
+        <span className="text-xs font-semibold">
           {label}
         </span>
         <span className="text-lg font-bold leading-snug">{value}</span>
@@ -1016,9 +1004,9 @@ function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
 
 function AnalyticsCard({ title, children, action }) {
   return (
-    <div className="bg-white/60 rounded-2xl shadow-lg border border-emerald-200 p-4 md:p-5">
+    <div className="bg-white/60 rounded-2xl shadow-lg border border-emerald-400 p-4 md:p-5 dark:bg-black/70">
       <div className="flex items-center justify-between mb-3 gap-2">
-        <h2 className="text-sm md:text-base font-semibold text-emerald-950">
+        <h2 className="text-sm md:text-base font-semibold">
           {title}
         </h2>
         {action && <div className="shrink-0">{action}</div>}
@@ -1048,7 +1036,7 @@ function EmployeeModuleProgress({ modules }) {
 
   if (!modules || modules.length === 0) {
     return (
-      <p className="text-sm text-gray-600 italic">
+      <p className="text-sm italic">
         No module progress available for this employee.
       </p>
     );
@@ -1122,19 +1110,19 @@ function EmployeeModuleProgress({ modules }) {
             return (
               <div
                 key={m.id}
-                className="p-3 bg-white rounded-lg shadow border border-emerald-200"
+                className="p-3 bg-white rounded-lg shadow border border-emerald-200 text-black"
                 title={tooltip}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{icon}</span>
-                    <span className="font-semibold text-emerald-950 text-sm">
+                    <span className="font-semibold text-black text-sm">
                       {m.module_title}
                     </span>
                   </div>
-                  <span className="text-xs font-semibold text-emerald-900">
+                  <span className="text-xs font-semibold text-black">
                     {pct}% •{" "}
-                    <span className="font-normal text-gray-600">
+                    <span className="font-normal text-black">
                       {statusLabel}
                     </span>
                   </span>
@@ -1143,7 +1131,7 @@ function EmployeeModuleProgress({ modules }) {
                 {/* Animated progress bar */}
                 <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-emerald-500 transition-all duration-500"
+                    className="h-full bg-emerald-500 transition-all duration-500 text-black"
                     style={{ width: `${pct}%` }}
                   />
                 </div>

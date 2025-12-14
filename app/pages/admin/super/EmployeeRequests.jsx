@@ -232,10 +232,21 @@ export default function AccessRequests() {
 
   return (
     <AppLayout>
-      <div className=" min-h-screen p-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-emerald-950 mb-2">Employee Requests</h1>
-          <p className="text-gray-600">Review and approve access requests from new employees</p>
+      <div className=" lex-1 min-h-dvh p-6 space-y-6">
+        <div
+          className="
+            rounded-lg shadow-sm border px-6 py-4 mb-6 transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Employee Requests
+          </h1>
+
+          <p className="text-gray-600 dark:text-gray-300">
+            Review and approve access requests from new employees
+          </p>
         </div>
 
         {message && (

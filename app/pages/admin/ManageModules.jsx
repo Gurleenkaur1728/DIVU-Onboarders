@@ -478,20 +478,37 @@ export default function ManageModules() {
 
   return (
     <AppLayout>
-      <div className=" min-h-screen p-8">
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div
+          className="
+            mb-6 px-6 py-4 rounded-lg border shadow-sm
+            flex items-center justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
           <div>
-            <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Modules</h1>
-            <p className="text-gray-600">Create, edit, and publish training modules for employees</p>
+            <h1 className="text-2xl font-bold">
+              Manage Modules
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Create, edit, and publish training modules for employees
+            </p>
           </div>
+
           <button
             onClick={() => openBuilder(null)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition"
+            className="
+              flex items-center gap-2 px-4 py-2 rounded-lg
+              bg-DivuDarkGreen text-white font-medium
+              hover:bg-DivuBlue transition
+            "
           >
-            <Plus size={16} /> Create New Module
+            <Plus size={16} /> Create Module
           </button>
         </div>
+
 
         {/* Search, Filter, and View Controls */}
         <div className="mb-6 flex flex-wrap gap-3 items-center">
@@ -502,7 +519,9 @@ export default function ManageModules() {
               placeholder="Search modules by title or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 
+              dark:bg-transparent dark:border-gray-600 dark:text-white
+              "
             />
           </div>
 
@@ -511,11 +530,14 @@ export default function ManageModules() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+              dark:bg-transparent dark:border-gray-600 dark:text-white"
             >
-              <option value="date">Sort by: Recent</option>
-              <option value="title">Sort by: Title (A-Z)</option>
-              <option value="progress">Sort by: Progress</option>
+              <option value="date" className="text-black"
+              >Sort by: Recent</option>
+              <option value="title"
+              className="text-black">Sort by: Title</option>
+              <option value="progress" className="text-black">Sort by: Progress</option>
             </select>
           </div>
 
@@ -566,11 +588,11 @@ export default function ManageModules() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <div className= "rounded-lg p-5 shadow-sm border transition bg-white border-gray-300 text-gray-900 dark:bg-black/40 dark:border-black dark:text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium mb-1">📝 Draft Modules</p>
-                <p className="text-3xl font-bold text-gray-900">{draftModules.length}</p>
+                <p className="text-sm font-medium mb-1">📝 Draft Modules</p>
+                <p className="text-3xl font-bold">{draftModules.length}</p>
               </div>
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
                 <Edit className="text-gray-600" size={24} />
@@ -578,11 +600,11 @@ export default function ManageModules() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <div className= "rounded-lg p-5 shadow-sm border transition bg-white border-gray-300 text-gray-900 dark:bg-black/40 dark:border-black dark:text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium mb-1">✅ Published Modules</p>
-                <p className="text-3xl font-bold text-gray-900">{publishedModules.length}</p>
+                <p className="text-sm font-medium mb-1">✅ Published Modules</p>
+                <p className="text-3xl font-bold">{publishedModules.length}</p>
               </div>
               <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center">
                 <span className="text-2xl text-emerald-600">✓</span>
@@ -590,11 +612,11 @@ export default function ManageModules() {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
+          <div className= "rounded-lg p-5 shadow-sm border transition bg-white border-gray-300 text-gray-900 dark:bg-black/40 dark:border-black dark:text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 font-medium mb-1">⏱️ Total Duration</p>
-                <p className="text-3xl font-bold text-gray-900">{totals.minutes} min</p>
+                <p className="text-sm font-medium mb-1">⏱️ Total Duration</p>
+                <p className="text-3xl font-bold">{totals.minutes} min</p>
               </div>
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
                 <span className="text-2xl">⏱️</span>
@@ -610,7 +632,7 @@ export default function ManageModules() {
               <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white border border-gray-200 rounded-lg p-5 space-y-3">
+                  <div key={i} className="space-y-3 rounded-lg p-5 shadow-sm border transition bg-white border-gray-300 text-gray-900 dark:bg-black/40 dark:border-black dark:text-white">
                     <div className="h-5 bg-gray-200 rounded animate-pulse" />
                     <div className="h-4 bg-gray-100 rounded animate-pulse" />
                     <div className="h-2 bg-gray-200 rounded animate-pulse" />
@@ -628,15 +650,16 @@ export default function ManageModules() {
             {/* Draft Modules Section */}
             <section className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-1 h-6 bg-gray-400 rounded"></span>
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2 dark:text-white">  
+                  <span className="w-1 h-6 bg-gray-400 rounded"
+                  ></span>
                   Draft Modules
                   <span className="text-sm font-normal text-gray-500">({filteredDrafts.length})</span>
                 </h3>
                 {filteredDrafts.length > 0 && (
                   <button
                     onClick={selectAllDrafts}
-                    className="text-sm text-emerald-600 hover:text-emerald-700 font-medium"
+                    className="text-sm text-DivuBlue600 hover:text-emerald-700 font-medium"
                   >
                     {selectedDrafts.length === filteredDrafts.length ? "Deselect All" : "Select All"}
                   </button>
@@ -654,7 +677,7 @@ export default function ManageModules() {
                 </div>
               ) : (
                 <div className={viewMode === "grid" 
-                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 rounded-lg p-5 shadow-sm border transition bg-white border-gray-300 text-gray-900 dark:bg-black/40 dark:border-black dark:text-white"
                   : "space-y-3"
                 }>
                   {filteredDrafts.map(renderModuleCard)}
@@ -665,7 +688,7 @@ export default function ManageModules() {
             {/* Published Modules Section */}
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2 dark:text-white">
                   <span className="w-1 h-6 bg-emerald-600 rounded"></span>
                   Published Modules
                   <span className="text-sm font-normal text-gray-500">({filteredPublished.length})</span>

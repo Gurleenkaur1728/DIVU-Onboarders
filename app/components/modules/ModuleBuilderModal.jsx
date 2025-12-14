@@ -750,7 +750,8 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
           ) : (
             <button
               onClick={handleNext}
-              className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500"
+              className="px-3 py-1.5 rounded bg-DivuDarkGreen hover:text-black
+               text-white text-sm hover:bg-DivuLightGreen"
             >
               Complete & Review
             </button>

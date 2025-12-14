@@ -13,34 +13,15 @@ import {
   Archive,
 } from "lucide-react";
 
-/**
- * Admin – Manage Questions
- * - Employee tab: view OPEN/ANSWERED questions, answer, close, delete
- * - Archive tab: view CLOSED questions grouped by day
- * - FAQs tab: simple CRUD for FAQs
- *
- * NOTE: We DO NOT use an implicit foreign table join.
- * `employee_id` is TEXT in user_questions, so we:
- *   1) fetch questions
- *   2) collect employee_ids
- *   3) fetch users IN that set
- *   4) map locally
- */
 
 export default function ManageQuestions() {
   const [tab, setTab] = useState("employee"); // "employee" | "archive" | "faqs"
-
-  // // role for Sidebar
-  // const roleId = useMemo(() => {
-  //   const rid = Number(localStorage.getItem("role_id") || 0);
-  //   // return [roleId.ADMIN, roleId.SUPER_ADMIN].includes(rid) ? rid : roleId.ADMIN;
-  // }, []);
-
   // FAQs state
   const [faqs, setFaqs] = useState([]);
   const [newQ, setNewQ] = useState("");
   const [newA, setNewA] = useState("");
   const [editingFaq, setEditingFaq] = useState(null);
+  
 
   // Employee Qs state
   const [employeeQuestions, setEmployeeQuestions] = useState([]);
@@ -324,23 +305,43 @@ export default function ManageQuestions() {
   /* ========== Render ========== */
   return (
     <AppLayout>
-    {/* // <div
-    //   className="flex min-h-dvh bg-cover bg-center relative"
-    //   style={{ backgroundImage: "url('/bg.png')" }}
-    // > */}
-      {/* <Sidebar role={roleId} active="manage-questions" /> */}
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
+        <div
+          className="
+            mb-6 px-6 py-4 rounded-lg border shadow-sm
+            flex flex-col gap-4 md:flex-row md:items-center md:justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          {/* LEFT — TITLE */}
+          <div>
+            <h1 className="text-2xl font-bold">
+              Manage Questions
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Review, answer, archive, and manage employee questions and FAQs
+            </p>
+          </div>
 
-      <div className="flex-1 flex flex-col p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4 mb-6">
-          <h1 className="text-2xl font-bold text-emerald-950">
-            Manage Questions
-          </h1>
-        </div>
-
-        <div className="flex gap-2 mb-6">
-          <Tab label="Employee Questions" active={tab === "employee"} onClick={() => setTab("employee")} />
-          <Tab label="Answered Archive" active={tab === "archive"} onClick={() => setTab("archive")} />
-          <Tab label="FAQs" active={tab === "faqs"} onClick={() => setTab("faqs")} />
+          {/* RIGHT — TABS */}
+          <div className="flex items-center gap-2">
+            <HeaderTab
+              label="Employee"
+              active={tab === "employee"}
+              onClick={() => setTab("employee")}
+            />
+            <HeaderTab
+              label="Archive"
+              active={tab === "archive"}
+              onClick={() => setTab("archive")}
+            />
+            <HeaderTab
+              label="FAQs"
+              active={tab === "faqs"}
+              onClick={() => setTab("faqs")}
+            />
+          </div>
         </div>
 
         {tab === "employee" && (
@@ -382,10 +383,50 @@ export default function ManageQuestions() {
             onChange={(e) => setAnswerText(e.target.value)}
             rows={4}
             placeholder="Type your answer here…"
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-black"
           />
         </Modal>
       )}
+
+      {editingFaq && (
+      <Modal
+        title="Edit FAQ"
+        onClose={() => setEditingFaq(null)}
+        onSave={saveEditFaq}
+      >
+        <label className="block mb-1 text-sm font-medium text-gray-900">
+          Question
+        </label>
+        <input
+          type="text"
+          value={editingFaq.question}
+          onChange={(e) =>
+            setEditingFaq({ ...editingFaq, question: e.target.value })
+          }
+          className="
+            w-full mb-4 px-3 py-2 rounded-lg border border-gray-300
+            bg-white  dark:border-black text-black
+          "
+        />
+
+        <label className="block mb-1 text-sm font-medium text-gray-900">
+          Answer
+        </label>
+        <textarea
+          rows={4}
+          value={editingFaq.answer}
+          onChange={(e) =>
+            setEditingFaq({ ...editingFaq, answer: e.target.value })
+          }
+          className="
+            w-full mb-4 px-3 py-2 rounded-lg border border-gray-300
+            bg-white  dark:border-black text-black
+            focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500
+          "
+        />
+      </Modal>
+    )}
+
 
       {/* Confirmation Modal */}
       {confirmModal.show && (
@@ -422,6 +463,25 @@ export default function ManageQuestions() {
 
 /* ---------- Subcomponents ---------- */
 
+function HeaderTab({ label, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        px-4 py-2 rounded-md text-sm font-medium border transition
+        ${
+          active
+            ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+            : "bg-transparent border-gray-400 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue"
+        }
+      `}
+    >
+      {label}
+    </button>
+  );
+}
+
+
 function EmployeeQuestionsTab({ employeeQuestions, onAnswer, onCloseQuestion, onDeleteQuestion }) {
   if ((employeeQuestions || []).length === 0) {
     return (
@@ -432,10 +492,10 @@ function EmployeeQuestionsTab({ employeeQuestions, onAnswer, onCloseQuestion, on
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-white">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm bg-black/20">
       <table className="min-w-[720px] w-full border-collapse" aria-label="Employee Questions">
         <thead>
-          <tr className="bg-gray-100 text-left text-gray-900">
+          <tr className="bg-gray-100 text-left  dark:bg-DivuBlue/20">
             <Th>Employee</Th>
             <Th>Question</Th>
             <Th>Answer</Th>
@@ -501,10 +561,11 @@ function AnsweredArchiveTab({ groups }) {
   return (
     <div className="space-y-4">
       {groups.map(({ date, items }) => (
-        <div key={date} className="rounded-lg border border-gray-200 bg-white shadow-sm">
-          <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 border-b border-gray-200">
+        <div key={date} className="rounded-lg border border-gray-200 bg-white shadow-sm dark:bg-black/20">
+          <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-DivuBlue/20
+          border-b border-gray-200">
             <CalendarDays size={16} className="text-emerald-600" />
-            <span className="font-semibold text-gray-900">{date}</span>
+            <span className="font-semibold ">{date}</span>
             <span className="ml-2 text-gray-500 text-sm">({items.length} {items.length === 1 ? 'question' : 'questions'})</span>
           </div>
 
@@ -548,8 +609,9 @@ function AnsweredArchiveTab({ groups }) {
 function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, setEditingFaq }) {
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+      <div className="bg-white dark:bg-black/50
+       rounded-lg shadow-sm border border-gray-200 p-6 space-y-4">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
           <PlusCircle size={18} className="text-emerald-600" /> Add New FAQ
         </h3>
         <input
@@ -557,18 +619,20 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, setEdi
           value={newQ}
           onChange={(e) => setNewQ(e.target.value)}
           placeholder="Enter FAQ question"
-          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 bg-transparent" 
         />
         <textarea
           value={newA}
           onChange={(e) => setNewA(e.target.value)}
           placeholder="Enter FAQ answer"
           rows={3}
-          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+          className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-black"
         />
         <button
           onClick={addFaq}
-          className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors"
+          className="px-4 py-2 rounded-lg bg-DivuDarkGreen
+           text-white font-semibold hover:bg-DivuLightGreen hover:text-black
+            transition-colors"
         >
           Add FAQ
         </button>
@@ -607,22 +671,9 @@ function FaqsTab({ faqs, newQ, newA, setNewQ, setNewA, addFaq, deleteFaq, setEdi
   );
 }
 
-function Tab({ label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors border-b-2 ${
-        active
-          ? "border-emerald-600 text-emerald-600 bg-emerald-50"
-          : "border-transparent text-gray-600 hover:text-emerald-600 hover:bg-gray-50"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
 function Th({ children }) {
-  return <th className="px-4 py-3 font-semibold text-gray-900 border-r border-gray-200">{children}</th>;
+  return <th className="px-4 py-3 font-semibold  border-r dark:border-black/50
+  ">{children}</th>;
 }
 function Modal({ title, onClose, onSave, children }) {
   return (
@@ -637,11 +688,17 @@ function Modal({ title, onClose, onSave, children }) {
           <button onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">
             Cancel
           </button>
-          <button onClick={onSave} className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 flex items-center gap-2">
+          <button onClick={onSave} className="px-4 py-2 rounded-lg bg-DivuDarkGreen
+           text-white hover:bg-DivuLightGreen flex items-center gap-2 hover:text-black
+           ">
             <Send size={16} /> Save
           </button>
         </div>
       </div>
+      
     </div>
+
+    
+
   );
 }
