@@ -134,12 +134,23 @@ export default function ManageAdmins() {
 
   return (
     <AppLayout>
-      <div className=" min-h-screen p-8">
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Admins</h1>
-          <p className="text-gray-600">Promote users to admin or remove admin privileges</p>
-        </div>
+      <div
+        className="
+          rounded-lg shadow-sm border px-6 py-4 mb-6 transition
+          bg-white border-gray-300 text-gray-900
+          dark:bg-black/30 dark:border-black dark:text-white
+        "
+      >
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Manage Admins
+        </h1>
+
+        <p className="text-gray-600 dark:text-gray-300">
+          Promote users to admin or remove admin privileges
+        </p>
+      </div>
 
         {/* Banner */}
         {banner && (
@@ -156,22 +167,27 @@ export default function ManageAdmins() {
         ) : (
           <div className="grid md:grid-cols-2 gap-8">
             {/* ✅ Current Admins Table */}
-            <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-              <h3 className="bg-gray-50 border-b border-gray-200 text-gray-900 px-6 py-3 font-bold text-lg">
+            <div className="bg-white border border-gray-200 dark:bg-DivuDarkGreen/80 dark:border-black
+             rounded-lg shadow-sm overflow-hidden"> 
+              <h3 className="bg-gray-50 border-b border-gray-200 dark:bg-black/60 dark:border-black
+              px-6 py-3 font-bold text-lg">
                 Current Admins
               </h3>
 
               <div className="max-h-[500px] overflow-y-auto overflow-x-auto">
                 <table className="w-full text-left border-collapse">
-                  <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+                  <thead className="sticky top-0 bg-gray-50 border-b border-gray-200
+                  dark:bg-DivuBlue/80
+                   dark:border-black dark:border-b">
                     <tr>
-                      <th className="px-4 py-2 text-gray-700 font-semibold w-[30%]">
+                      <th className="px-4 py-2 text-gray-700 dark:text-gray-300
+                       font-semibold w-[30%]">
                         Name
                       </th>
-                      <th className="px-4 py-2 text-gray-700 font-semibold w-[40%]">
+                      <th className="px-4 py-2 text-gray-700 dark:text-gray-300 font-semibold w-[40%]">
                         Email
                       </th>
-                      <th className="px-4 py-2 text-gray-700 font-semibold w-[30%] text-center">
+                      <th className="px-4 py-2 text-gray-700 dark:text-gray-300 font-semibold w-[30%] text-center">
                         Action
                       </th>
                     </tr>
@@ -191,7 +207,8 @@ export default function ManageAdmins() {
                       admins.map((a, i) => (
                         <tr
                           key={a.id}
-                          className="border-b border-gray-200 hover:bg-gray-50 transition"
+                          className="border-b border-gray-200 hover:bg-gray-50 dark:bg-DivuWhite
+                          transition"
                         >
                           <td
                             className="px-4 py-3 text-sm font-medium text-gray-900 truncate max-w-[180px]"
@@ -274,7 +291,7 @@ export default function ManageAdmins() {
                           <td className="px-4 py-3 text-center">
                             <button
                               onClick={() => promote(u)}
-                              className="inline-flex items-center gap-1 px-3 py-1 rounded bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition"
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded bg-DivuDarkGreen hover:bg-DivuLightGreen hover:text-black text-white text-sm font-medium transition"
                             >
                               <Plus size={14} /> Make Admin
                             </button>

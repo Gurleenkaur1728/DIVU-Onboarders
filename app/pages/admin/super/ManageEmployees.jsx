@@ -222,7 +222,7 @@ export default function ManageEmployment() {
   return (
 
     <AppLayout>
-      <div className=" min-h-screen p-8">
+      <div className=" lex-1 min-h-dvh p-6 space-y-6">
         <div
           className="
             rounded-lg shadow-sm border px-6 py-4 mb-6 flex items-center justify-between transition
@@ -245,7 +245,8 @@ export default function ManageEmployment() {
               onClick={bulkEditAll}
               className="
                 px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border
-                bg-black text-white border-DivuDarkGreen
+                bg-transparent
+               border-DivuDarkGreen
                 hover:bg-DivuBlue hover:text-black transition-all
               "
             >
@@ -278,8 +279,9 @@ export default function ManageEmployment() {
               onClick={loadEmployees}
               className="
                 px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border
-                bg-DivuBlue text-black border-DivuDarkGreen
-                hover:bg-DivuDarkGreen hover:text-white transition-all
+                bg-transparent
+                border-DivuDarkGreen
+                hover:bg-DivuBlue hover:text-white transition-all
               "
             >
               Refresh
@@ -386,7 +388,9 @@ export default function ManageEmployment() {
           >
 
 
-          <div className="bg-white/10 border-gray-400 dark:bg-DivuDarkGreen/70 dark:border-black border rounded-lg p-4">
+          <div className="text-white border rounded-lg p-4
+            bg-gradient-to-r from-blue-500 to-blue-600
+            dark:bg-DivuDarkGreen/70 dark:from-transparent dark:to-transparent dark:border-black">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium opacity-90">Total Employees</h3>
@@ -396,7 +400,9 @@ export default function ManageEmployment() {
             </div>
           </div>
           
-          <div className="bg-white/10 border-gray-400 dark:bg-DivuDarkGreen/70 dark:border-black border rounded-lg p-4">
+          <div className="text-white border rounded-lg p-4
+            bg-gradient-to-r from-green-500 to-green-600 
+            dark:bg-DivuDarkGreen/70 dark:from-transparent dark:to-transparent dark:border-black">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium opacity-90">Complete Profiles</h3>
@@ -412,7 +418,9 @@ export default function ManageEmployment() {
             </div>
           </div>
           
-          <div className="bg-white/10 border-gray-400 dark:bg-DivuDarkGreen/70 dark:border-black border rounded-lg p-4">          
+          <div className="text-white border rounded-lg p-4
+            bg-gradient-to-r from-orange-500 to-orange-600
+            dark:bg-DivuDarkGreen/70 dark:from-transparent dark:to-transparent dark:border-black">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium opacity-90">Missing Info</h3>
@@ -424,8 +432,9 @@ export default function ManageEmployment() {
             </div>
           </div>
 
-          <div className="bg-white/10 border-gray-400 dark:bg-DivuDarkGreen/70 dark:border-black border rounded-lg p-4">          
-
+          <div className="text-white border rounded-lg p-4
+            bg-gradient-to-r from-purple-500 to-purple-600
+            dark:bg-DivuDarkGreen/70 dark:from-transparent dark:to-transparent dark:border-black">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium opacity-90">Currently Editing</h3>
@@ -599,7 +608,9 @@ export default function ManageEmployment() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => saveEmployment(employee.id)}
-                              className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-DivuBlue border-black border  
+                              className="px-3 py-1 bg-DivuDarkGreen
+                               text-white rounded text-sm hover:bg-DivuLightGreen hover:text-black
+                               border-black border  
                               "
                             >
                               Save

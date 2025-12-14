@@ -275,21 +275,42 @@ export default function ManageChecklist() {
 
   return (
     <AppLayout>
-      <div className=" min-h-screen p-8">
-        <div className="flex items-center justify-between mb-6">
+       <div className="flex-1 min-h-dvh p-6 space-y-6">
+        <div
+          className="
+            rounded-lg shadow-sm border px-6 py-4 mb-6
+            flex items-center justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          {/* LEFT — TITLE + SUBTITLE */}
           <div>
-            <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Checklist</h1>
-            <p className="text-gray-600">Create and manage checklist groups and items for employee onboarding</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Manage Checklist
+            </h1>
+
+            <p className="text-gray-600 dark:text-gray-300">
+              Create and manage checklist groups and items for employee onboarding
+            </p>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={openNewGroup}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition"
-            >
-              <Plus size={16} /> New Group
-            </button>
-          </div>
+
+          {/* RIGHT — ACTION BUTTON */}
+          <button
+            onClick={openNewGroup}
+            className="
+              flex items-center gap-2 px-4 py-2 rounded-md
+              text-sm font-semibold border
+              bg-DivuDarkGreen text-white border-black
+              hover:bg-DivuBlue
+               transition
+            "
+          >
+            <Plus size={16} />
+            New Group
+          </button>
         </div>
+
 
         {notice && <div className="mb-6 px-4 py-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg">{notice}</div>}
 
@@ -310,10 +331,18 @@ export default function ManageChecklist() {
               const open = !!expanded[g.id];
               const items = itemsByGroup[g.id] || [];
               return (
-                <div key={g.id} className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200 rounded-t-lg">
+                <div
+                  key={g.id}
+                  className="
+                    rounded-lg shadow-sm border transition
+                    bg-white border-gray-300 text-gray-900
+                    dark:bg-black/70 dark:border-black dark:text-white
+                  "
+                >
+                  <div className="flex items-center justify-between px-4 py-3 bg-DivuLightGreen/40 
+                  border-b border-gray-200 rounded-t-lg">
                     <button
-                      className="flex items-center gap-2 font-semibold text-gray-900"
+                      className="flex items-center gap-2 font-semibold "
                       onClick={() => setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))}
                       title={open ? "Collapse" : "Expand"}
                     >
@@ -365,7 +394,8 @@ export default function ManageChecklist() {
                             </tr>
                           ) : (
                             items.map((it, idx) => (
-                              <tr key={it.item_id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                              <tr key={it.item_id} className="border-b border-gray-200 hover:bg-DivuBlue/20
+                               transition">
                                 <td className="px-4 py-3">
                                   {it.is_required ? (
                                     <CheckCircle className="w-5 h-5 text-emerald-600" />
@@ -373,7 +403,7 @@ export default function ManageChecklist() {
                                     <Circle className="w-5 h-5 text-gray-400" />
                                   )}
                                 </td>
-                                <td className="px-4 py-3 text-gray-900">{it.title}</td>
+                                <td className="px-4 py-3">{it.title}</td>
                                 <td className="px-4 py-3 text-gray-600">{it.assigned || "-"}</td>
                                 <td className="px-4 py-3">
                                   <div className="flex gap-2 justify-end pr-1">
@@ -421,7 +451,8 @@ export default function ManageChecklist() {
               <button onClick={closeGroupModal} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200 transition">
                 Cancel
               </button>
-              <button onClick={saveGroup} disabled={savingGroup} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition">
+              <button onClick={saveGroup} disabled={savingGroup} className="px-4 py-2 rounded-lg bg-DivuDarkGreen text-white text-sm hover:bg-DivuLightGreen hover:text-black
+              transition">
                 { savingGroup ? "Saving..." : "Save" }
               </button>
             </div>
@@ -459,7 +490,8 @@ export default function ManageChecklist() {
               <button onClick={closeItemModal} className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm hover:bg-gray-200 transition">
                 Cancel
               </button>
-              <button onClick={saveItem} className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700 transition">
+              <button onClick={saveItem} className="px-4 py-2 rounded-lg bg-DivuDarkGreen
+               text-white text-sm hover:bg-DivuLightGreen hover:text-black transition">
                 Save
               </button>
             </div>

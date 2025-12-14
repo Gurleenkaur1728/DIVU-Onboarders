@@ -438,14 +438,28 @@ export default function ManageFeedback() {
 
   return (
     <AppLayout>    
-      <div className=" min-h-screen p-8">
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div
+          className="
+            mb-6 px-6 py-4 rounded-lg border shadow-sm
+            flex items-center justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
           <div>
-            <h1 className="text-3xl font-bold text-emerald-950 mb-2">Employee Feedback</h1>
-            <p className="text-gray-600">{feedbacks.length} total feedback submissions</p>
+            <h1 className="text-2xl font-bold">
+              Employee Feedback
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {feedbacks.length} total feedback submissions
+            </p>
           </div>
+
           <div className="flex items-center gap-3">
+
+
             {/* Notification Bell */}
             <div className="relative">
               <button
@@ -453,9 +467,10 @@ export default function ManageFeedback() {
                   setShowNotifications(!showNotifications);
                   requestNotificationPermission();
                 }}
-                className="relative p-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
+                className="relative p-2 bg-transparent hover:bg-DivuBlue
+                  rounded-lg transition-colors"
               >
-                <Bell size={20} className="text-white" />
+                <Bell size={20}/>
                 {notifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {notifications.length}
@@ -465,8 +480,15 @@ export default function ManageFeedback() {
               
               {/* Notifications Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 top-12 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                  <div className="p-3 border-b border-gray-200 bg-gray-50">
+              <div
+                className="
+                  absolute right-0 top-12 w-80 rounded-lg shadow-xl z-50 border
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-black/70 dark:border-black dark:text-gray-100
+                "
+              >
+
+              <div className="p-3 border-b border-gray-200 bg-gray-50">
                     <h4 className="font-semibold text-gray-800 flex items-center gap-2">
                       <Bell size={16} />
                       Recent Notifications
@@ -533,7 +555,8 @@ export default function ManageFeedback() {
             
             <button
               onClick={() => setShowAnalytics(!showAnalytics)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-white text-sm font-medium transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-DivuDarkGreen
+               hover:bg-DivuBlue rounded-lg text-white text-sm font-medium transition-colors flex items-center gap-2"
             >
               <BarChart3 size={16} />
               {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
@@ -543,19 +566,33 @@ export default function ManageFeedback() {
 
         {/* Analytics Dashboard */}
         {showAnalytics && (
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+        <div
+          className="
+            rounded-xl shadow-sm p-6 mb-6 border transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/40 dark:border-black dark:text-gray-100
+          "
+        >
+
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
               <TrendingUp size={20} />
               Analytics Dashboard
             </h3>
             
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/70
+                   dark:border-black dark:text-gray-100
+                "
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm font-medium">Total Feedback</p>
-                    <p className="text-2xl font-bold text-gray-900">{analytics.totalFeedback}</p>
+                    <p className=" text-sm font-medium">Total Feedback</p>
+                    <p className="text-2xl font-bold">{analytics.totalFeedback}</p>
                   </div>
                   <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
                     <Users size={24} className="text-blue-600" />
@@ -563,11 +600,19 @@ export default function ManageFeedback() {
                 </div>
               </div>
               
-              <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/70
+                   dark:border-black dark:text-gray-100
+                "
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm font-medium">Average Rating</p>
-                    <p className="text-2xl font-bold text-gray-900">{analytics.avgRating}/5</p>
+                    <p className=" text-sm font-medium">Average Rating</p>
+                    <p className="text-2xl font-bold ">{analytics.avgRating}/5</p>
                   </div>
                   <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center">
                     <Star size={24} className="text-yellow-600" />
@@ -575,11 +620,18 @@ export default function ManageFeedback() {
                 </div>
               </div>
               
-              <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/70
+                   dark:border-black dark:text-gray-100
+                "
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm font-medium">This Month</p>
-                    <p className="text-2xl font-bold text-gray-900">{analytics.monthlyTrends[analytics.monthlyTrends.length - 1]?.count || 0}</p>
+                    <p className=" text-sm font-medium">This Month</p>
+                    <p className="text-2xl font-bold ">{analytics.monthlyTrends[analytics.monthlyTrends.length - 1]?.count || 0}</p>
                   </div>
                   <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
                     <Calendar size={24} className="text-purple-600" />
@@ -587,11 +639,18 @@ export default function ManageFeedback() {
                 </div>
               </div>
               
-              <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm">
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/70
+                   dark:border-black dark:text-gray-100
+                "
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm font-medium">Positive Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className=" text-sm font-medium">Positive Rate</p>
+                    <p className="text-2xl font-bold ">
                       {analytics.totalFeedback > 0 ? 
                         Math.round((Object.entries(analytics.ratingDistribution)
                           .filter(([rating]) => parseInt(rating) >= 4)
@@ -609,8 +668,15 @@ export default function ManageFeedback() {
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Rating Distribution */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-3">Rating Distribution</h4>
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/30
+                   dark:border-black dark:text-gray-100
+                "
+              >
+                <h4 className="font-semibold mb-3">Rating Distribution</h4>
                 <div className="space-y-2">
                   {[5, 4, 3, 2, 1].map(rating => {
                     const count = analytics.ratingDistribution[rating] || 0;
@@ -621,13 +687,14 @@ export default function ManageFeedback() {
                           <span className="text-sm">{rating}</span>
                           <Star size={12} className="text-yellow-400 fill-yellow-400" />
                         </div>
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-black
+                        rounded-full h-2">
                           <div 
-                            className="bg-emerald-500 h-2 rounded-full transition-all duration-500" 
+                            className="bg-DivuLightGreen rounded-full transition-all duration-500 h-2" 
                             style={{ width: `${percentage}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm text-gray-600 w-12">{count}</span>
+                        <span className="text-sm w-12">{count}</span>
                       </div>
                     );
                   })}
@@ -635,13 +702,21 @@ export default function ManageFeedback() {
               </div>
               
               {/* Top Modules */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-3">Top Modules by Feedback</h4>
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/30
+                   dark:border-black dark:text-gray-100
+                "
+              >
+                <h4 className="font-semibold mb-3">Top Modules by Feedback</h4>
                 <div className="space-y-2">
                   {analytics.topModules.map((module, idx) => (
-                    <div key={module.name} className="flex items-center justify-between p-2 bg-white rounded border">
+                    <div key={module.name} className="flex items-center justify-between p-2 bg-white dark:bg-black
+                    rounded border">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 bg-emerald-500 text-white text-xs rounded-full flex items-center justify-center">
+                        <span className="w-6 h-6 bg-emerald-500  text-xs rounded-full flex items-center justify-center">
                           {idx + 1}
                         </span>
                         <span className="text-sm font-medium truncate">{module.name}</span>
@@ -659,13 +734,20 @@ export default function ManageFeedback() {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6 border border-gray-200">
-          <div className="space-y-4">
+        <div
+          className="
+            p-4 rounded-lg shadow-sm border transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-DivuDarkGreen/80
+              dark:border-black dark:text-gray-100
+          "
+        >
+         <div className="space-y-4">
             {/* First row - Filters */}
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center gap-2">
                 <Filter size={18} className="text-gray-600" />
-                <span className="font-medium text-gray-900">Filters:</span>
+                <span className="font-medium">Filters:</span>
               </div>
               
               {/* Search */}
@@ -674,14 +756,14 @@ export default function ManageFeedback() {
                 placeholder="Search by employee or module..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               />
               
               {/* Rating filter */}
               <select
                 value={filterRating}
                 onChange={(e) => setFilterRating(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               >
                 <option value="all">All Ratings</option>
                 <option value="5">5 Stars</option>
@@ -696,7 +778,7 @@ export default function ManageFeedback() {
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
                 placeholder="Start date"
               />
               
@@ -704,7 +786,7 @@ export default function ManageFeedback() {
                 type="date"
                 value={dateRange.end}
                 onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
                 placeholder="End date"
               />
               
@@ -712,7 +794,7 @@ export default function ManageFeedback() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               >
                 <option value="created_at">Sort by Date</option>
                 <option value="rating">Sort by Rating</option>
@@ -723,7 +805,7 @@ export default function ManageFeedback() {
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               >
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
@@ -744,7 +826,9 @@ export default function ManageFeedback() {
               <div className="flex gap-2">
                 <button
                   onClick={exportToCSV}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-4 py-2 bg-transparent border border-DivuDarkGreen
+                   rounded-lg hover:bg-DivuBlue dark:border-black
+                    transition-colors text-sm font-medium"
                 >
                   <Download size={16} />
                   Export CSV
@@ -765,7 +849,7 @@ export default function ManageFeedback() {
         </div>
 
         {/* Feedback Table */}
-        <div className="overflow-x-auto rounded-lg border border-DivuDarkGreen shadow-lg bg-white">
+        <div className="overflow-x-auto rounded-lg border border-DivuDarkGreen shadow-lg bg-black/10">
           {loading ? (
             <div className="p-8 text-center text-gray-600">
               Loading feedback...
@@ -777,7 +861,8 @@ export default function ManageFeedback() {
           ) : (
             <table className="min-w-[980px] w-full border-collapse">
               <thead>
-                <tr className="bg-gray-100 text-left text-gray-900 border-b border-gray-200">
+                
+                <tr className="bg-gray-100 text-left text-gray-900 border-b border-gray-200 dark:bg-DivuBlue/20 dark:text-white">
                   <th className="px-4 py-3 font-bold border-r border-gray-200 w-12">
                     <input
                       type="checkbox"
@@ -978,7 +1063,7 @@ export default function ManageFeedback() {
 /* ---------- Subcomponent ---------- */
 function Th({ children }) {
   return (
-    <th className="px-4 py-3 font-semibold text-gray-900 border-r border-gray-200">
+    <th className="px-4 py-3 font-semibold border-r dark:border-DivuBlue/50">
       {children}
     </th>
   );

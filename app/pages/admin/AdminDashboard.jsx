@@ -284,7 +284,7 @@ export default function AdminDashboard() {
             <button
               onClick={exportChartsCSV}
               className="px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border 
-                        bg-black text-white border-DivuDarkGreen 
+                        bg-transparent border-DivuDarkGreen 
                         hover:bg-DivuBlue hover:text-black transition-all"
             >
               Export CSV
@@ -351,7 +351,8 @@ export default function AdminDashboard() {
           <button
             onClick={generateAISummary}
             disabled={aiLoading || loading}
-            className="px-4 py-2 bg-DivuDarkGreen hover:bg-DivuBlue disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg mb-4 transition-colors"
+            className="px-4 py-2 bg-DivuDarkGreen hover:bg-DivuLightGreen hover:text-black
+             disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg mb-4 transition-colors"
           >
             {aiLoading ? "Analyzing…" : "Generate AI Summary"}
           </button>
@@ -382,7 +383,8 @@ export default function AdminDashboard() {
 
           <button
             onClick={sendReminders}
-            className="bg-DivuDarkGreen hover:bg-DivuBlue px-5 py-2 rounded-lg text-white shadow-sm transition-colors"
+            className="bg-DivuDarkGreen hover:bg-DivuLightGreen hover:text-black
+            px-5 py-2 rounded-lg text-white shadow-sm transition-colors"
           >
             Send Reminders Now
           </button>

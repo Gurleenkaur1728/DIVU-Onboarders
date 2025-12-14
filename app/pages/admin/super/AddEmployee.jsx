@@ -208,7 +208,7 @@ export default function AddEmployee() {
 
   return (
     <AppLayout>
-      <div className="bg-url/ min-h-screen p-8">       
+      <div className="bg-url/ flex-1 min-h-dvh p-6 space-y-6">
       <div
         className="
           rounded-lg shadow-sm border px-6 py-4 mb-6
@@ -219,7 +219,7 @@ export default function AddEmployee() {
       >
         {/* Left Side — Page Title */}
         <h1 className="text-2xl font-bold">
-          Manage Employees
+          Add Employees
         </h1>
 
         {/* Right Side — Tabs */}
@@ -262,7 +262,7 @@ export default function AddEmployee() {
         )}
 
         {activeTab === "form" && (
-          <div className=" border border-gray-400 bg-white/30 dark:bg-black/20 dark:border-black
+          <div className=" border border-gray-400 bg-white/30 dark:bg-white 
            rounded-lg shadow-sm p-6 space-y-4">
             {/* Auto-generate toggle */}
             <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
@@ -348,7 +348,7 @@ export default function AddEmployee() {
             <button 
               onClick={handleSubmit} 
               disabled={loading} 
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-DivuDarkGreen hover:bg-DivuBlue
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-DivuDarkGreen hover:bg-DivuLightGreen hover:text-black
                text-white font-semibold disabled:bg-gray-400 transition-colors"
             >
               <Send size={16} /> {loading ? "Sending..." : "Send Invitation"}
@@ -375,7 +375,8 @@ export default function AddEmployee() {
                 </thead>
                 <tbody>
                   {recentInvites.map((inv, idx) => (
-                    <tr key={inv.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                    <tr key={inv.id} className="border-b border-gray-200 hover:bg-DivuBlue
+                    transition-colors">
                       <td className="px-4 py-3 text-gray-900 dark:text-emerald-200 font-bold">{inv.first_name} {inv.last_name}</td>
                       <td className="px-4 py-3 text-gray-900 dark:text-white">{inv.email}</td>
                       <td className="px-4 py-3 text-gray-900 dark:text-white">{inv.position}</td>
@@ -389,7 +390,7 @@ export default function AddEmployee() {
                           {inv.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 text-sm">{new Date(inv.created_at).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm">{new Date(inv.created_at).toLocaleString()}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
                           <button 
@@ -436,5 +437,6 @@ function Tab({ label, active, onClick }) {
 }
 
 function Th({ children }) {
-  return <th className="px-4 py-3 text-left font-semibold text-gray-700">{children}</th>;
+  return <th className="px-4 py-3 text-left font-semibold bg-DivuBlue/20 dark:bg-DivuBlue/20
+  ">{children}</th>;
 }

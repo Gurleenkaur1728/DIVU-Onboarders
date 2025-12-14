@@ -263,34 +263,77 @@ export default function ManageContent() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen p-8">
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-emerald-950 mb-2">Manage Content</h1>
-          <p className="text-gray-600">Edit homepage content for Welcome, Culture, and About sections</p>
+        <div
+          className="
+            rounded-lg shadow-sm border px-6 py-4 mb-8
+            flex items-center justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          {/* LEFT – TITLE + SUBTITLE */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Manage Content
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Edit homepage sections for Welcome, Culture, and About
+            </p>
+          </div>
+
+          {/* RIGHT – HEADER TABS */}
+          <div className="flex items-center gap-3">
+
+            <button
+              onClick={() => setActiveTab("welcome")}
+              className={`
+                px-4 py-2 rounded-md text-sm font-medium border transition
+                ${
+                  activeTab === "welcome"
+                    ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                    : "bg-transparent border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue"
+                }
+              `}
+            >
+              Welcome
+            </button>
+
+            <button
+              onClick={() => setActiveTab("culture")}
+              className={`
+                px-4 py-2 rounded-md text-sm font-medium border transition
+                ${
+                  activeTab === "culture"
+                    ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                    : "bg-transparent border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue"
+                }
+              `}
+            >
+              Culture
+            </button>
+
+            <button
+              onClick={() => setActiveTab("about")}
+              className={`
+                px-4 py-2 rounded-md text-sm font-medium border transition
+                ${
+                  activeTab === "about"
+                    ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                    : "bg-transparent border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue"
+                }
+              `}
+            >
+              About
+            </button>
+
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8">
-          <Tab
-            label="Welcome"
-            active={activeTab === "welcome"}
-            onClick={() => setActiveTab("welcome")}
-          />
-          <Tab
-            label="Culture"
-            active={activeTab === "culture"}
-            onClick={() => setActiveTab("culture")}
-          />
-          <Tab
-            label="About"
-            active={activeTab === "about"}
-            onClick={() => setActiveTab("about")}
-          />
-        </div>
 
         {/* Section Editor */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 max-w-5xl">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 dark:bg-black/30 dark:border-black">
           {/* Loop sections */}
           {sections.map((s, idx) => {
             return (
@@ -309,7 +352,9 @@ export default function ManageContent() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => saveSection(idx)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-DivuDarkGreen
+                       text-white hover:bg-DivuLightGreen hover:text-black
+                       transition"
                     >
                       <Save size={16} />
                       Save
@@ -329,7 +374,7 @@ export default function ManageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Title */}
                   <label className="block">
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold">
                       Title
                     </span>
                     <input
@@ -338,13 +383,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { title: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                       rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Subtitle */}
                   <label className="block">
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold ">
                       Subtitle
                     </span>
                     <input
@@ -353,13 +399,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { subtitle: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                       rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Description */}
                   <label className="block md:col-span-2">
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold ">
                       Description
                     </span>
                     <textarea
@@ -368,13 +415,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { description: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                       rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* CTA label */}
                   <label className="block">
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold ">
                       CTA Label
                     </span>
                     <input
@@ -383,13 +431,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { cta_label: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                       rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* CTA link */}
                   <label className="block">
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold ">
                       CTA Link
                     </span>
                     <input
@@ -398,13 +447,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { cta_href: e.target.value })
                       }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                        rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Media Upload */}
                   <div className="md:col-span-2">
-                    <span className="font-semibold text-gray-700">
+                    <span className="font-semibold ">
                       Media
                     </span>
                     <div className="flex items-center gap-3 mt-2">
@@ -427,7 +477,7 @@ export default function ManageContent() {
                       }
                       className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     />
-                    <span className="text-gray-700">Active</span>
+                    <span>Active</span>
                   </label>
                 </div>
               </div>
@@ -437,7 +487,8 @@ export default function ManageContent() {
           {/* ADD NEW SECTION */}
           <button
             onClick={addDraftSection}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition mt-4"
+            className="flex items-center gap-2 px-4 py-2 bg-DivuDarkGreen
+             text-white rounded-lg hover:bg-DivuBlue transition mt-4"
           >
             <Plus size={18} />
             Add Section

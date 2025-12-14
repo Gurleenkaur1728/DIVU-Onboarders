@@ -106,21 +106,40 @@ export default function Records() {
 
   return (
     <AppLayout>
-      <div className=" min-h-screen p-8">
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-emerald-950 mb-2">Audit Records</h1>
-            <p className="text-gray-600">Track all user activity and system events</p>
-          </div>
-          <button
-            onClick={loadAllLogs}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
-            title="Refresh Logs"
-          >
-            <RefreshCcw size={16} /> Refresh
-          </button>
+      <div
+        className="
+          rounded-lg shadow-sm border px-6 py-4 mb-6 flex items-center justify-between transition
+          bg-white border-gray-300 text-gray-900
+          dark:bg-black/30 dark:border-black dark:text-white
+        "
+      >
+        {/* LEFT SIDE — TITLE + SUBTITLE */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Audit Records
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            Track all user activity and system events
+          </p>
         </div>
+
+        {/* RIGHT SIDE — REFRESH BUTTON */}
+        <button
+          onClick={loadAllLogs}
+          className="
+            flex items-center gap-2 px-4 py-2 text-sm font-semibold border
+            bg-DivuDarkGreen text-white border-black rounded-md
+            hover:bg-DivuBlue transition
+          "
+          title="Refresh Logs"
+        >
+          <RefreshCcw size={16} />
+          Refresh
+        </button>
+      </div>
+
 
         {/* Search */}
         <div className="flex items-center gap-3 mb-6">
