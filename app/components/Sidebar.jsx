@@ -41,7 +41,7 @@ function Item({ icon: Icon, label, route, isActive, collapsed, disabled }) {
         group flex items-center 
         ${collapsed ? "justify-center px-3" : "px-5"}
         py-3.5 rounded-md transition-all duration-300
-        ${isActive ? "bg-emerald-800 text-white border-l-4 border-emerald-400" 
+        ${isActive ? "bg-DivuDarkGreen/70 text-white border-l-4 border-emerald-400" 
                    : "text-emerald-200 hover:bg-emerald-800/40 hover:text-emerald-100"}
         ${disabled ? "opacity-40 pointer-events-none" : ""}
       `}
@@ -79,7 +79,7 @@ export default function Sidebar({ role, collapsed, setCollapsed, mobileOpen, set
           fixed top-0 left-0
           h-screen
           ${collapsed ? "w-20" : "w-64"}
-          flex flex-col bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950
+          flex flex-col bg-gradient-to-b from-[#101f1b] via-[#152f28] to-[#101f1b]
           z-40
           transition-all duration-300
           overflow-y-auto custom-scrollbar

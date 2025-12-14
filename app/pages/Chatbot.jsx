@@ -36,7 +36,7 @@ export default function Chatbot() {
 
   return (
     <AppLayout>
-      <div className="bg-white min-h-screen p-8">
+      <div className=" min-h-screen p-8">
         <h1 className="text-3xl font-bold text-emerald-950 mb-6">
           AI Assistant
         </h1>

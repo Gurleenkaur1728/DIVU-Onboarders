@@ -161,7 +161,7 @@ export default function ForgotPassword() {
   return (
     <div
       className="flex min-h-dvh items-center justify-center bg-[#0c1214] bg-cover bg-center p-6"
-      style={{ backgroundImage: "url('/bg.png')" }}
+      style={{ backgroundImage: "url('/bg3.png')" }}
     >
       <AuthCard>
         <div className="flex justify-center mb-4">

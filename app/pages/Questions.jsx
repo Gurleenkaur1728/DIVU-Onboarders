@@ -144,7 +144,7 @@ export default function Questions() {
  
   return (
     <AppLayout>
-      <div className="bg-white min-h-screen p-8">
+      <div className=" min-h-screen p-8">
         {/* Header */}
         <h1 className="text-3xl font-bold text-emerald-950 mb-6">Questions & FAQs</h1>
  

@@ -267,10 +267,16 @@ export default function AdminDashboard() {
       <main
         className="flex-1 min-h-dvh p-6 space-y-6 "
       >
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-4 mb-6 flex items-center justify-between">
+      <div
+        className="
+          rounded-lg shadow-sm border px-6 py-4 mb-6 flex items-center justify-between transition
+          bg-white border-gray-300 text-gray-900
+          dark:bg-black/30 dark:border-black dark:text-white
+        "
+      >
           
           {/* Title */}
-          <h1 className="text-2xl font-bold text-emerald-950">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Admin Dashboard - Overview
           </h1>
 
@@ -278,7 +284,7 @@ export default function AdminDashboard() {
             <button
               onClick={exportChartsCSV}
               className="px-3 py-1.5 rounded-full text-xs md:text-sm font-medium border 
-                        bg-white/90 text-emerald-900 border-emerald-200 
+                        bg-black text-white border-DivuDarkGreen 
                         hover:bg-DivuBlue hover:text-black transition-all"
             >
               Export CSV
@@ -308,7 +314,7 @@ export default function AdminDashboard() {
                   <YAxis stroke="#6b7280" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "white",
+                      backgroundColor: "grey",
                       border: "1px solid #e5e7eb",
                       borderRadius: "8px",
                     }}
@@ -334,8 +340,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* AI Summary */}
-        <div className="bg-white/60 p-6 rounded-lg shadow-sm border border-DivuLightGreen">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">AI Summary</h2>
+        <div
+          className="
+            p-6 rounded-lg shadow-sm border transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/60 dark:border-DivuLightGreen dark:text-white
+          "
+        >
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">AI Summary</h2>
           <button
             onClick={generateAISummary}
             disabled={aiLoading || loading}
@@ -346,11 +358,11 @@ export default function AdminDashboard() {
 
           {aiSummary ? (
             <div
-              className="prose max-w-none text-gray-900"
+              className="prose max-w-none text-gray-900 dark:text-white"
               dangerouslySetInnerHTML={{ __html: aiSummary }}
             />
           ) : (
-            <p className="text-gray-600 italic">
+            <p className="text-gray-600 dark:text-gray-300 italic">
               {loading
                 ? "Loading data…"
                 : "No AI summary generated yet. Click the button above to create one."}
@@ -359,8 +371,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* ⭐⭐ SEND REMINDERS BUTTON SECTION ⭐⭐ */}
-        <div className="bg-white/60 p-6 rounded-lg shadow-sm border border-DivuLightGreen">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Send Email Reminders</h2>
+        <div
+          className="
+            p-6 rounded-lg shadow-sm border transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/60 dark:border-DivuLightGreen dark:text-white
+          "
+        >
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Send Email Reminders</h2>
 
           <button
             onClick={sendReminders}
@@ -377,17 +395,30 @@ export default function AdminDashboard() {
 // Small reusable components
 function StatCard({ label, value }) {
   return (
-    <div className="bg-DivuDarkGreen rounded-lg shadow-sm border border-gray-200 p-5">
-      <h2 className="text-sm font-bold text-slate-100 mb-1">{label}</h2>
-      <p className="text-3xl font-bold text-white">{value}</p>
+    <div
+      className="
+        rounded-lg p-5 shadow-sm border transition
+        bg-white border-gray-300 text-gray-900
+        dark:bg-DivuDarkGreen/70 dark:border-black dark:text-white
+      "
+    >
+      <h2 className="text-sm font-bold mb-1 text-gray-900 dark:text-white">{label}</h2> 
+      <p className="text-3xl font-bold text-gray-900 dark:text-white">{value}</p>
     </div>
   );
 }
 
+
 function ChartCard({ title, children }) {
   return (
-    <div className="bg-DivuWhite p-6 rounded-lg shadow-sm border border-DivuLightGreen">
-      <h2 className="font-semibold text-gray-900 mb-4">{title}</h2>
+    <div
+      className="
+        rounded-lg p-6 shadow-sm border transition
+        bg-white border-gray-300 text-gray-900
+        dark:bg-black/60 dark:border-DivuDarkGreen dark:text-white
+      "
+    >
+      <h2 className="font-semibold mb-4">{title}</h2>
       {children}
     </div>
   );
