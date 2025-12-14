@@ -208,16 +208,52 @@ export default function AddEmployee() {
 
   return (
     <AppLayout>
-      <div className="bg-url/ min-h-screen p-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-emerald-950 mb-2">Add Employee</h1>
-          <p className="text-gray-600">Send invitations to new employees</p>
-        </div>
+      <div className="bg-url/ min-h-screen p-8">       
+      <div
+        className="
+          rounded-lg shadow-sm border px-6 py-4 mb-6
+          flex items-center justify-between transition
+          bg-white border-gray-300 text-gray-900
+          dark:bg-black/30 dark:border-black dark:text-white
+        "
+      >
+        {/* Left Side — Page Title */}
+        <h1 className="text-2xl font-bold">
+          Manage Employees
+        </h1>
 
-        <div className="flex gap-2 mb-8">
-          <Tab label="Add Employee" active={activeTab === "form"} onClick={() => setActiveTab("form")} />
-          <Tab label="Recent Invitations" active={activeTab === "recent"} onClick={() => setActiveTab("recent")} />
+        {/* Right Side — Tabs */}
+        <div className="flex items-center gap-3">
+
+          {/* Add Employee Tab */}
+          <button
+            onClick={() => setActiveTab("form")}
+            className={`
+              px-4 py-2 rounded-md text-sm font-medium border transition
+              ${activeTab === "form"
+                ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                : "bg-transparent border-black border hover:bg-DivuBlue"
+              }
+            `}
+          >
+            Add Employee
+          </button>
+
+          {/* Recent Invitations Tab */}
+          <button
+            onClick={() => setActiveTab("recent")}
+            className={`
+              px-4 py-2 rounded-md text-sm font-medium border transition
+              ${activeTab === "recent"
+                ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                : "bg-transparent border-black border hover:bg-DivuBlue"
+              }
+            `}
+          >
+            Recent Invitations
+          </button>
         </div>
+      </div>
 
         {notification && (
           <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-lg shadow-lg">
@@ -226,7 +262,8 @@ export default function AddEmployee() {
         )}
 
         {activeTab === "form" && (
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 max-w-2xl space-y-4">
+          <div className=" border border-gray-400 bg-white/30 dark:bg-black/20 dark:border-black
+           rounded-lg shadow-sm p-6 space-y-4">
             {/* Auto-generate toggle */}
             <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
               <input 
@@ -234,7 +271,7 @@ export default function AddEmployee() {
                 id="autoGenerate" 
                 checked={autoGenerateId} 
                 onChange={(e) => setAutoGenerateId(e.target.checked)}
-                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500" 
+                className="w-4 h-4 rounded focus:ring-emerald-500" 
               />
               <label htmlFor="autoGenerate" className="text-sm font-medium text-gray-700 cursor-pointer">
                 Auto-generate Employee ID (Format: 001, 002, 003, ...)
@@ -253,7 +290,8 @@ export default function AddEmployee() {
                 onChange={handleChange} 
                 disabled={autoGenerateId}
                 className={`border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
-                  autoGenerateId ? "bg-gray-100 cursor-not-allowed" : ""
+                  autoGenerateId ? "bg-gray-100 cursor-not-allowed text-black"
+                   : ""
                 }`}
               />
               {autoGenerateId && (
@@ -270,7 +308,8 @@ export default function AddEmployee() {
                 placeholder="Enter first name" 
                 value={formData.firstName} 
                 onChange={handleChange} 
-                className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                className="border border-gray-300 rounded-lg px-3 py-2 dark:placeholder-slate-600 text-black
+                w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
               />
             </div>
             <div>
@@ -280,7 +319,8 @@ export default function AddEmployee() {
                 placeholder="Enter last name" 
                 value={formData.lastName} 
                 onChange={handleChange} 
-                className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                className="border border-gray-300 rounded-lg px-3 py-2 dark:placeholder-slate-600 text-black
+                 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
               />
             </div>
             <div>
@@ -290,7 +330,8 @@ export default function AddEmployee() {
                 placeholder="Enter email address" 
                 value={formData.email} 
                 onChange={handleChange} 
-                className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                className="border border-gray-300 rounded-lg px-3 py-2 dark:placeholder-slate-600 text-black
+                w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
               />
             </div>
             <div>
@@ -300,13 +341,15 @@ export default function AddEmployee() {
                 placeholder="Enter position" 
                 value={formData.position} 
                 onChange={handleChange} 
-                className="border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+                className="border border-gray-300 rounded-lg px-3 py-2 dark:placeholder-slate-600 text-black
+                 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
               />
             </div>
             <button 
               onClick={handleSubmit} 
               disabled={loading} 
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 disabled:bg-gray-400 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-DivuDarkGreen hover:bg-DivuBlue
+               text-white font-semibold disabled:bg-gray-400 transition-colors"
             >
               <Send size={16} /> {loading ? "Sending..." : "Send Invitation"}
             </button>
@@ -315,20 +358,27 @@ export default function AddEmployee() {
         )}
 
         {activeTab === "recent" && (
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+          <div className="border border-gray-400 bg-white/30 dark:bg-black/20 dark:border-black
+           rounded-lg shadow-sm p-6 space-y-4">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50 border-b border-gray-200
+                 dark:bg-black/60 dark:border-gray-700 dark:text-white">
                   <tr>
-                    <Th>Name</Th><Th>Email</Th><Th>Position</Th><Th>Status</Th><Th>Created</Th><Th>Actions</Th>
+                    <Th>Name</Th>
+                    <Th>Email</Th>
+                    <Th>Position</Th>
+                    <Th>Status</Th>
+                    <Th>Created</Th>
+                    <Th>Actions</Th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentInvites.map((inv, idx) => (
                     <tr key={inv.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-gray-900">{inv.first_name} {inv.last_name}</td>
-                      <td className="px-4 py-3 text-gray-900">{inv.email}</td>
-                      <td className="px-4 py-3 text-gray-900">{inv.position}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-emerald-200 font-bold">{inv.first_name} {inv.last_name}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-white">{inv.email}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-white">{inv.position}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           inv.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :

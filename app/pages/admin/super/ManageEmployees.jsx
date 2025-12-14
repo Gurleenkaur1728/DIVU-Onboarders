@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../../../src/lib/supabaseClient.js";
 import AppLayout from "../../../../src/AppLayout.jsx";
 
+
 export default function ManageEmployment() {
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
@@ -222,52 +223,81 @@ export default function ManageEmployment() {
 
     <AppLayout>
       <div className=" min-h-screen p-8">
-        <div className="mb-6 flex justify-between items-center">
+        <div
+          className="
+            rounded-lg shadow-sm border px-6 py-4 mb-6 flex items-center justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
           <div>
-            <h1 className="text-3xl font-bold text-emerald-950 mb-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               Manage Employment Details
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               Assign and manage employment information for all users
             </p>
           </div>
-          
+
           <div className="flex gap-3">
+
             <button
               onClick={bulkEditAll}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              disabled={filteredEmployees.length === 0}
+              className="
+                px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border
+                bg-black text-white border-DivuDarkGreen
+                hover:bg-DivuBlue hover:text-black transition-all
+              "
             >
               Edit All ({filteredEmployees.length})
             </button>
-            
+
             <button
               onClick={bulkCancelAll}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              disabled={Object.keys(editingEmployees).length === 0}
+              className="
+                px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border
+                bg-gray-700 text-white border-gray-900
+                hover:bg-gray-500 transition-all
+              "
             >
               Cancel All
             </button>
 
             <button
               onClick={bulkSaveAll}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              disabled={Object.keys(editingEmployees).length === 0}
+              className="
+                px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border
+                bg-DivuDarkGreen text-white border-black
+                hover:bg-DivuBlue transition-all
+              "
             >
               Save All ({Object.keys(editingEmployees).length})
             </button>
 
             <button
               onClick={loadEmployees}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              className="
+                px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border
+                bg-DivuBlue text-black border-DivuDarkGreen
+                hover:bg-DivuDarkGreen hover:text-white transition-all
+              "
             >
               Refresh
             </button>
           </div>
         </div>
 
+
+
+
         {/* Search and Filter Controls */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-4 mb-6">
+        <div
+          className="
+            rounded-lg shadow-sm border p-4 mb-6 transition
+            bg-white border-gray-300 
+            dark:bg-black/30 dark:border-black 
+          "
+        >
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
@@ -277,7 +307,7 @@ export default function ManageEmployment() {
                 placeholder="Search by name, email, or employee ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               />
             </div>
             
@@ -287,7 +317,7 @@ export default function ManageEmployment() {
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               >
                 <option value="">All Departments</option>
                 <option value="Technology">Technology</option>
@@ -305,7 +335,9 @@ export default function ManageEmployment() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+                text-black"
+                      
               >
                 <option value="">All Employees</option>
                 <option value="complete">Complete Profiles</option>
@@ -345,8 +377,16 @@ export default function ManageEmployment() {
             </label>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4">
+          <div
+            className="
+              grid grid-cols-1 md:grid-cols-4 gap-4 mb-6
+              rounded-lg p-5 shadow-sm transition
+             text-gray-900 dark:text-white
+            "
+          >
+
+
+          <div className="bg-white/10 border-gray-400 dark:bg-DivuDarkGreen/70 dark:border-black border rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium opacity-90">Total Employees</h3>
@@ -356,7 +396,7 @@ export default function ManageEmployment() {
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-4">
+          <div className="bg-white/10 border-gray-400 dark:bg-DivuDarkGreen/70 dark:border-black border rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium opacity-90">Complete Profiles</h3>
@@ -372,7 +412,7 @@ export default function ManageEmployment() {
             </div>
           </div>
           
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg p-4">
+          <div className="bg-white/10 border-gray-400 dark:bg-DivuDarkGreen/70 dark:border-black border rounded-lg p-4">          
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium opacity-90">Missing Info</h3>
@@ -383,8 +423,9 @@ export default function ManageEmployment() {
               </div>
             </div>
           </div>
-          
-          <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-4">
+
+          <div className="bg-white/10 border-gray-400 dark:bg-DivuDarkGreen/70 dark:border-black border rounded-lg p-4">          
+
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-medium opacity-90">Currently Editing</h3>
@@ -396,12 +437,18 @@ export default function ManageEmployment() {
             </div>
           </div>
         </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div
+          className="
+            rounded-lg shadow-sm border overflow-hidden transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/40 dark:border-black dark:text-white
+          "
+        >
           {Object.keys(editingEmployees).length > 0 && (
-            <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+            <div className="bg-DivuBlue/30 dark:bg-DivuDarkBlue/70 border-b border-blue-200 px-4 py-3">
               <div className="flex items-center justify-between">
-                <span className="text-blue-800 font-medium">
+                <span className="text-blue-800 font-medium dark:text-white
+                ">
                   Currently editing {Object.keys(editingEmployees).length} employee(s)
                 </span>
                 <span className="text-blue-600 text-sm">
@@ -413,28 +460,41 @@ export default function ManageEmployment() {
           
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left p-4 font-semibold text-gray-700">Employee</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Employee ID</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Hire Date</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Department</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Position</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Manager</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Type</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Salary</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Actions</th>
+            <thead
+                className="
+                  bg-gray-50 border-b border-gray-300 text-gray-700
+                  dark:bg-black/60 dark:border-gray-700 dark:text-white 
+                "
+              >
+                <tr
+                  className="
+                    border-b transition-colors
+                   dark:hover:bg-black/30
+                    border-gray-200 dark:border-gray-700
+                  "
+                >
+
+                  <th className="text-left p-4 font-semibold">Employee ID</th>
+                  <th className="text-left p-4 font-semibold">Hire Date</th>
+                  <th className="text-left p-4 font-semibold">Department</th>
+                  <th className="text-left p-4 font-semibold">Position</th>
+                  <th className="text-left p-4 font-semibold">Manager</th>
+                  <th className="text-left p-4 font-semibold">Type</th>
+                  <th className="text-left p-4 font-semibold">Salary</th>
+                  <th className="text-left p-4 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredEmployees.map((employee) => (
-                  <tr key={employee.id} className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
-                    editingEmployees[employee.id] ? 'bg-blue-50 border-blue-200' : ''
+                  <tr key={employee.id} className={`border-b border-gray-200 transition-colors hover:bg-DivuLightGreen/50
+                    ${
+                    editingEmployees[employee.id] ? 'bg-DivuBlue/80 border-DivuLightGreen/80 focus-visible:border-DivuLightGreen/80' : ''
                   }`}>
                     <td className="p-4">
                       <div>
-                        <div className="font-medium text-gray-900">{employee.name}</div>
-                        <div className="text-sm text-gray-500">{employee.email}</div>
+                        <div className="font-medium">{employee.name}</div>
+                        <div className="text-sm 
+                        ">{employee.email}</div>
                       </div>
                     </td>
                     
@@ -449,7 +509,7 @@ export default function ManageEmployment() {
                               updateFormData(employee.id, 'employee_id', e.target.value)
                             }
                             placeholder="Employee ID"
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                            className="w-full px-2 py-1 border border-gray-500 rounded text-sm text-black"
                           />
                         </td>
                         <td className="p-4">
@@ -460,7 +520,7 @@ export default function ManageEmployment() {
                               updateFormDataWithAutoSave(employee.id, 'hire_date', e.target.value) :
                               updateFormData(employee.id, 'hire_date', e.target.value)
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-2 py-1 border border-gray-500 rounded text-sm focus:ring-2 focus:ring-emerald-500 text-black"
                           />
                         </td>
                         <td className="p-4">
@@ -470,7 +530,7 @@ export default function ManageEmployment() {
                               updateFormDataWithAutoSave(employee.id, 'department', e.target.value) :
                               updateFormData(employee.id, 'department', e.target.value)
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-2 py-1 border border-gray-500 rounded text-sm focus:ring-2 focus:ring-emerald-500 text-black"
                           >
                             <option value="">Select...</option>
                             <option value="Technology">Technology</option>
@@ -490,7 +550,7 @@ export default function ManageEmployment() {
                               updateFormData(employee.id, 'position', e.target.value)
                             }
                             placeholder="Job Title"
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-2 py-1 border border-gray-500 rounded text-sm focus:ring-2 focus:ring-emerald-500 text-black"
                           />
                         </td>
                         <td className="p-4">
@@ -502,7 +562,7 @@ export default function ManageEmployment() {
                               updateFormData(employee.id, 'manager', e.target.value)
                             }
                             placeholder="Manager Name"
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-2 py-1 border border-gray-500 rounded text-sm focus:ring-2 focus:ring-emerald-500 text-black"
                           />
                         </td>
                         <td className="p-4">
@@ -512,7 +572,7 @@ export default function ManageEmployment() {
                               updateFormDataWithAutoSave(employee.id, 'employment_type', e.target.value) :
                               updateFormData(employee.id, 'employment_type', e.target.value)
                             }
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-2 py-1 border border-gray-500 rounded text-sm focus:ring-2 focus:ring-emerald-500 text-black"
                           >
                             <option value="">Select...</option>
                             <option value="Full-Time">Full-Time</option>
@@ -530,7 +590,7 @@ export default function ManageEmployment() {
                               updateFormData(employee.id, 'salary', e.target.value)
                             }
                             placeholder="Annual Salary"
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-emerald-500"
+                            className="w-full px-2 py-1 border border-gray-500 rounded text-sm focus:ring-2 focus:ring-emerald-500 text-black"
                             min="0"
                             step="1000"
                           />
@@ -539,13 +599,14 @@ export default function ManageEmployment() {
                           <div className="flex gap-2">
                             <button
                               onClick={() => saveEmployment(employee.id)}
-                              className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+                              className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-DivuBlue border-black border  
+                              "
                             >
                               Save
                             </button>
                             <button
                               onClick={() => cancelEditing(employee.id)}
-                              className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+                              className="px-3 py-1 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 border border-black"
                             >
                               Cancel
                             </button>
@@ -555,36 +616,36 @@ export default function ManageEmployment() {
                     ) : (
                       <>
                         <td className="p-4 text-sm">
-                          {employee.employee_id || <span className="text-red-500">Not assigned</span>}
+                          {employee.employee_id || <span className="text-red-900 font-bold">Not assigned</span>}
                         </td>
                         <td className="p-4 text-sm">
                           {employee.hire_date 
                             ? new Date(employee.hire_date).toLocaleDateString()
-                            : <span className="text-red-500">Not set</span>
+                            : <span className="text-red-900 font-bold">Not set</span>
                           }
                         </td>
                         <td className="p-4 text-sm">
-                          {employee.department || <span className="text-red-500">Not assigned</span>}
+                          {employee.department || <span className="text-red-800 font-bold">Not assigned</span>}
                         </td>
                         <td className="p-4 text-sm">
-                          {employee.position || <span className="text-red-500">Not assigned</span>}
+                          {employee.position || <span className="text-red-800 font-bold">Not assigned</span>}
                         </td>
                         <td className="p-4 text-sm">
-                          {employee.manager || <span className="text-red-500">Not assigned</span>}
+                          {employee.manager || <span className="text-red-800 font-bold">Not assigned</span>}
                         </td>
                         <td className="p-4 text-sm">
-                          {employee.employment_type || <span className="text-red-500">Not set</span>}
+                          {employee.employment_type || <span className="text-red-800 font-bold">Not set</span>}
                         </td>
                         <td className="p-4 text-sm">
                           {employee.salary 
                             ? `$${employee.salary.toLocaleString()}/year`
-                            : <span className="text-orange-500">Not specified</span>
+                            : <span className="text-orange-800 font-bold">Not specified</span>
                           }
                         </td>
                         <td className="p-4">
                           <button
                             onClick={() => startEditing(employee)}
-                            className="px-3 py-1 bg-emerald-600 text-white rounded text-sm hover:bg-emerald-700"
+                            className="px-3 py-1 bg-DivuDarkGreen text-white rounded text-sm hover:bg-DivuBlue border-black border"
                           >
                             Edit
                           </button>
@@ -628,6 +689,7 @@ export default function ManageEmployment() {
           </div>
         )}
       </div>
+      
     </AppLayout>
   );
 }
