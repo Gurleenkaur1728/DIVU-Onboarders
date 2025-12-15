@@ -191,11 +191,10 @@ export default function Checklist() {
  
   return (
     <AppLayout>
-    <div className="p-6  min-h-screen">
-      <div className="max-w-7xl mx-auto">
+    <div className="flex-1 min-h-dvh p-6 space-y-6 mt-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Onboarding Checklist</h1>
+          <h1 className="text-3xl font-bold mb-2">Onboarding Checklist</h1>
           <p className="text-gray-600">Track and complete your onboarding tasks, {me.name || "Employee"}!</p>
         </div>
  
@@ -222,11 +221,15 @@ export default function Checklist() {
               return (
                 <div
                   key={g.id}
-                  className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden"
-                >
+                    className="
+                      rounded-lg shadow-sm border transition
+                      bg-white border-gray-300 text-gray-900
+                      dark:bg-black/70 dark:border-black dark:text-white
+                  "
+                  >
                   {/* Group header */}
                   <button
-                    className="w-full flex items-center gap-3 px-6 py-4 bg-emerald-100 text-gray-900 hover:bg-emerald-200 transition-colors duration-200"
+                    className="w-full flex items-center gap-3 px-6 py-4 bg-emerald-100  hover:bg-emerald-200 transition-colors duration-200 dark:bg-DivuLightGreen/40 rounded-t-lg"
                     onClick={() =>
                       setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))
                     }
@@ -251,7 +254,9 @@ export default function Checklist() {
                           {g.items.map((it, idx) => (
                             <tr
                               key={it.assignedId}
-                              className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
+                              className="border-b border-gray-100 hover:bg-DivuLightGreen/50 
+                               transition-colors duration-200
+                              dark:hover:bg-DivuBlue/20"
                             >
                               <td className="px-4 py-3 text-center" style={{width: '100px'}}>
                                 <button
@@ -267,9 +272,9 @@ export default function Checklist() {
                                 </button>
                               </td>
 
-                              <td className="px-4 py-3 text-gray-900">{it.title}</td>
-                              <td className="px-4 py-3 text-gray-700" style={{width: '150px'}}>{fmt(it.assigned_on)}</td>
-                              <td className="px-4 py-3 text-gray-700" style={{width: '150px'}}>{fmt(it.completed_at)}</td>
+                              <td className="px-4 py-3">{it.title}</td>
+                              <td className="px-4 py-3 " style={{width: '150px'}}>{fmt(it.assigned_on)}</td>
+                              <td className="px-4 py-3 " style={{width: '150px'}}>{fmt(it.completed_at)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -282,7 +287,6 @@ export default function Checklist() {
           </div>
         )}
       </div>
-    </div>
     </AppLayout>
   );
 }
