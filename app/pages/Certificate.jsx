@@ -302,14 +302,14 @@ export default function Certificate() {
         className="bg-white/95 p-10 sm:p-12 rounded-2xl shadow-2xl text-center w-[90%] max-w-3xl border-[10px] border-yellow-400 relative"
       >
         {/* Back Button */}
-<div className="absolute top-4 left-4">
-  <button
-    onClick={() => navigate(-1)}
-    className="px-4 py-2 bg-white hover:bg-gray-100 text-emerald-700 rounded-lg shadow font-medium"
-  >
-    ←
-  </button>
-</div>
+        <div className="absolute top-4 left-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 bg-white hover:bg-gray-100 text-emerald-700 rounded-lg shadow font-medium"
+          >
+            ← Back
+          </button>
+        </div>
 
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl font-bold text-emerald-900 mb-3 tracking-wide">

@@ -122,10 +122,10 @@ export default function Sidebar({ role, collapsed, setCollapsed, mobileOpen, set
         {role === ROLES.USER && (
           <>
             <Item icon={Home} label="Home Page" route="/home" isActive={location.pathname === "/home"} collapsed={collapsed} />
-            <Item icon={BookOpen} label="Modules" route="/modules" isActive={location.pathname === "/modules" || location.pathname.startsWith("/modules/")} collapsed={collapsed} />
             <Item icon={List} label="Checklist" route="/checklist" isActive={location.pathname === "/checklist"} collapsed={collapsed} />
-            <Item icon={CalendarDays} label="Events" route="/events" isActive={location.pathname === "/events"} collapsed={collapsed} />
+            <Item icon={BookOpen} label="Modules" route="/modules" isActive={location.pathname === "/modules" || location.pathname.startsWith("/modules/")} collapsed={collapsed} />
             <Item icon={MessageSquare} label="Feedback" route="/feedback" isActive={location.pathname === "/feedback"} collapsed={collapsed} />
+            <Item icon={CalendarDays} label="Events" route="/events" isActive={location.pathname === "/events"} collapsed={collapsed} />
             <Item icon={BarChart2} label="Progress" route="/progress" isActive={location.pathname === "/progress"} collapsed={collapsed} />
             <Item icon={HelpCircle} label="Questions" route="/questions" isActive={location.pathname === "/questions"} collapsed={collapsed} />
             <Item icon={MessageSquare} label="AI Assistant" route="/chatbot" isActive={location.pathname === "/chatbot"} collapsed={collapsed}/>
@@ -140,6 +140,8 @@ export default function Sidebar({ role, collapsed, setCollapsed, mobileOpen, set
           <>
             <Item icon={LayoutDashboard} label="Dashboard" route="/admin/dashboard" isActive={location.pathname === "/admin/dashboard"} collapsed={collapsed} />
 
+            <div className="mx-1 mb-4 h-[1px] mt-6 bg-emerald-700/40">-</div>
+
             {role === ROLES.SUPER_ADMIN && (
               <>
                 <div className="mx-4 my-2 h-[1px] bg-emerald-700/40" />
@@ -152,12 +154,15 @@ export default function Sidebar({ role, collapsed, setCollapsed, mobileOpen, set
                 <div className="mx-4 my-2 h-[1px] bg-emerald-700/40" />
               </>
             )}
+
+            <div className="mx-1 mb-4 h-[1px] mt-6 bg-emerald-700/40">-</div>
+
             <Item icon={FileEdit} label="Manage Content" route="/admin/content" isActive={location.pathname === "/admin/content"} collapsed={collapsed}/>
             <Item icon={ListChecks} label="Manage Checklist" route="/admin/checklist" isActive={location.pathname === "/admin/checklist"} collapsed={collapsed}/>
             <Item icon={UserCheckIcon} label="Assign Templates" route="/admin/assign-templates" isActive={location.pathname === "/admin/assign-templates"} collapsed={collapsed}/>
             <Item icon={BookOpen} label="Manage Modules" route="/admin/modules" isActive={location.pathname === "/admin/modules"} collapsed={collapsed}/>
-            <Item icon={CalendarPlus} label="Manage Events" route="/admin/manage-events" isActive={location.pathname === "/admin/manage-events"} collapsed={collapsed}/>
             <Item icon={MessageSquare} label="View Feedback" route="/admin/feedback" isActive={location.pathname === "/admin/feedback"} collapsed={collapsed}/>
+            <Item icon={CalendarPlus} label="Manage Events" route="/admin/manage-events" isActive={location.pathname === "/admin/manage-events"} collapsed={collapsed}/>
             <Item icon={BarChart2} label="Employee Progress" route="/admin/progress" isActive={location.pathname === "/admin/progress"} collapsed={collapsed}/>
             <Item icon={BookOpen} label="Manage Questions" route="/admin/manage-questions" isActive={location.pathname === "/admin/manage-questions"} collapsed={collapsed}/>
             <Item icon={User} 

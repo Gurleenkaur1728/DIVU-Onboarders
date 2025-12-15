@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import AppLayout from "../../../src/AppLayout.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
 import { useToast } from "../../context/ToastContext.jsx";
+import { sanitizeHtml } from "../../../src/lib/sanitizeHtml.js";
 
 import {
   BarChart,
@@ -209,7 +210,7 @@ export default function AdminDashboard() {
         context: "admin_global_summary",
       };
 
-      const res = await fetch("http://localhost:5050/api/ai/summary", { 
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/ai/summary`, { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -360,7 +361,8 @@ export default function AdminDashboard() {
           {aiSummary ? (
             <div
               className="prose max-w-none dark:prose-invert text-gray-800 dark:text-gray-200"
-              dangerouslySetInnerHTML={{ __html: aiSummary }}
+              dangerouslySetInnerHTML={{ 
+                __html: sanitizeHtml(aiSummary) }}
             />
           ) : (
             <p className="text-gray-600 dark:text-gray-300 italic">
