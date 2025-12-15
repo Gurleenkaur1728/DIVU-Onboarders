@@ -103,7 +103,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
   /* load draft */
   useEffect(() => {
     const loadDraft = async () => {
-      const { data, error } = await supabase.from("module_drafts").select("*").eq("id", draftId).single();
+      const { data, error } = await supabase.from("module_drafts").select("*").eq("id", draftId).single().order('order_index', { ascending: true });
       if (error) {
         console.error(error);
         showToast("Failed to load draft.", "error");
@@ -354,7 +354,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
       console.log("Module creation process completed, deleting draft...");
 
       // Delete the draft since we've successfully published
-      await supabase.from("module_drafts").delete().eq("id", draftId);
+      await supabase.from("module_drafts").delete().eq("id", draftId).order('order_index', { ascending: true });
       setSaving(false);
       showToast("Module created successfully!", "success");
 
@@ -373,7 +373,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
   /* abandon draft */
   const abandonModule = async () => {
     try {
-      await supabase.from("module_drafts").delete().eq("id", draftId);
+      await supabase.from("module_drafts").delete().eq("id", draftId).order('order_index', { ascending: true });
       showToast("Draft abandoned and deleted.", "info");
     } catch (err) {
       console.error(err);

@@ -184,10 +184,10 @@ export default function ManageModules() {
           onClick={async () => {
             try {
               if (m.status === "draft") {
-                await supabase.from("module_drafts").delete().eq("id", m.id);
+                await supabase.from("module_drafts").delete().eq("id", m.id).order('order_index', { ascending: true });
                 setDraftModules((p) => p.filter((x) => x.id !== m.id));
               } else {
-                await supabase.from("modules").delete().eq("id", m.id);
+                await supabase.from("modules").delete().eq("id", m.id).order('order_index', { ascending: true });
                 setPublishedModules((p) => p.filter((x) => x.id !== m.id));
               }
               setModules((p) => p.filter((x) => x.id !== m.id));

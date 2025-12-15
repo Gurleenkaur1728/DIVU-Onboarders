@@ -39,7 +39,8 @@ export default function Modules() {
         .from("modules")
         .select("*")
         .eq("is_active", true)
-        .order("created_at", { ascending: true });
+        .order("order_index", { ascending: true });
+
 
       if (modulesError) throw modulesError;
 
@@ -127,11 +128,13 @@ export default function Modules() {
           const statusOrder = { "completed": 0, "in-progress": 1, "not-started": 2 };
           return statusOrder[a.status] - statusOrder[b.status];
         case "dateAssigned":
-        default:
           // Sort by date assigned (newest first)
           if (a.assigned === "-") return 1;
           if (b.assigned === "-") return -1;
           return new Date(b.assigned) - new Date(a.assigned);
+          case "serial":
+    default:
+      return a.order_index - b.order_index;
       }
     });
 
