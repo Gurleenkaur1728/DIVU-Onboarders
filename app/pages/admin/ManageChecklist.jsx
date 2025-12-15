@@ -340,7 +340,7 @@ export default function ManageChecklist() {
                   "
                 >
                   <div className="flex items-center justify-between px-4 py-3 bg-DivuLightGreen/40 
-                  border-b border-gray-200 rounded-t-lg">
+                   rounded-t-lg">
                     <button
                       className="flex items-center gap-2 font-semibold "
                       onClick={() => setExpanded((s) => ({ ...s, [g.id]: !s[g.id] }))}

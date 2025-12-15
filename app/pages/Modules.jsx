@@ -14,7 +14,7 @@ export default function Modules() {
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("dateAssigned");
+  const [sortBy, setSortBy] = useState("moduleAscending");
 
   // Load published modules from Supabase
   useEffect(() => {
@@ -88,6 +88,7 @@ export default function Modules() {
 
         return {
           ...module,
+          moduleOrder: getModuleOrder(module.title),
           assigned: dateAssigned,
           completed: dateCompleted,
           feedback: feedbackStatus,
@@ -124,9 +125,11 @@ export default function Modules() {
       switch (sortBy) {
         case "alphabetical":
           return a.title.localeCompare(b.title);
-        case "completion":
+          
+        case "completion": {
           const statusOrder = { "completed": 0, "in-progress": 1, "not-started": 2 };
           return statusOrder[a.status] - statusOrder[b.status];
+        }
         case "dateAssigned":
           // Sort by date assigned (newest first)
           if (a.assigned === "-") return 1;
@@ -182,6 +185,8 @@ export default function Modules() {
               onChange={(e) => setSortBy(e.target.value)}
               className="px-4 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-black"
             >
+              <option value="moduleAscending">Module Number Ascending</option>
+              <option value="moduleDescending">Module Number Descending</option>
               <option value="dateAssigned">Sort by Date Assigned</option>
               <option value="alphabetical">Sort Alphabetically</option>
               <option value="completion">Sort by Completion</option>
@@ -282,3 +287,12 @@ export default function Modules() {
     </AppLayout>
   );
 }
+
+/* -------------------- HELPERS -------------------- */
+
+function getModuleOrder(title = "") {
+  const match = title.match(/\d+/); // finds first number
+  return match ? Number(match[0]) : Infinity;
+}
+
+
