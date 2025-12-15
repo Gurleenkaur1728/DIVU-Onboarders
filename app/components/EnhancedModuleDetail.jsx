@@ -179,7 +179,8 @@ function ProgressBar({ percentage, className = "" }) {
   return (
     <div className={`w-full bg-gray-200 rounded-full h-3 ${className}`}>
       <div 
-        className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-out"
+        className="bg-gradient-to-r from-emerald-500 to-emerald-600
+         h-3 rounded-full transition-all duration-500 ease-out"
         style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
       />
     </div>
@@ -590,7 +591,8 @@ export default function EnhancedModuleDetail() {
               <div className="flex justify-end mt-6">
                 <button
                   onClick={() => markSectionComplete(section.id)}
-                  className="group bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                  className="group bg-DivuDarkGreen
+                   hover:bg-DivuLightGreen text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 hover:shadow-lg hover:text-black"
                 >
                   <span className="flex items-center gap-2">
                     <span>Mark Complete</span>
@@ -1503,22 +1505,13 @@ export default function EnhancedModuleDetail() {
 
   return (
     <AppLayout>
-    {/* // <div
-    //   className="flex min-h-dvh"
-    //   style={{
-    //     backgroundImage: "url('/bg.png')",
-    //     backgroundSize: "cover",
-    //     backgroundPosition: "center",
-    //   }}
-    // >
-    //   <Sidebar role={roleId} /> */}
-
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 mt-8">
         {/* Header Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+        <div className="bg-white dark:bg-black/60 dark:border-white border
+         rounded-2xl shadow-xl p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">{module.title}</h1>
+              <h1 className="text-3xl font-bold mb-2">{module.title}</h1>
               <p className="text-gray-600">{module.description}</p>
             </div>
             <div className="text-right">
@@ -1553,7 +1546,7 @@ export default function EnhancedModuleDetail() {
                   disabled={!isPageUnlocked}
                   className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${
                     isCurrentPage 
-                      ? 'bg-emerald-600 text-white' 
+                      ? 'bg-DivuLightGreen text-black'
                       : isPageUnlocked
                         ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                         : 'bg-gray-50 text-gray-400 cursor-not-allowed'
@@ -1567,7 +1560,7 @@ export default function EnhancedModuleDetail() {
         </div>
 
         {/* Current Page Content */}
-        <div className="space-y-6">
+        <div className="space-y-6 text-black">
           {currentPageData.sections?.map((section, sectionIndex) => 
             renderSection(section, sectionIndex)
           )}

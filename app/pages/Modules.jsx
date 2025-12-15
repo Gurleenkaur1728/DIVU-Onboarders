@@ -135,9 +135,13 @@ export default function Modules() {
           if (a.assigned === "-") return 1;
           if (b.assigned === "-") return -1;
           return new Date(b.assigned) - new Date(a.assigned);
-          case "serial":
-    default:
-      return a.order_index - b.order_index;
+
+        case "moduleDescending":
+          return getModuleOrder(b.title) - getModuleOrder(a.title);
+
+        case "moduleAscending":
+          default:
+            return getModuleOrder(a.title) - getModuleOrder(b.title);   
       }
     });
 
@@ -187,7 +191,7 @@ export default function Modules() {
             >
               <option value="moduleAscending">Module Number Ascending</option>
               <option value="moduleDescending">Module Number Descending</option>
-              <option value="dateAssigned">Sort by Date Assigned</option>
+              <option value="dateAssigned">Sort by Date Started</option>
               <option value="alphabetical">Sort Alphabetically</option>
               <option value="completion">Sort by Completion</option>
             </select>
@@ -211,7 +215,7 @@ export default function Modules() {
                 <tr>
                   <th className="p-4 font-semibold" style={{width: '80px'}}>Status</th>
                   <th className="p-4 font-semibold">Module</th>
-                  <th className="p-4 font-semibold" style={{width: '150px'}}>Date Assigned</th>
+                  <th className="p-4 font-semibold" style={{width: '150px'}}>Date Started</th>
                   <th className="p-4 font-semibold" style={{width: '150px'}}>Date Completed</th>
                   <th className="p-4 font-semibold text-center" style={{width: '150px'}}>Feedback</th>
                 </tr>
@@ -229,7 +233,8 @@ export default function Modules() {
                   filteredModules.map((m, idx) => (
                     <tr 
                       key={m.id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
+                      className="border-b border-gray-100 hover:bg-DivuBlue/40
+                       transition-colors duration-200"
                     >
                       {/* Status */}
                       <td className="p-4 text-center" style={{width: '80px'}}>
@@ -253,8 +258,8 @@ export default function Modules() {
                       </td>
 
                       {/* Dates */}
-                      <td className="p-4 text-sm text-gray-700" style={{width: '150px'}}>{m.assigned}</td>
-                      <td className="p-4 text-sm text-gray-700" style={{width: '150px'}}>{m.completed}</td>
+                      <td className="p-4 text-sm" style={{width: '150px'}}>{m.assigned}</td>
+                      <td className="p-4 text-sm" style={{width: '150px'}}>{m.completed}</td>
 
                       {/* Feedback */}
                       <td className="p-4 text-center" style={{width: '150px'}}>

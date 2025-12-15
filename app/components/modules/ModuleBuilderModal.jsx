@@ -92,6 +92,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
   // pages: [{id, name, sections:[section]}]
   const [pages, setPages] = useState([]);
   const [activePageIndex, setActivePageIndex] = useState(-1);
+  const [originalModuleId, setOriginalModuleId] = useState(null);
 
   // inline type chooser (Info step + Pages step)
   const [selectTypeOpen, setSelectTypeOpen] = useState(false);
@@ -103,19 +104,27 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
   /* load draft */
   useEffect(() => {
     const loadDraft = async () => {
-      const { data, error } = await supabase.from("module_drafts").select("*").eq("id", draftId).single().order('order_index', { ascending: true });
-      if (error) {
+      const { data, error } = await supabase
+        .from("module_drafts")
+        .select("*")
+        .eq("id", draftId)
+        .maybeSingle();
+
+        if (error) {
         console.error(error);
         showToast("Failed to load draft.", "error");
         onClose();
         return;
       }
-      setTitle(data.title || "");
+  setTitle(data.title || "");
       setDescription(data.description || "");
       const dd = data.draft_data || {};
       const draftPages = Array.isArray(dd.pages) ? dd.pages : [];
       setPages(draftPages);
-      setStep(Number(data.current_step ?? 0));
+  setStep(Number(data.current_step ?? 0));
+  // Support either a direct module_id column or a fallback embedded id inside draft_data
+  const fallbackModuleId = data?.draft_data?.original_module_id ?? null;
+  setOriginalModuleId(data.module_id ?? fallbackModuleId ?? null);
       if (draftPages.length) setActivePageIndex(0);
       setLoading(false);
     };
@@ -329,8 +338,39 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
     });
 
     try {
+      if (originalModuleId) {
+        // Update existing published module
+        const { error: updateErr } = await supabase
+          .from("modules")
+          .update({
+            title: title.trim(),
+            description: description.trim(),
+            estimated_time_min: 10,
+            pages: pages,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", originalModuleId)
+          .select()
+          .single();
+
+        if (updateErr) {
+          console.error("Module update error:", updateErr);
+          showToast(`Error updating module: ${updateErr.message}`, "error");
+          setSaving(false);
+          return;
+        }
+
+        // Delete the draft now that we've updated the published module
+        await supabase.from("module_drafts").delete().eq("id", draftId).order('order_index', { ascending: true });
+        setSaving(false);
+        showToast("Module updated successfully!", "success");
+        if (typeof onModuleCreated === "function") onModuleCreated();
+        onClose();
+        return;
+      }
+
       // Create the module with pages data directly in the pages column
-      const { data: moduleData, error: modErr } = await supabase
+      const { error: modErr } = await supabase
         .from("modules")
         .insert({
           title: title.trim(),
@@ -348,10 +388,6 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
         setSaving(false);
         return;
       }
-
-      console.log("Module created successfully with pages data:", moduleData);
-
-      console.log("Module creation process completed, deleting draft...");
 
       // Delete the draft since we've successfully published
       await supabase.from("module_drafts").delete().eq("id", draftId).order('order_index', { ascending: true });
@@ -528,7 +564,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
                   onChange={(e) => onChangeTitle(e.target.value)}
                   onBlur={() => persistDraft()}
                   placeholder="Module Title (max 100 words)"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
                 />
                 <div className="text-xs text-gray-600">{words(title)}/100 words</div>
               </div>
@@ -540,7 +576,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
                   onChange={(e) => onChangeDescription(e.target.value)}
                   onBlur={() => persistDraft()}
                   placeholder="Module Description (max 250 words)"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
                 />
                 <div className="text-xs text-gray-600">{words(description)}/250 words</div>
               </div>

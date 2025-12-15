@@ -69,7 +69,7 @@ export default function PageEditor({
           {sections.map((section, idx) => (
             <div
               key={section.id}
-              className="border rounded-xl p-3 bg-white shadow-sm"
+              className="border rounded-xl p-3 bg-white shadow-sm text-black"
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="font-semibold text-emerald-900 text-sm capitalize">
