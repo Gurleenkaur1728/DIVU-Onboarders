@@ -301,13 +301,7 @@ export default function Certificate() {
         id="certificate-container"
         className="bg-white/95 p-10 sm:p-12 rounded-2xl shadow-2xl text-center w-[90%] max-w-3xl border-[10px] border-yellow-400 relative"
       >
-{/* Back Button */}
-<button
-  onClick={() => navigate(-1)}
-  className="absolute top-6 left-6 px-4 py-2 bg-white/90 hover:bg-white text-emerald-700 rounded-lg shadow-md font-medium transition z-50"
->
-  ← 
-</button>
+
 
         {/* Title */}
         <h1 className="text-3xl sm:text-4xl font-bold text-emerald-900 mb-3 tracking-wide">
