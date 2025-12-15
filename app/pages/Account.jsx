@@ -126,7 +126,7 @@ localStorage.setItem("lang", val);
         // Handle profile image
         if (userData.profile_image) {
           const { data } = supabase.storage
-            .from("profile_images")
+            .from("profile_photo")
             .getPublicUrl(userData.profile_image);
           setProfileImage(data.publicUrl);
           setProfileImagePath(userData.profile_image);
@@ -261,7 +261,37 @@ localStorage.setItem("lang", val);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) setProfileImage(URL.createObjectURL(file));
+    if (!file) return;
+
+    try {
+      // Show preview immediately
+      setProfileImage(URL.createObjectURL(file));
+
+      // Upload to Supabase storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.profile_id}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile_photo')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data } = supabase.storage
+        .from('profile_photo')
+        .getPublicUrl(filePath);
+
+      // Update state with storage path
+      setProfileImagePath(filePath);
+      setProfileImage(data.publicUrl);
+
+      console.log('✅ Image uploaded to storage:', filePath);
+    } catch (error) {
+      console.error('❌ Error uploading image:', error);
+      alert('Failed to upload image: ' + error.message);
+    }
   };
 
   const triggerFileInput = () => {
@@ -278,7 +308,6 @@ localStorage.setItem("lang", val);
       setBusy(true);
       const updates = {
         name,
-        updated_at: new Date().toISOString(),
       };
 
       // Add profile image if uploaded
