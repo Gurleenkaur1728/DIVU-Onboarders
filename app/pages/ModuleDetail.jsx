@@ -451,16 +451,6 @@ export default function ModuleDetail() {
 
   return (
     <AppLayout>
-
-    {/* // <div
-    //   className="flex min-h-dvh"
-    //   style={{
-    //     backgroundImage: "url(${'/bg.png'})",
-    //     backgroundSize: "cover",
-    //     backgroundPosition: "center",
-    //   }}
-    // > */}
-
       <div className="flex-1 flex justify-center items-start p-10">
         <div className="bg-white rounded-2xl shadow-2xl w-4/5 max-w-5xl p-12 text-gray-800">
           {/* Header */}

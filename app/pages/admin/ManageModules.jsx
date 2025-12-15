@@ -41,12 +41,11 @@ export default function ManageModules() {
       try {
         const profileId = localStorage.getItem("profile_id");
 
-        // Fetch published modules
-        let modulesQuery = supabase
+        // Fetch published modules (do not restrict by profile so admins see all)
+        const modulesQuery = supabase
           .from("modules")
           .select("*")
           .order("created_at", { ascending: false });
-        if (profileId) modulesQuery = modulesQuery.eq("created_by", profileId);
 
         const { data: publishedData, error: publishedErr } = await modulesQuery;
         if (publishedErr) throw publishedErr;
@@ -63,6 +62,7 @@ export default function ManageModules() {
 
         // Normalize drafts
         const formattedDrafts = (draftData || []).map((d) => ({
+          ...d,
           id: d.id,
           title: d.title || "(Untitled Draft)",
           description: d.description || "No description yet.",
@@ -138,6 +138,86 @@ export default function ManageModules() {
     } catch (err) {
       console.error(err);
       showToast("Could not open builder.", "error");
+    }
+  };
+
+  // Create or open a draft prefilled from a published module so published modules can be edited
+  const createOrOpenDraftFromPublished = async (moduleId) => {
+    const profileId = localStorage.getItem("profile_id");
+    if (!profileId) {
+      showToast("Please log in to edit a module.", "error");
+      return;
+    }
+
+    try {
+      // Check if a draft already exists for this published module (optionally created by this user)
+      const { data: existingDraft } = await supabase
+        .from("module_drafts")
+        .select("*")
+        .eq("module_id", moduleId)
+        .maybeSingle();
+
+      if (existingDraft && existingDraft.id) {
+        setDraftId(existingDraft.id);
+        setBuilderOpen(true);
+        showToast("Resuming draft for published module.", "info");
+        return;
+      }
+
+      // Load published module data
+      const { data: modData, error: modErr } = await supabase
+        .from("modules")
+        .select("*")
+        .eq("id", moduleId)
+        .maybeSingle();
+
+      if (modErr || !modData) throw modErr || new Error("Published module not found");
+
+      // Create a draft seeded from the published module. Try with module_id first,
+      // but fall back to embedding original id inside draft_data if the schema
+      // doesn't include module_id.
+      let newDraft, createErr;
+      ({ data: newDraft, error: createErr } = await supabase
+        .from("module_drafts")
+        .insert({
+          user_id: profileId,
+          title: modData.title || "",
+          description: modData.description || "",
+          current_step: 0,
+          progress_percent: modData.progress ?? 100,
+          draft_data: { pages: modData.pages || [] },
+          status: "draft",
+          module_id: moduleId,
+        })
+        .select("id")
+        .single());
+
+      // If insert failed (e.g., column module_id missing), retry without module_id
+      if (createErr) {
+        console.warn("Failed to create draft with module_id, retrying without module_id:", createErr.message || createErr);
+        ({ data: newDraft, error: createErr } = await supabase
+          .from("module_drafts")
+          .insert({
+            user_id: profileId,
+            title: modData.title || "",
+            description: modData.description || "",
+            current_step: 0,
+            progress_percent: modData.progress ?? 100,
+            draft_data: { pages: modData.pages || [], original_module_id: moduleId },
+            status: "draft",
+          })
+          .select("id")
+          .single());
+      }
+
+      if (createErr) throw createErr;
+
+      setDraftId(newDraft.id);
+      setBuilderOpen(true);
+      showToast("Draft created from published module. You can now edit and republish.", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Could not open published module for editing.", "error");
     }
   };
 
@@ -334,27 +414,6 @@ export default function ManageModules() {
       });
     };
 
-    // Legacy delete (old code to be removed)
-    const _handleDeleteOld = async () => {
-      const confirmMsg = m.status === "draft" 
-        ? `Delete draft "${m.title}"? This cannot be undone.`
-        : `Delete published module "${m.title}"? This will remove it for all employees.`;
-
-      try {
-        if (m.status === "draft") {
-          await supabase.from("module_drafts").delete().eq("id", m.id);
-          setDraftModules((p) => p.filter((x) => x.id !== m.id));
-        } else {
-          await supabase.from("modules").delete().eq("id", m.id);
-          setPublishedModules((p) => p.filter((x) => x.id !== m.id));
-        }
-        setModules((p) => p.filter((x) => x.id !== m.id));
-        showToast("Module deleted.", "success");
-      } catch (e) {
-        console.error(e);
-        showToast("Delete failed.", "error");
-      }
-    };
 
     const formatDate = (date) => {
       if (!date) return "N/A";
@@ -459,10 +518,14 @@ export default function ManageModules() {
         {/* Edit + Delete Buttons */}
         <div className="flex gap-2 mt-auto pt-3 border-t border-gray-100">
           <button
-            onClick={() => openBuilder(m.status === "draft" ? m.id : null)}
+            onClick={() => {
+              if (m.status === "draft") openBuilder(m.id);
+              else if (m.status === "published") createOrOpenDraftFromPublished(m.id);
+              else openBuilder(null);
+            }}
             className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition"
           >
-            <Edit size={16} /> {m.status === "draft" ? "Continue" : "Edit"}
+            <Edit size={16} /> {m.status === "draft" ? "Continue" : m.status === "published" ? "Edit" : "Edit"}
           </button>
 
           <button

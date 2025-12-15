@@ -168,14 +168,6 @@ export default function ModuleComplete() {
 
   return (
     <AppLayout>
-    {/* <div
-      className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
-      style={{
-        backgroundImage: "url('/bg.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    > */}
       <div className="bg-white p-12 rounded-2xl shadow-2xl text-center w-[500px] max-w-xl">
         <h1 className="text-3xl font-bold text-emerald-900 mb-4">
           🎉 Congratulations!
