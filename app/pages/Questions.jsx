@@ -144,22 +144,51 @@ export default function Questions() {
  
   return (
     <AppLayout>
-      <div className=" min-h-screen p-8">
+      <div className="flex-1 min-h-dvh p-6 space-y-6 mt-8">
         {/* Header */}
-        <h1 className="text-3xl font-bold text-emerald-950 mb-6">Questions & FAQs</h1>
- 
-        {notice && (
-          <div className="mb-6 px-4 py-3 bg-emerald-50 text-emerald-900 border border-emerald-200 rounded-lg">
-            {notice}
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          {/* LEFT */}
+          <div>
+            <h1 className="text-3xl font-bold text-emerald-950 dark:text-emerald-100">
+              Questions & FAQs
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Browse common questions or ask one of your own
+            </p>
           </div>
-        )}
- 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <Tab label="FAQs" active={tab === "faqs"} onClick={() => setTab("faqs")} />
-          <Tab label="Ask Question" active={tab === "ask"} onClick={() => setTab("ask")} />
+
+          {/* RIGHT — TABS */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setTab("faqs")}
+              className={`
+                px-4 py-2 rounded-lg text-sm font-medium transition
+                ${
+                  tab === "faqs"
+                    ? "bg-DivuLightGreen text-black border border-black"
+                    : "bg-white/80 text-gray-700 dark:bg-black/30 dark:text-gray-300 hover:bg-DivuBlue border border-black dark:hover:bg-DivuBlue"  
+                }
+              `}
+            >
+              FAQs
+            </button>
+
+            <button
+              onClick={() => setTab("ask")}
+              className={`
+                px-4 py-2 rounded-lg text-sm font-medium transition
+                ${
+                  tab === "ask"
+                    ? "bg-DivuLightGreen text-black border border-black"
+                    : "bg-white/80 text-gray-700 dark:bg-black/30 dark:text-gray-300 hover:bg-DivuBlue border border-black"
+                }
+              `}
+            >
+              Ask Question
+            </button>
+          </div>
         </div>
- 
+
         {/* Tabs Content */}
         {tab === "faqs" ? (
           <FaqsTab faqs={faqs} />
@@ -184,12 +213,12 @@ function FaqsTab({ faqs }) {
       {faqs.map((faq) => (
         <div
           key={faq.id}
-          className="bg-white border border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow"
+          className="bg-white border dark:bg-black/80 border-gray-200 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow"
         >
-          <h3 className="font-semibold flex items-center gap-2 text-gray-900 text-lg">
+          <h3 className="font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100 text-lg">
             <HelpCircle size={18} className="text-emerald-600" /> {faq.question}
           </h3>
-          <p className="text-gray-700 mt-3 leading-relaxed">
+          <p className="text-gray-700 dark:text-gray-400 mt-3 leading-relaxed">
             {faq.answer || <span className="italic text-gray-400">No answer yet.</span>}
           </p>
         </div>
@@ -204,8 +233,8 @@ function FaqsTab({ faqs }) {
 function AskQuestionTab({ myQuestions, newQ, setNewQ, askQuestion, loading }) {
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
-        <h3 className="font-semibold flex items-center gap-2 text-gray-900 text-lg mb-4">
+      <div className="bg-white border dark:bg-DivuDarkGreen/30 border-gray-200 rounded-lg shadow-sm p-6">
+        <h3 className="font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100 text-lg mb-4">
           <MessageSquare size={18} className="text-emerald-600" /> Ask a New Question
         </h3>
         <textarea
@@ -218,16 +247,17 @@ function AskQuestionTab({ myQuestions, newQ, setNewQ, askQuestion, loading }) {
         <button
           onClick={askQuestion}
           disabled={loading}
-          className="mt-3 px-6 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+          className="mt-3 px-6 py-2 rounded-lg bg-DivuDarkGreen border border-black text-white font-medium hover:bg-DivuLightGreen hover:text-black
+           transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
         >
           <Send size={16} className="inline mr-2" /> {loading ? "Submitting..." : "Submit Question"}
         </button>
       </div>
  
-      <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm">
+      <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-black/60">
         <table className="min-w-[500px] w-full border-collapse text-sm md:text-base" aria-label="My questions">
           <thead>
-            <tr className="bg-emerald-800 text-left text-white">
+            <tr className="bg-DivuLightGreen text-black text-left">
               <Th>Question</Th>
               <Th>Answer</Th>
               <Th>Status</Th>
@@ -237,14 +267,16 @@ function AskQuestionTab({ myQuestions, newQ, setNewQ, askQuestion, loading }) {
             {myQuestions.map((q, idx) => (
               <tr
                 key={q.id}
-                className={`text-emerald-950 ${
-                  idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"
-                } hover:bg-emerald-200/60 transition-colors duration-200`}
+                className={`text-emerald-950 dark:text-emerald-100  hover:bg-DivuLightGreen/50 dark:hover:bg-DivuLightGreen/40
+                  ${
+                  idx % 2 === 0 ? "bg-emerald-50/90 dark:bg-black/30" : "bg-emerald-100/80 dark:bg-black/50"
+                }
+                 transition-colors duration-200`}
               >
                 <td className="px-4 py-3">{q.question}</td>
                 <td className="px-4 py-3">
                   {q.answer ? (
-                    <span className="text-emerald-700 font-medium">{q.answer}</span>
+                    <span className="text-emerald-700 dark:text-emerald-300 font-medium">{q.answer}</span>
                   ) : (
                     <span className="text-gray-400 italic">No answer yet</span>
                   )}
