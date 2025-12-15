@@ -125,8 +125,7 @@ export default function Events() {
  
         {/* Month calendar (compact rectangular; day cells square) */}
         {view === "month" && (
-          <div className="bg-white dark:bg-black/20
-           border-DivuDarkGreen border-2 rounded-xl shadow w-full overflow-x-auto">
+          <div className="bg-white dark:bg-black/20 border-DivuDarkGreen border-2 rounded-xl shadow w-full overflow-x-auto">
             <div className="grid grid-cols-7 bg-DivuLightGreen text-black text-[11px] font-bold uppercase min-w-[600px]">
               {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
                 <div key={d} className="px-2 py-2 text-center">{d}</div>
@@ -142,7 +141,8 @@ export default function Events() {
                   <div
                     key={i}
                     className={`h-44 border p-1 text-left hover:bg-DivuBlue dark:hover:bg-DivuBlue/70
-                       ${inMonth ? "bg-white dark:bg-black/30":"bg-gray-300 dark:bg-DivuDarkGreen/40                      text-gray-400               "}   `}
+                       ${inMonth ? "bg-white dark:bg-black/30":"bg-gray-300 dark:bg-DivuDarkGreen/40 text-gray-400"} 
+                         `}
                   >
                     <div className="flex items-center justify-between">
                       <span className={`text-xs font-semibold ${inMonth ? "text-emerald-900 dark:text-emerald-300 ":"text-gray-400"}`}>{d.getDate()}</span>

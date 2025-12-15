@@ -333,7 +333,7 @@ localStorage.setItem("lang", val);
       setBusy(false);
     }
   };
-const [collapsed, setCollapsed] = useState(false);
+
   const signOut = () => {
     logout();
     nav("/", { replace: true });
@@ -741,7 +741,7 @@ const [collapsed, setCollapsed] = useState(false);
 
               <div className="grid grid-cols-1 gap-4 max-w-lg">
                 <label className="block">
-                  <span className="block text-sm font-semibold text-gray-900 mb-1">
+                  <span className="block text-sm font-semibold  mb-1">
                     Display Name
                   </span>
                   <input
@@ -754,7 +754,7 @@ const [collapsed, setCollapsed] = useState(false);
                 </label>
 
                 <label className="block">
-                  <span className="block text-sm font-semibold text-gray-900 mb-1">
+                  <span className="block text-sm font-semibold  mb-1">
                     Email
                   </span>
                   <input
@@ -766,7 +766,7 @@ const [collapsed, setCollapsed] = useState(false);
                 </label>
 
                 <label className="block">
-                  <span className="block text-sm font-semibold text-gray-900 mb-1">
+                  <span className="block text-sm font-semibold  mb-1">
                     Employee ID
                   </span>
                   <input
@@ -778,7 +778,7 @@ const [collapsed, setCollapsed] = useState(false);
                 </label>
 
                 <label className="block">
-                  <span className="block text-sm font-semibold text-gray-900 mb-1">
+                  <span className="block text-sm font-semibold  mb-1">
                     Role
                   </span>
                   <input
@@ -800,7 +800,9 @@ const [collapsed, setCollapsed] = useState(false);
                 <button
                   onClick={save}
                   disabled={busy}
-                  className="px-6 py-3 rounded-lg font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+                  className="px-6 py-3 rounded-lg font-medium text-white bg-DivuDarkGreen 
+                   hover:bg-DivuLightGreen hover:text-black
+                   transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
                 >
                   {busy ? "Saving…" : "Save Changes"}
                 </button>

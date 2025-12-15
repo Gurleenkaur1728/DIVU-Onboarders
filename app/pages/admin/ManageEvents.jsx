@@ -286,9 +286,8 @@ export default function ManageEvents() {
               Loading events...
             </div>
           ) : (
-          <div className="bg-white dark:bg-black/30
-           border border-gray-200 rounded-xl shadow w-full overflow-x-auto">
-            <div className="grid grid-cols-7 bg-gray-100 text-gray-700 text-[11px] font-bold uppercase min-w-[600px] dark:bg-DivuBlue/20 dark:text-white
+          <div className="bg-white dark:bg-black/20 border-DivuDarkGreen border-2 rounded-xl shadow w-full overflow-x-auto">
+            <div className="grid grid-cols-7 bg-DivuLightGreen text-blacktext-[11px] font-bold uppercase min-w-[600px] dark:bg-DivuBlue/20 dark:text-white
             ">
               {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
                 <div key={d} className="px-2 py-2 text-center border-r border-gray-200 last:border-r-0">{d}</div>
@@ -304,15 +303,13 @@ export default function ManageEvents() {
                   <button
                     key={i}
                     onClick={() => onDayClick(d)}
-                    className={`h-24 border border-gray-200 p-1 text-left transition ${
-                      inMonth ? "bg-white hover:bg-emerald-50" : "bg-gray-50 hover:bg-gray-100"
-                    }`}
+                    className={`h-44 border p-1 text-left hover:bg-DivuBlue dark:hover:bg-DivuBlue/70
+                       ${inMonth ? "bg-white dark:bg-black/30":"bg-gray-300 dark:bg-DivuDarkGreen/40 text-gray-400"} 
+                         `}
                     title="Add event"
                   >
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs font-semibold ${
-                        inMonth ? "text-gray-900" : "text-gray-400"
-                      }`}>{d.getDate()}</span>
+                      <span className={`text-xs font-semibold`}>{d.getDate()}</span>
                       {isTodayFlag && (
                         <span className="text-[9px] px-1 border border-emerald-500 bg-emerald-100 text-emerald-700 rounded">Today</span>
                       )}
@@ -360,8 +357,8 @@ export default function ManageEvents() {
                 <div className="bg-white rounded-xl border border-gray-200 shadow p-4 text-sm text-gray-600">No upcoming events.</div>
               ) : (
                 monthGroups.map((g, idx) => (
-                  <div key={idx} className="bg-white rounded-xl border border-gray-200 shadow overflow-hidden">
-                    <div className="px-4 py-2 bg-gray-100 text-gray-900 text-sm font-bold">
+                  <div key={idx} className="bg-white dark:bg-black/70 rounded-xl border border-black shadow overflow-hidden">
+                    <div className="px-4 py-2 bg-DivuLightGreen text-gray-900 text-sm font-bold">
                       {g.label}
                     </div>
                     {g.items.length === 0 ? (
@@ -370,8 +367,8 @@ export default function ManageEvents() {
                       <ul className="divide-y divide-gray-200">
                         {g.items.map((ev) => (
                           <li key={ev.id} className="p-3 hover:bg-emerald-50 cursor-pointer transition-colors" onClick={() => openEdit(ev)}>
-                            <div className="font-semibold text-gray-900 truncate">{ev.name}</div>
-                            <div className="text-xs text-emerald-800">
+                            <div className="font-semibold  truncate">{ev.name}</div>
+                            <div className="text-xs text-emerald-800 dark:text-emerald-300">
                               {formatFriendlyDate(ev.event_date)}{" • "}{formatTimeRange(ev.start_time, ev.end_time)}
                               {ev.venue ? ` • ${ev.venue}` : ""}
                             </div>
