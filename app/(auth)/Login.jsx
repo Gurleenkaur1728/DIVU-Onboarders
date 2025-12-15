@@ -40,13 +40,13 @@ export default function Login() {
         return;
       }
 
-      // // ✅ Verify password using bcrypt
-      // const valid = await bcrypt.compare(password, user.password || "");
-      // if (!valid) {
-      //   setErr("Invalid email or password.");
-      //   setLoading(false);
-      //   return;
-      // }
+      // ✅ Verify password using bcrypt
+      const valid = await bcrypt.compare(password, user.password || "");
+      if (!valid) {
+        setErr("Invalid email or password.");
+        setLoading(false);
+        return;
+      }
 
       // ✅ Determine role from DB
       const roleId = Number(user.role_id);
@@ -95,13 +95,13 @@ export default function Login() {
       </div>
 
       <div
-        className="absolute inset-0 bg-cover bg-center mix-blend-overlay opacity-30"
-        style={{ backgroundImage: "url('/bg.png')" }}
+        className="absolute inset-0 bg-cover bg-center mix-blend-overlay"
+        style={{ backgroundImage: "url('/bg3.png')" }}
       />
 
       <div className="relative z-10 flex min-h-screen items-center justify-center p-6">
         <div className="w-full max-w-md">
-          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-8 shadow-2xl">
+          <div className="backdrop-blur-xl bg-black/0 border border-DivuDarkGreen rounded-2xl p-8 shadow-2xl">
             <div className="flex justify-center mb-8">
               <Logo />
             </div>

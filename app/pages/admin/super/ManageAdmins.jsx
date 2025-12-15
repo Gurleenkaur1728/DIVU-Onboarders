@@ -58,13 +58,27 @@ export default function ManageAdmins() {
 
   // ✅ Promote a user to Admin
   async function promote(user) {
+    // Add confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to promote "${user.name}" to Admin?\n\nThis will give them access to admin features.`
+    );
+    
+    if (!confirmed) return;
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
         .update({ role_id: 1 })
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Promote error:", error);
+        setBanner(`Failed to promote user: ${error.message}`);
+        return;
+      }
+
+      console.log("User promoted successfully:", data);
 
       await logAction({
         employee_name: user.name,
@@ -72,23 +86,37 @@ export default function ManageAdmins() {
         action: `${me.name} promoted ${user.name} to Admin`,
       });
 
-      setBanner(`${user.name} is now an Admin.`);
+      setBanner(`✅ ${user.name} is now an Admin.`);
       await loadUsers();
     } catch (err) {
-      console.error(err);
-      setBanner("Failed to promote user.");
+      console.error("Promote exception:", err);
+      setBanner(`Error: ${err.message || "Failed to promote user."}`);
     }
   }
 
   // ✅ Demote an Admin to User
   async function demote(user) {
+    // Add confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to remove "${user.name}" from the Admin role?\n\nThey will lose access to admin features.`
+    );
+    
+    if (!confirmed) return;
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("users")
         .update({ role_id: 0 })
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Demote error:", error);
+        setBanner(`Failed to demote user: ${error.message}`);
+        return;
+      }
+
+      console.log("User demoted successfully:", data);
 
       await logAction({
         employee_name: user.name,
@@ -96,66 +124,70 @@ export default function ManageAdmins() {
         action: `${me.name} removed ${user.name} from Admin role`,
       });
 
-      setBanner(`${user.name} removed from Admin role.`);
+      setBanner(`✅ ${user.name} removed from Admin role.`);
       await loadUsers();
     } catch (err) {
-      console.error(err);
-      setBanner("Failed to remove admin.");
+      console.error("Demote exception:", err);
+      setBanner(`Error: ${err.message || "Failed to demote user."}`);
     }
   }
 
   return (
     <AppLayout>
-    {/* <div
-      className="flex min-h-dvh bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/bg.png')" }}
-    >
-  {/* <Sidebar active="manage-admins" role={roleId} /> */}
-
-      <div className="flex-1 flex flex-col p-6">
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
-          <span className="font-semibold text-emerald-950">
-            Super Admin – Manage Admins
-          </span>
-        </div>
+      <div
+        className="
+          rounded-lg shadow-sm border px-6 py-4 mb-6 transition
+          bg-white border-gray-300 text-gray-900
+          dark:bg-black/30 dark:border-black dark:text-white
+        "
+      >
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          Manage Admins
+        </h1>
 
-        {/* Title */}
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-DivuLightGreen text-2xl tracking-wide">
-          MANAGE ADMINS
-        </div>
+        <p className="text-gray-600 dark:text-gray-300">
+          Promote users to admin or remove admin privileges
+        </p>
+      </div>
 
         {/* Banner */}
         {banner && (
-          <div className="mb-4 px-4 py-2 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded">
+          <div className="mb-6 px-4 py-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg">
             {banner}
           </div>
         )}
 
         {/* Content */}
         {loading ? (
-          <div className="flex items-center justify-center py-10 text-emerald-800">
+          <div className="flex items-center justify-center py-10 text-gray-600">
             <Loader2 className="animate-spin mr-2" /> Loading users...
           </div>
         ) : (
           <div className="grid md:grid-cols-2 gap-8">
             {/* ✅ Current Admins Table */}
-            <div className="bg-white rounded-xl shadow-lg border border-emerald-400/70 overflow-hidden">
-              <h3 className="bg-DivuLightGreen text-black px-6 py-3 font-bold text-lg rounded-t-xl">
+            <div className="bg-white border border-gray-200 dark:bg-DivuDarkGreen/80 dark:border-black
+             rounded-lg shadow-sm overflow-hidden"> 
+              <h3 className="bg-gray-50 border-b border-gray-200 dark:bg-black/60 dark:border-black
+              px-6 py-3 font-bold text-lg">
                 Current Admins
               </h3>
 
-              <div className="max-h-[500px] overflow-y-auto overflow-x-hidden">
+              <div className="max-h-[500px] overflow-y-auto overflow-x-auto">
                 <table className="w-full text-left border-collapse">
-                  <thead className="sticky top-0 bg-emerald-100 border-b border-emerald-300">
+                  <thead className="sticky top-0 bg-gray-50 border-b border-gray-200
+                  dark:bg-DivuBlue/80
+                   dark:border-black dark:border-b">
                     <tr>
-                      <th className="px-4 py-2 text-emerald-900 font-semibold w-[30%]">
+                      <th className="px-4 py-2 text-gray-700 dark:text-gray-300
+                       font-semibold w-[30%]">
                         Name
                       </th>
-                      <th className="px-4 py-2 text-emerald-900 font-semibold w-[40%]">
+                      <th className="px-4 py-2 text-gray-700 dark:text-gray-300 font-semibold w-[40%]">
                         Email
                       </th>
-                      <th className="px-4 py-2 text-emerald-900 font-semibold w-[30%] text-center">
+                      <th className="px-4 py-2 text-gray-700 dark:text-gray-300 font-semibold w-[30%] text-center">
                         Action
                       </th>
                     </tr>
@@ -166,7 +198,7 @@ export default function ManageAdmins() {
                       <tr>
                         <td
                           colSpan={3}
-                          className="px-4 py-6 text-center text-gray-600"
+                          className="px-4 py-6 text-center text-gray-500"
                         >
                           No admins found.
                         </td>
@@ -175,18 +207,17 @@ export default function ManageAdmins() {
                       admins.map((a, i) => (
                         <tr
                           key={a.id}
-                          className={`border-b border-emerald-100 ${
-                            i % 2 === 0 ? "bg-emerald-50/80" : "bg-emerald-100/70"
-                          } hover:bg-emerald-200/60 transition`}
+                          className="border-b border-gray-200 hover:bg-gray-50 dark:bg-DivuWhite
+                          transition"
                         >
                           <td
-                            className="px-4 py-3 text-sm font-medium text-emerald-900 truncate max-w-[180px]"
+                            className="px-4 py-3 text-sm font-medium text-gray-900 truncate max-w-[180px]"
                             title={a.name}
                           >
                             {a.name || "—"}
                           </td>
                           <td
-                            className="px-4 py-3 text-sm text-gray-700 break-words max-w-[220px]"
+                            className="px-4 py-3 text-sm text-gray-600 break-words max-w-[220px]"
                             title={a.email}
                           >
                             {a.email || "—"}
@@ -208,22 +239,22 @@ export default function ManageAdmins() {
             </div>
 
             {/* ✅ Add Admin Table */}
-            <div className="bg-white rounded-xl shadow-lg border border-emerald-400/70 overflow-hidden">
-              <h3 className="bg-DivuBlue text-black px-6 py-3 font-bold text-lg rounded-t-xl">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+              <h3 className="bg-gray-50 border-b border-gray-200 text-gray-900 px-6 py-3 font-bold text-lg">
                 Add Admin
               </h3>
 
-              <div className="max-h-[500px] overflow-y-auto overflow-x-hidden">
+              <div className="max-h-[500px] overflow-y-auto overflow-x-auto">
                 <table className="w-full text-left border-collapse">
-                  <thead className="sticky top-0 bg-emerald-100 border-b border-emerald-300">
+                  <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-2 text-emerald-900 font-semibold w-[30%]">
+                      <th className="px-4 py-2 text-gray-700 font-semibold w-[30%]">
                         Name
                       </th>
-                      <th className="px-4 py-2 text-emerald-900 font-semibold w-[40%]">
+                      <th className="px-4 py-2 text-gray-700 font-semibold w-[40%]">
                         Email
                       </th>
-                      <th className="px-4 py-2 text-emerald-900 font-semibold w-[30%] text-center">
+                      <th className="px-4 py-2 text-gray-700 font-semibold w-[30%] text-center">
                         Action
                       </th>
                     </tr>
@@ -234,7 +265,7 @@ export default function ManageAdmins() {
                       <tr>
                         <td
                           colSpan={3}
-                          className="px-4 py-6 text-center text-gray-600"
+                          className="px-4 py-6 text-center text-gray-500"
                         >
                           No users available to promote.
                         </td>
@@ -243,18 +274,16 @@ export default function ManageAdmins() {
                       users.map((u, i) => (
                         <tr
                           key={u.id}
-                          className={`border-b border-emerald-100 ${
-                            i % 2 === 0 ? "bg-emerald-50/80" : "bg-emerald-100/70"
-                          } hover:bg-emerald-200/60 transition`}
+                          className="border-b border-gray-200 hover:bg-gray-50 transition"
                         >
                           <td
-                            className="px-4 py-3 text-sm font-medium text-emerald-900 truncate max-w-[180px]"
+                            className="px-4 py-3 text-sm font-medium text-gray-900 truncate max-w-[180px]"
                             title={u.name}
                           >
                             {u.name || "—"}
                           </td>
                           <td
-                            className="px-4 py-3 text-sm text-gray-700 break-words max-w-[220px]"
+                            className="px-4 py-3 text-sm text-gray-600 break-words max-w-[220px]"
                             title={u.email}
                           >
                             {u.email || "—"}
@@ -262,7 +291,7 @@ export default function ManageAdmins() {
                           <td className="px-4 py-3 text-center">
                             <button
                               onClick={() => promote(u)}
-                              className="inline-flex items-center gap-1 px-3 py-1 rounded bg-DivuLightGreen text-black text-sm font-medium hover:bg-DivuLightGreen/90 transition"
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded bg-DivuDarkGreen hover:bg-DivuLightGreen hover:text-black text-white text-sm font-medium transition"
                             >
                               <Plus size={14} /> Make Admin
                             </button>

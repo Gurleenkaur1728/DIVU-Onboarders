@@ -3,33 +3,22 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../src/AppLayout.jsx";
 import { supabase } from "../../../src/lib/supabaseClient.js";
 import { useRole } from "../../../src/lib/hooks/useRole.js";
+import { useToast } from "../../context/ToastContext.jsx";
 
 // Icons
 import { 
   Save,
   Trash2, 
-  Plus, 
-  Lock } from "lucide-react";
+  Plus } from "lucide-react";
 
 export default function ManageContent() {
   const navigate = useNavigate();
-  const { roleId, isAdmin } = useRole();
+  const { isAdmin } = useRole();
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState("welcome");
   const [sections, setSections] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const [addOpen, setAddOpen] = useState(false);
-  const [newType, setNewType] = useState("text");
-  const [newDraft, setNewDraft] = useState({
-    title: "",
-    subtitle: "",
-    description: "",
-    media_url: "",
-    cta_label: "",
-    cta_href: "",
-  });
+  const [_loading, setLoading] = useState(false);
 
   // Redirect non-admins
   useEffect(() => {
@@ -45,7 +34,6 @@ export default function ManageContent() {
   const fetchSections = useCallback(
     async (tab) => {
       setLoading(true);
-      setMessage("");
       const section = tabToSection(tab);
 
       try {
@@ -66,8 +54,8 @@ export default function ManageContent() {
             .insert([
               {
                 section,
-                sort_order: 0,
-                title: section === "hero" ? "Welcome" : "Section Title",
+                sort_order: 1,
+                title: section === "hero" ? "Welcome to DIVU!" : "Section Title",
                 subtitle: "",
                 description: "",
                 media_url: "",
@@ -77,7 +65,7 @@ export default function ManageContent() {
               },
             ])
             .select("*")
-            .maybeSingle();
+            .single();
 
           if (insertError) throw insertError;
           rows = inserted ? [inserted] : [];
@@ -85,13 +73,12 @@ export default function ManageContent() {
 
         setSections(rows);
       } catch (error) {
-        console.error("Error loading content:", error);
-        setMessage("⚠️ Failed to load content.");
+        showToast("Failed to load content: " + error.message, "error");
       } finally {
         setLoading(false);
       }
     },
-    [tabToSection]
+    [tabToSection, showToast]
   );
 
   useEffect(() => {
@@ -116,18 +103,36 @@ export default function ManageContent() {
       .toString(36)
       .slice(2)}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("assets")
-      .upload(filePath, file, { upsert: false });
+    try {
+      showToast("Uploading media...", "info");
+      
+      const { error: uploadError } = await supabase.storage
+        .from("assets")
+        .upload(filePath, file, { upsert: true });
 
-    if (uploadError) {
-      setMessage("⚠️ Upload failed.");
-      return;
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
+      const publicUrl = data.publicUrl;
+      
+      updateLocal(index, { media_url: publicUrl });
+      
+      // Auto-save after upload
+      const row = { ...sections[index], media_url: publicUrl };
+      
+      if (row.id) {
+        const { error: saveError } = await supabase
+          .from("home_content")
+          .update({ media_url: publicUrl })
+          .eq("id", row.id);
+          
+        if (saveError) throw saveError;
+      }
+      
+      showToast("Media uploaded and saved successfully!", "success");
+    } catch (error) {
+      showToast("Upload failed: " + error.message, "error");
     }
-
-    const { data } = supabase.storage.from("assets").getPublicUrl(filePath);
-    updateLocal(index, { media_url: data.publicUrl });
-    setMessage("✅ Media uploaded!");
   }
 
   async function saveSection(index) {
@@ -135,10 +140,9 @@ export default function ManageContent() {
     const row = sections[index];
 
     try {
-      let result;
-
       if (row.id) {
-        result = await supabase
+        // UPDATE existing section
+        const { error } = await supabase
           .from("home_content")
           .update({
             title: row.title ?? "",
@@ -148,32 +152,40 @@ export default function ManageContent() {
             cta_label: row.cta_label ?? "",
             cta_href: row.cta_href ?? "",
             is_active: row.is_active ?? true,
-            sort_order: row.sort_order ?? 0,
+            sort_order: row.sort_order ?? 1,
           })
-          .eq("id", row.id)
-          .select("*")
-          .maybeSingle();
+          .eq("id", row.id);
+
+        if (error) throw error;
       } else {
-        result = await supabase
+        // INSERT new section - calculate next sort_order
+        const maxSort = sections.reduce((max, s) => 
+          (s.sort_order > max ? s.sort_order : max), 0
+        );
+
+        const { error } = await supabase
           .from("home_content")
           .insert([
             {
               section: tabToSection(activeTab),
-              ...row,
-              sort_order: sections.length,
+              title: row.title ?? "",
+              subtitle: row.subtitle ?? "",
+              description: row.description ?? "",
+              media_url: row.media_url ?? "",
+              cta_label: row.cta_label ?? "",
+              cta_href: row.cta_href ?? "",
+              is_active: row.is_active ?? true,
+              sort_order: maxSort + 1,
             },
-          ])
-          .select("*")
-          .maybeSingle();
+          ]);
+
+        if (error) throw error;
       }
 
-      if (result.error) throw result.error;
-
-      setMessage("✅ Section saved.");
-      fetchSections(activeTab);
+      showToast("Section saved successfully!", "success");
+      await fetchSections(activeTab);
     } catch (error) {
-      console.error(error);
-      setMessage("⚠️ Failed to save section.");
+      showToast("Failed to save: " + error.message, "error");
     } finally {
       setLoading(false);
     }
@@ -183,13 +195,14 @@ export default function ManageContent() {
     const row = sections[index];
     if (!row) return;
 
-    if (row.sort_order === 0) {
-      setMessage("⚠️ You cannot delete the first section.");
+    if (!row.id) {
+      // Remove unsaved draft
+      setSections((prev) => prev.filter((_, i) => i !== index));
+      showToast("Draft section removed", "info");
       return;
     }
 
-    if (!row.id) {
-      setSections((prev) => prev.filter((_, i) => i !== index));
+    if (!confirm("Are you sure you want to delete this section?")) {
       return;
     }
 
@@ -203,116 +216,153 @@ export default function ManageContent() {
 
       if (error) throw error;
 
-      setMessage("🗑️ Section deleted.");
-      fetchSections(activeTab);
+      showToast("Section deleted successfully", "success");
+      await fetchSections(activeTab);
     } catch (error) {
-      console.error(error);
-      setMessage("⚠️ Failed to delete section.");
+      showToast("Failed to delete: " + error.message, "error");
     } finally {
       setLoading(false);
     }
   }
 
-  function addDraftSection() {
-    const newSection = {
-      id: null,
-      section: tabToSection(activeTab),
-      ...newDraft,
-      sort_order: sections.length,
-      is_active: true,
-    };
+  async function addDraftSection() {
+    setLoading(true);
 
-    setSections((prev) => [...prev, newSection]);
+    try {
+      // Calculate next sort_order
+      const maxSort = sections.reduce((max, s) => 
+        (s.sort_order > max ? s.sort_order : max), 0
+      );
 
-    setNewDraft({
-      title: "",
-      subtitle: "",
-      description: "",
-      media_url: "",
-      cta_label: "",
-      cta_href: "",
-    });
+      const { error } = await supabase
+        .from("home_content")
+        .insert([
+          {
+            section: tabToSection(activeTab),
+            title: "New Section",
+            subtitle: "",
+            description: "",
+            media_url: "",
+            cta_label: "",
+            cta_href: "",
+            is_active: true,
+            sort_order: maxSort + 1,
+          },
+        ]);
 
-    setNewType("text");
-    setAddOpen(false);
+      if (error) throw error;
+
+      showToast("New section added! Edit and save your changes.", "success");
+      await fetchSections(activeTab);
+    } catch (error) {
+      showToast("Failed to add section: " + error.message, "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <AppLayout>
-      <div className="p-6">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
-          <span className="font-semibold text-emerald-950">
-            Admin – Manage Content
-          </span>
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
+        {/* Header */}
+        <div
+          className="
+            rounded-lg shadow-sm border px-6 py-4 mb-8
+            flex items-center justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          {/* LEFT – TITLE + SUBTITLE */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Manage Content
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Edit homepage sections for Welcome, Culture, and About
+            </p>
+          </div>
+
+          {/* RIGHT – HEADER TABS */}
+          <div className="flex items-center gap-3">
+
+            <button
+              onClick={() => setActiveTab("welcome")}
+              className={`
+                px-4 py-2 rounded-md text-sm font-medium border transition
+                ${
+                  activeTab === "welcome"
+                    ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                    : "bg-transparent border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue"
+                }
+              `}
+            >
+              Welcome
+            </button>
+
+            <button
+              onClick={() => setActiveTab("culture")}
+              className={`
+                px-4 py-2 rounded-md text-sm font-medium border transition
+                ${
+                  activeTab === "culture"
+                    ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                    : "bg-transparent border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue"
+                }
+              `}
+            >
+              Culture
+            </button>
+
+            <button
+              onClick={() => setActiveTab("about")}
+              className={`
+                px-4 py-2 rounded-md text-sm font-medium border transition
+                ${
+                  activeTab === "about"
+                    ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                    : "bg-transparent border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue"
+                }
+              `}
+            >
+              About
+            </button>
+
+          </div>
         </div>
 
-        {/* Title */}
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-6 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
-          MANAGE CONTENT
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <Tab
-            label="Welcome"
-            active={activeTab === "welcome"}
-            onClick={() => setActiveTab("welcome")}
-          />
-          <Tab
-            label="Culture"
-            active={activeTab === "culture"}
-            onClick={() => setActiveTab("culture")}
-          />
-          <Tab
-            label="About"
-            active={activeTab === "about"}
-            onClick={() => setActiveTab("about")}
-          />
-        </div>
 
         {/* Section Editor */}
-        <div className="bg-white rounded-xl p-6 shadow-lg max-w-5xl">
+        <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 dark:bg-black/30 dark:border-black">
           {/* Loop sections */}
           {sections.map((s, idx) => {
-            const isFirst = s.sort_order === 0;
-
             return (
               <div
                 key={s.id ?? `draft-${idx}`}
-                className="border rounded-xl p-4 mb-5"
+                className="border border-gray-200 rounded-lg p-4 mb-5"
               >
                 {/* Header row */}
                 <div className="flex justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm px-2 py-1 rounded bg-emerald-50 border border-emerald-200 text-emerald-900">
-                      #{s.sort_order}
+                    <span className="text-sm px-2 py-1 rounded bg-emerald-100 border border-emerald-300 text-emerald-700 font-medium">
+                      Section #{s.sort_order}
                     </span>
-
-                    {isFirst && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800">
-                        <Lock size={14} /> First section (locked)
-                      </span>
-                    )}
                   </div>
 
                   <div className="flex gap-2">
                     <button
                       onClick={() => saveSection(idx)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded bg-emerald-600 text-white hover:bg-emerald-700"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-DivuDarkGreen
+                       text-white hover:bg-DivuLightGreen hover:text-black
+                       transition"
                     >
                       <Save size={16} />
                       Save
                     </button>
 
                     <button
-                      disabled={isFirst}
                       onClick={() => deleteSection(idx)}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded ${
-                        isFirst
-                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          : "bg-red-600 text-white hover:bg-red-700"
-                      }`}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
                     >
                       <Trash2 size={16} />
                       Delete
@@ -324,7 +374,7 @@ export default function ManageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Title */}
                   <label className="block">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold">
                       Title
                     </span>
                     <input
@@ -333,13 +383,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { title: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                       rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Subtitle */}
                   <label className="block">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold ">
                       Subtitle
                     </span>
                     <input
@@ -348,13 +399,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { subtitle: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                       rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Description */}
                   <label className="block md:col-span-2">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold ">
                       Description
                     </span>
                     <textarea
@@ -363,13 +415,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { description: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                       rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* CTA label */}
                   <label className="block">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold ">
                       CTA Label
                     </span>
                     <input
@@ -378,13 +431,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { cta_label: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                       rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* CTA link */}
                   <label className="block">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold ">
                       CTA Link
                     </span>
                     <input
@@ -393,13 +447,14 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { cta_href: e.target.value })
                       }
-                      className="w-full border rounded px-3 py-2 mt-1"
+                      className="w-full border border-gray-300 dark:text-gray-700
+                        rounded-lg px-3 py-2 mt-1 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     />
                   </label>
 
                   {/* Media Upload */}
                   <div className="md:col-span-2">
-                    <span className="font-semibold text-emerald-900">
+                    <span className="font-semibold ">
                       Media
                     </span>
                     <div className="flex items-center gap-3 mt-2">
@@ -420,6 +475,7 @@ export default function ManageContent() {
                       onChange={(e) =>
                         updateLocal(idx, { is_active: e.target.checked })
                       }
+                      className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                     />
                     <span>Active</span>
                   </label>
@@ -429,87 +485,14 @@ export default function ManageContent() {
           })}
 
           {/* ADD NEW SECTION */}
-          {!addOpen ? (
-            <button
-              onClick={() => setAddOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded mt-4"
-            >
-              <Plus size={18} />
-              Add Section
-            </button>
-          ) : (
-            <div className="border rounded-xl p-4 mt-4">
-              <h3 className="font-semibold text-emerald-900 mb-2">
-                Add New Section
-              </h3>
-
-              <label className="block mb-3">
-                <span className="font-semibold text-emerald-900">Title</span>
-                <input
-                  type="text"
-                  value={newDraft.title}
-                  onChange={(e) =>
-                    setNewDraft((p) => ({ ...p, title: e.target.value }))
-                  }
-                  className="w-full border rounded px-3 py-2 mt-1"
-                />
-              </label>
-
-              <label className="block mb-3">
-                <span className="font-semibold text-emerald-900">Subtitle</span>
-                <input
-                  type="text"
-                  value={newDraft.subtitle}
-                  onChange={(e) =>
-                    setNewDraft((p) => ({ ...p, subtitle: e.target.value }))
-                  }
-                  className="w-full border rounded px-3 py-2 mt-1"
-                />
-              </label>
-
-              <label className="block mb-3">
-                <span className="font-semibold text-emerald-900">
-                  Description
-                </span>
-                <textarea
-                  rows="3"
-                  value={newDraft.description}
-                  onChange={(e) =>
-                    setNewDraft((p) => ({ ...p, description: e.target.value }))
-                  }
-                  className="w-full border rounded px-3 py-2 mt-1"
-                />
-              </label>
-
-              <div className="flex items-center gap-3 mt-4">
-                <button
-                  onClick={addDraftSection}
-                  className="flex items-center bg-emerald-600 text-white px-4 py-2 rounded"
-                >
-                  <Save size={18} />
-                  Add
-                </button>
-                <button
-                  onClick={() => setAddOpen(false)}
-                  className="px-4 py-2 border rounded"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-
-          {message && (
-            <p
-              className={`mt-4 font-medium ${
-                message.includes("⚠️")
-                  ? "text-red-600"
-                  : "text-emerald-700"
-              }`}
-            >
-              {message}
-            </p>
-          )}
+          <button
+            onClick={addDraftSection}
+            className="flex items-center gap-2 px-4 py-2 bg-DivuDarkGreen
+             text-white rounded-lg hover:bg-DivuBlue transition mt-4"
+          >
+            <Plus size={18} />
+            Add Section
+          </button>
         </div>
       </div>
     </AppLayout>
@@ -520,10 +503,10 @@ function Tab({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg font-semibold ${
+      className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
         active
-          ? "bg-DivuLightGreen text-emerald-950 shadow-md"
-          : "bg-DivuDarkGreen/90 text-emerald-100 hover:bg-DivuBlue hover:text-black"
+          ? "bg-emerald-600 text-white shadow-sm"
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
       }`}
     >
       {label}

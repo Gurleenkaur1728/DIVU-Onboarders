@@ -85,12 +85,35 @@ export default function AddEmployee() {
   const [recentInvites, setRecentInvites] = useState([]);
   const [activeTab, setActiveTab] = useState("form");
   const [notification, setNotification] = useState("");
+  const [autoGenerateId, setAutoGenerateId] = useState(true);
 
   const hrEmail = localStorage.getItem("profile_email") || "HR Admin";
 
   useEffect(() => {
     fetchInvitations();
-  }, []);
+    if (autoGenerateId) {
+      generateEmployeeId();
+    }
+  }, [autoGenerateId]);
+
+  // ✅ Generate automatic employee ID
+  const generateEmployeeId = async () => {
+    try {
+      // Get the count of all employee invitations
+      const { count, error } = await supabase
+        .from("employee_invitations")
+        .select("*", { count: "exact", head: true });
+      
+      if (error) console.error("Error fetching employee count:", error);
+      
+      const nextNumber = (count || 0) + 1;
+      const generatedId = String(nextNumber).padStart(3, "0");
+      
+      setFormData(prev => ({ ...prev, employeeId: generatedId }));
+    } catch (err) {
+      console.error("Error generating employee ID:", err);
+    }
+  };
 
   // ✅ Fetch recent invitations
   const fetchInvitations = async () => {
@@ -185,30 +208,149 @@ export default function AddEmployee() {
 
   return (
     <AppLayout>
-    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}>
-    //   <Sidebar active="add-employee" role={roleId} /> */}
-      <div className="flex-1 flex flex-col p-6">
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-6 text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl">ADD EMPLOYEE</div>
+      <div className="bg-url/ flex-1 min-h-dvh p-6 space-y-6">
+      <div
+        className="
+          rounded-lg shadow-sm border px-6 py-4 mb-6
+          flex items-center justify-between transition
+          bg-white border-gray-300 text-gray-900
+          dark:bg-black/30 dark:border-black dark:text-white
+        "
+      >
+        {/* Left Side — Page Title */}
+        <h1 className="text-2xl font-bold">
+          Add Employees
+        </h1>
 
-        <div className="flex gap-2 mb-6">
-          <Tab label="Add Employee" active={activeTab === "form"} onClick={() => setActiveTab("form")} />
-          <Tab label="Recent Invitations" active={activeTab === "recent"} onClick={() => setActiveTab("recent")} />
+        {/* Right Side — Tabs */}
+        <div className="flex items-center gap-3">
+
+          {/* Add Employee Tab */}
+          <button
+            onClick={() => setActiveTab("form")}
+            className={`
+              px-4 py-2 rounded-md text-sm font-medium border transition
+              ${activeTab === "form"
+                ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                : "bg-transparent border-black border hover:bg-DivuBlue"
+              }
+            `}
+          >
+            Add Employee
+          </button>
+
+          {/* Recent Invitations Tab */}
+          <button
+            onClick={() => setActiveTab("recent")}
+            className={`
+              px-4 py-2 rounded-md text-sm font-medium border transition
+              ${activeTab === "recent"
+                ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                : "bg-transparent border-black border hover:bg-DivuBlue"
+              }
+            `}
+          >
+            Recent Invitations
+          </button>
         </div>
+      </div>
 
         {notification && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-emerald-700 text-white px-6 py-3 rounded-xl">
+          <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-lg shadow-lg">
             {notification}
           </div>
         )}
 
         {activeTab === "form" && (
-          <div className="bg-white rounded-xl p-6 shadow-lg max-w-2xl space-y-4">
-            <input name="employeeId" placeholder="Employee ID" value={formData.employeeId} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
-            <input name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
-            <input name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
-            <input name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
-            <input name="position" placeholder="Position" value={formData.position} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
-            <button onClick={handleSubmit} disabled={loading} className="flex items-center gap-2 px-4 py-2 rounded bg-DivuDarkGreen text-white font-semibold hover:bg-DivuLightGreen hover:text-black disabled:bg-gray-400">
+          <div className=" border border-gray-400 bg-white/30 dark:bg-white 
+           rounded-lg shadow-sm p-6 space-y-4">
+            {/* Auto-generate toggle */}
+            <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <input 
+                type="checkbox" 
+                id="autoGenerate" 
+                checked={autoGenerateId} 
+                onChange={(e) => setAutoGenerateId(e.target.checked)}
+                className="w-4 h-4 rounded focus:ring-emerald-500" 
+              />
+              <label htmlFor="autoGenerate" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Auto-generate Employee ID (Format: 001, 002, 003, ...)
+              </label>
+            </div>
+
+            {/* Employee ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Employee ID {!autoGenerateId && <span className="text-red-500">*</span>}
+              </label>
+              <input 
+                name="employeeId" 
+                placeholder={autoGenerateId ? "Auto-generated" : "Enter employee ID"} 
+                value={formData.employeeId} 
+                onChange={handleChange} 
+                disabled={autoGenerateId}
+                className={`border border-gray-300 rounded-lg px-3 py-2 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                  autoGenerateId ? "bg-gray-100 cursor-not-allowed text-black"
+                   : ""
+                }`}
+              />
+              {autoGenerateId && (
+                <p className="text-xs text-gray-500 mt-1">
+                  ✓ Next available ID: {formData.employeeId}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <input 
+                name="firstName" 
+                placeholder="Enter first name" 
+                value={formData.firstName} 
+                onChange={handleChange} 
+                className="border border-gray-300 rounded-lg px-3 py-2 dark:placeholder-slate-600 text-black
+                w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <input 
+                name="lastName" 
+                placeholder="Enter last name" 
+                value={formData.lastName} 
+                onChange={handleChange} 
+                className="border border-gray-300 rounded-lg px-3 py-2 dark:placeholder-slate-600 text-black
+                 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input 
+                name="email" 
+                placeholder="Enter email address" 
+                value={formData.email} 
+                onChange={handleChange} 
+                className="border border-gray-300 rounded-lg px-3 py-2 dark:placeholder-slate-600 text-black
+                w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+              <input 
+                name="position" 
+                placeholder="Enter position" 
+                value={formData.position} 
+                onChange={handleChange} 
+                className="border border-gray-300 rounded-lg px-3 py-2 dark:placeholder-slate-600 text-black
+                 w-full focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
+              />
+            </div>
+            <button 
+              onClick={handleSubmit} 
+              disabled={loading} 
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-DivuDarkGreen hover:bg-DivuLightGreen hover:text-black
+               text-white font-semibold disabled:bg-gray-400 transition-colors"
+            >
               <Send size={16} /> {loading ? "Sending..." : "Send Invitation"}
             </button>
             {message && <p className={`mt-3 text-sm ${isError ? "text-red-600" : "text-green-600"}`}>{message}</p>}
@@ -216,29 +358,62 @@ export default function AddEmployee() {
         )}
 
         {activeTab === "recent" && (
-          <div className="overflow-x-auto rounded-lg border bg-white">
-            <table className="min-w-[800px] w-full border-collapse">
-              <thead>
-                <tr className="bg-DivuLightGreen text-Black">
-                  <Th>Name</Th><Th>Email</Th><Th>Position</Th><Th>Status</Th><Th>Created</Th><Th>Actions</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentInvites.map((inv, idx) => (
-                  <tr key={inv.id} className={idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"}>
-                    <td className="px-4 py-3">{inv.first_name} {inv.last_name}</td>
-                    <td className="px-4 py-3">{inv.email}</td>
-                    <td className="px-4 py-3">{inv.position}</td>
-                    <td className="px-4 py-3">{inv.status}</td>
-                    <td className="px-4 py-3">{new Date(inv.created_at).toLocaleString()}</td>
-                    <td className="px-4 py-3 flex gap-2">
-                      <button onClick={() => handleResend(inv)} className="p-2 bg-DivuBlue text-white rounded"><RefreshCcw size={16} /></button>
-                      <button onClick={() => handleRevoke(inv)} className="p-2 bg-red-500 text-white rounded"><XCircle size={16} /></button>
-                    </td>
+          <div className="border border-gray-400 bg-white/30 dark:bg-black/20 dark:border-black
+           rounded-lg shadow-sm p-6 space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200
+                 dark:bg-black/60 dark:border-gray-700 dark:text-white">
+                  <tr>
+                    <Th>Name</Th>
+                    <Th>Email</Th>
+                    <Th>Position</Th>
+                    <Th>Status</Th>
+                    <Th>Created</Th>
+                    <Th>Actions</Th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {recentInvites.map((inv, idx) => (
+                    <tr key={inv.id} className="border-b border-gray-200 hover:bg-DivuBlue
+                    transition-colors">
+                      <td className="px-4 py-3 text-gray-900 dark:text-emerald-200 font-bold">{inv.first_name} {inv.last_name}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-white">{inv.email}</td>
+                      <td className="px-4 py-3 text-gray-900 dark:text-white">{inv.position}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          inv.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          inv.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                          inv.status === 'revoked' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {inv.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{new Date(inv.created_at).toLocaleString()}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleResend(inv)} 
+                            className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                            title="Resend invitation"
+                          >
+                            <RefreshCcw size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleRevoke(inv)} 
+                            className="p-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                            title="Revoke invitation"
+                          >
+                            <XCircle size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -248,12 +423,20 @@ export default function AddEmployee() {
 
 function Tab({ label, active, onClick }) {
   return (
-    <button onClick={onClick} className={`px-4 py-2 rounded-lg text-sm font-semibold ${active ? "bg-DivuLightGreen hover:bg-DivuBlue" : "bg-DivuDarkGreen/90 text-white hover:bg-DivuBlue hover:text-black"}`}>
+    <button 
+      onClick={onClick} 
+      className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+        active 
+          ? "bg-emerald-600 text-white shadow-sm" 
+          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+      }`}
+    >
       {label}
     </button>
   );
 }
 
 function Th({ children }) {
-  return <th className="px-4 py-3 font-bold border-r border-emerald-800/50">{children}</th>;
+  return <th className="px-4 py-3 text-left font-semibold bg-DivuBlue/20 dark:bg-DivuBlue/20
+  ">{children}</th>;
 }

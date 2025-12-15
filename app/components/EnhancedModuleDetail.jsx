@@ -1622,10 +1622,10 @@ export default function EnhancedModuleDetail() {
 
         {/* Enhanced Feedback Modal */}
         {showFeedbackModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-4 sm:p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-gray-800">📝 Module Feedback</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800">📝 Module Feedback</h3>
                 <button 
                   onClick={() => setShowFeedbackModal(false)}
                   className="text-gray-500 hover:text-gray-700 text-2xl"
@@ -1776,7 +1776,7 @@ export default function EnhancedModuleDetail() {
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-800">💬 Quick Section Feedback</h3>
+                <h3 className="text-base sm:text-lg font-bold text-gray-800">💬 Quick Section Feedback</h3>
                 <button 
                   onClick={() => setShowSectionFeedback(null)}
                   className="text-gray-400 hover:text-gray-600"

@@ -409,19 +409,19 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
     >
       <div
         className={`flex items-center justify-center w-8 h-8 rounded-full font-bold border shadow-sm transition-all
-        ${active ? "bg-DivuDarkGreen text-white border-DivuDarkGreen scale-105 ring-2 ring-DivuLightGreen/30"
-                 : done ? "bg-white text-black border-emerald-300"
-                 : "bg-white text-black border-emerald-300 group-hover:bg-emerald-50"}`}
+        ${active ? "bg-emerald-600 text-white border-emerald-600 scale-105 ring-2 ring-emerald-100"
+                 : done ? "bg-white text-emerald-600 border-emerald-300"
+                 : "bg-white text-gray-600 border-gray-300 group-hover:bg-gray-50"}`}
       >
         {done ? (
-          <CheckCircle size={14} className="text-black" />
+          <CheckCircle size={14} className="text-emerald-600" />
         ) : (
-          <span className={`text-xs font-semibold ${active ? "text-white" : "text-emerald-800"}`}>
+          <span className={`text-xs font-semibold ${active ? "text-white" : "text-gray-700"}`}>
             {typeof index === "number" ? index + 1 : (label === "Info" ? "I" : "R")}
           </span>
         )}
       </div>
-      <span className={`text-[11px] font-semibold ${active ? "text-black" : done ? "text-black" : "text-DivuDarkGreen/70 group-hover:text-black "}`}>
+      <span className={`text-[11px] font-semibold ${active ? "text-gray-900" : done ? "text-gray-700" : "text-gray-500 group-hover:text-gray-700"}`}>
         {label}
       </span>
     </button>
@@ -430,20 +430,20 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-emerald-950 text-white rounded-xl p-6">Loading draft…</div>
+        <div className="bg-white text-gray-900 rounded-xl p-6 shadow-xl">Loading draft…</div>
       </div>
     );
   }
   return (
-  <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-6 z-50">
+  <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 sm:p-6 z-50">
     {/* fixed-size modal */}
-    <div className="w-full max-w-5xl h-[80vh] bg-white border-DivuDarkGreen rounded-2xl shadow-xl overflow-visible flex flex-col">
+    <div className="w-full max-w-5xl h-[90vh] sm:h-[80vh] bg-white border border-gray-200 rounded-2xl shadow-xl overflow-visible flex flex-col">
       {/* header */}
-      <div className="flex items-center justify-between bg-DivuLightGreen text-black rounded-t-2xl p-4">
+      <div className="flex items-center justify-between bg-white border-b border-gray-200 rounded-t-2xl p-3 sm:p-4">
         {/* progress dots w/ connectors */}
-        <div className="flex items-center gap-3 overflow-x-auto">
+        <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
           <ProgressDot label="Info" active={step === 0} done={step > 0} onClick={goInfo} />
-          <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />
+          <div className="h-[2px] w-6 bg-gray-300 rounded self-center" />
           {pages.map((p, i) => (
             <div key={p.id} className="flex items-center gap-3">
               <ProgressDot
@@ -453,10 +453,10 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
                 onClick={() => goPage(i)}
                 index={i}
               />
-              {i < pages.length - 1 && <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />}
+              {i < pages.length - 1 && <div className="h-[2px] w-6 bg-gray-300 rounded self-center" />}
             </div>
           ))}
-          {pages.length > 0 && <div className="h-[2px] w-6 bg-emerald-300 rounded self-center" />}
+          {pages.length > 0 && <div className="h-[2px] w-6 bg-gray-300 rounded self-center" />}
           <ProgressDot label="Review" active={step === 2} done={false} onClick={goReview} />
         </div>
 
@@ -469,7 +469,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
           </button>
           <button
             onClick={onClose}
-            className="px-3 py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 text-sm font-semibold"
+            className="px-3 py-1.5 rounded bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold"
           >
             Close
           </button>
@@ -479,8 +479,8 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
         {abandonConfirmOpen && (
           <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40">
             <div className="bg-white w-full max-w-md rounded-xl shadow-xl p-6 mx-4">
-              <div className="text-lg font-semibold text-emerald-900 mb-2">Abandon draft?</div>
-              <p className="text-sm text-emerald-700 mb-4">
+              <div className="text-lg font-semibold text-gray-900 mb-2">Abandon draft?</div>
+              <p className="text-sm text-gray-600 mb-4">
                 This will permanently delete your draft and all progress. This action cannot be undone.
               </p>
               <div className="flex justify-end gap-2">
@@ -504,14 +504,14 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
 
       {/* unified progress bar */}
       <div className="px-6 py-3 flex items-center gap-4">
-        <div className="relative flex-1 h-3 rounded-full bg-emerald-100/70 shadow-inner overflow-hidden">
+        <div className="relative flex-1 h-3 rounded-full bg-gray-200 shadow-inner overflow-hidden">
           <div
-            className="absolute left-0 top-0 h-full rounded-full transition-[width] duration-500 ease-out bg-gradient-to-r from-DivuDarkGreen to-DivuLightGreen shadow"
+            className="absolute left-0 top-0 h-full rounded-full transition-[width] duration-500 ease-out bg-emerald-600 shadow"
             style={{ width: `${progress}%` }}
           />
         </div>
         <div className="w-12 text-right">
-          <span className="text-sm font-semibold text-emerald-900">{progress}%</span>
+          <span className="text-sm font-semibold text-gray-700">{progress}%</span>
         </div>
       </div>
 
@@ -520,29 +520,29 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
         {/* Step 0: Info */}
         {step === 0 && (
           <div className="grid grid-cols-1 gap-6">
-            <div className="p-4 border rounded-xl border-emerald-300 bg-white">
+            <div className="p-4 border rounded-xl border-gray-300 bg-white shadow-sm">
               <div className="mb-3">
-                <div className="font-semibold text-black mb-2">Module Title</div>
+                <div className="font-semibold text-gray-900 mb-2">Module Title</div>
                 <input
                   value={title}
                   onChange={(e) => onChangeTitle(e.target.value)}
                   onBlur={() => persistDraft()}
                   placeholder="Module Title (max 100 words)"
-                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm mb-2"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
-                <div className="text-xs text-emerald-700">{words(title)}/100 words</div>
+                <div className="text-xs text-gray-600">{words(title)}/100 words</div>
               </div>
 
               <div>
-                <div className="font-semibold text-emerald-900 mb-2">Module Description</div>
+                <div className="font-semibold text-gray-900 mb-2">Module Description</div>
                 <textarea
                   value={description}
                   onChange={(e) => onChangeDescription(e.target.value)}
                   onBlur={() => persistDraft()}
                   placeholder="Module Description (max 250 words)"
-                  className="w-full border border-emerald-300 rounded-lg px-3 py-2 text-sm h-28 resize-none"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm h-28 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
-                <div className="text-xs text-emerald-700">{words(description)}/250 words</div>
+                <div className="text-xs text-gray-600">{words(description)}/250 words</div>
               </div>
 
               {!selectTypeOpen && (
@@ -555,8 +555,8 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
               )}
 
               {selectTypeOpen && (
-                <div className="mt-4 p-4 border rounded-xl border-emerald-300 bg-emerald-50">
-                  <div className="font-semibold text-emerald-900 mb-2">
+                <div className="mt-4 p-4 border rounded-xl border-gray-300 bg-white shadow-sm">
+                  <div className="font-semibold text-gray-900 mb-2">
                     Choose content type for new page
                   </div>
                   <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
@@ -564,7 +564,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
                       <button
                         key={t.key}
                         onClick={() => addPageWithSectionType(t.key)}
-                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border border-emerald-200 bg-white hover:bg-emerald-100 text-emerald-900"
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-gray-700 transition"
                       >
                         <span className="text-xs">{t.label}</span>
                       </button>
@@ -589,12 +589,12 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
           <div className="grid grid-cols-12 gap-6">
             {/* left panel */}
             <div className="col-span-12 lg:col-span-4 space-y-4">
-              <div className="p-4 border rounded-xl border-emerald-300 bg-white">
+              <div className="p-4 border rounded-xl border-gray-300 bg-white shadow-sm">
                 <div className="flex items-center justify-between">
-                  <div className="font-semibold text-emerald-900">Pages</div>
+                  <div className="font-semibold text-gray-900">Pages</div>
                   <button
                     onClick={() => setSelectTypeOpen(true)}
-                    className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500"
+                    className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700"
                   >
                     <Plus size={14} className="inline mr-1" />
                     Add Page
@@ -603,8 +603,8 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
 
                 <div className="mt-3 space-y-2">
                   {pages.length === 0 ? (
-                    <div className="text-sm text-emerald-700">
-                      No pages yet. Click “Add Page”.
+                    <div className="text-sm text-gray-600">
+                      No pages yet. Click "Add Page".
                     </div>
                   ) : (
                     pages.map((p, i) => (
@@ -613,11 +613,11 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
                         className={`flex items-center justify-between border rounded-lg px-3 py-2 ${
                           i === activePageIndex
                             ? "border-emerald-300 bg-emerald-50"
-                            : "border-gray-200 bg-white"
+                            : "border-gray-200 bg-white hover:bg-gray-50"
                         }`}
                       >
                         <button
-                          className="text-left text-sm text-emerald-800 font-medium truncate"
+                          className="text-left text-sm text-gray-800 font-medium truncate"
                           onClick={() => setActivePageIndex(i)}
                           title="Open page"
                         >
@@ -626,7 +626,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => duplicatePage(i)}
-                            className="p-1.5 rounded bg-blue-600 text-white hover:bg-blue-500"
+                            className="p-1.5 rounded bg-gray-600 text-white hover:bg-gray-700"
                             title="Duplicate page"
                           >
                             <Copy size={14} />
@@ -646,8 +646,8 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
               </div>
 
               {selectTypeOpen && (
-                <div className="p-4 border rounded-xl border-emerald-300 bg-white">
-                  <div className="font-semibold text-emerald-900 mb-2">
+                <div className="p-4 border rounded-xl border-gray-300 bg-white shadow-sm">
+                  <div className="font-semibold text-gray-900 mb-2">
                     Choose Content Type for New Page
                   </div>
                   <div className="grid grid-cols-3 gap-2">
@@ -655,7 +655,7 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
                       <button
                         key={t.key}
                         onClick={() => addPageWithSectionType(t.key)}
-                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border border-emerald-200 hover:bg-emerald-50 text-emerald-900"
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-gray-700 transition"
                       >
                         <span className="text-xs">{t.label}</span>
                       </button>
@@ -750,7 +750,8 @@ export default function ModuleBuilderModal({ draftId, onClose, showToast, onModu
           ) : (
             <button
               onClick={handleNext}
-              className="px-3 py-1.5 rounded bg-emerald-600 text-white text-sm hover:bg-emerald-500"
+              className="px-3 py-1.5 rounded bg-DivuDarkGreen hover:text-black
+               text-white text-sm hover:bg-DivuLightGreen"
             >
               Complete & Review
             </button>

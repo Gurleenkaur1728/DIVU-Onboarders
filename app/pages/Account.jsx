@@ -1,10 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar, { ROLES } from "../components/Sidebar.jsx";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { supabase } from "../../src/lib/supabaseClient";
 import SiteTranslator from "../../src/SiteTranslator.jsx";
+import AppLayout from "../../src/AppLayout.jsx";
+import ROLES from "../components/Sidebar.jsx";
+
+
 export default function Account() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -250,6 +253,12 @@ localStorage.setItem("lang", val);
     }
   };
 
+  const markNotificationAsRead = (notificationId) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
+    );
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) setProfileImage(URL.createObjectURL(file));
@@ -287,11 +296,6 @@ localStorage.setItem("lang", val);
       // Update localStorage to keep auth context in sync
       localStorage.setItem("user_name", name);
 
-      // Update user context if setUser function is available
-      if (setUser) {
-        setUser({ ...user, name });
-      }
-
       alert("✅ Changes saved successfully!");
     } catch (e) {
       console.error("Save error:", e);
@@ -308,101 +312,99 @@ const [collapsed, setCollapsed] = useState(false);
 
   if (loading || authLoading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950">
-        <p className="text-emerald-100 text-lg animate-pulse">Loading...</p>
+      
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
       </div>
-    );
+    );  
   }
 
   return (
+    <AppLayout>
     <div
-  className={`
-    flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60
-    ${collapsed ? "ml-20" : "ml-64"}
-    transition-all duration-300
-  `}
+      className="flex-1 min-h-dvh p-6 space-y-6">
 
-      style={{
-        backgroundImage: "url('/bg.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      
-      <Sidebar role={roleId} collapsed={collapsed} setCollapsed={setCollapsed} />
-
-
-      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
         {/* Header */}
-        <div className="mb-6 flex flex-wrap items-center justify-between bg-emerald-100/90 rounded-lg px-4 py-3 shadow-sm border border-emerald-200/50">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-emerald-950">
-            Account
-          </h1>
-          <button
-            onClick={signOut}
-            className="px-5 py-2 rounded-lg font-semibold border-2 border-red-500 text-red-600 bg-red-50 hover:bg-red-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400"
-          >
-            Sign Out
-          </button>
+        <div
+          className="
+            mb-6 px-6 py-4 rounded-lg border shadow-sm
+            flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          {/* LEFT */}
+          <div>
+            <h1 className="text-2xl font-bold">Account</h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Manage your profile, preferences, and activity
+            </p>
+          </div>
+
+          {/* RIGHT — TABS */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              ["dashboard", " Dashboard"],
+              ["notifications", " Notifications"],
+              ["employment", " Employment"],
+              ["role", " Role"],
+              ["department", " Department"],
+              ["language", " Language"],
+              ["settings", " Settings"],
+            ].map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`
+                  px-4 py-2 rounded-md text-sm font-medium border transition
+                  ${
+                    activeTab === key
+                      ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                      : "bg-transparent border-gray-300 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue"
+                  }
+                `}
+              >
+                {label}
+                {key === "notifications" &&
+                  notifications.filter((n) => !n.read).length > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center text-xs bg-red-500 text-white rounded-full px-2">
+                      {notifications.filter((n) => !n.read).length}
+                    </span>
+                  )}
+              </button>
+            ))}
+            <button
+              onClick={signOut}
+              className="px-4 py-2 rounded-md text-sm font-medium border transition bg-transparent border-gray-300 text-gray-700 dark:text-gray-200 hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-600 dark:hover:text-white"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-3 flex-wrap mb-6">
-          {[
-            "dashboard",
-            "notifications",
-            "employment",
-            "role",
-            "department",
-            "language",
-            "settings",
-          ].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-5 py-2 rounded-full font-semibold capitalize transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 relative
-                ${
-                  activeTab === tab
-                    ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950 shadow-md scale-105"
-                    : "bg-white text-emerald-800 hover:bg-gray-100"
-                }`}
-            >
-              {tab === "dashboard"
-                ? "📊 Dashboard"
-                : tab === "notifications"
-                ? "🔔 Notifications"
-                : tab === "employment"
-                ? "💼 Employment"
-                : tab === "role"
-                ? "👤 Role Info"
-                : tab === "department"
-                ? "🏢 Department"
-                : tab === "language"
-                ? "🌐 Language"
-                : "⚙️ Settings"}
-              {tab === "notifications" &&
-                notifications.filter((n) => !n.read).length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
-                    {notifications.filter((n) => !n.read).length > 9
-                      ? "9+"
-                      : notifications.filter((n) => !n.read).length}
-                  </span>
-                )}
-            </button>
-          ))}
-        </div>
 
         {/* Content Card */}
-        <div className="bg-white/95 rounded-2xl p-6 sm:p-8 shadow-lg border border-emerald-200">
+        <div
+          className="
+            rounded-xl border shadow-sm transition
+            bg-white/90 text-gray-900 border-gray-300
+            dark:bg-black/40 dark:text-gray-100 dark:border-black
+            p-5
+          "
+        >
+
           {/* DASHBOARD */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               {/* Welcome Section */}
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold text-emerald-900 mb-2">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold  mb-2">
                   Welcome back, {name}! 👋
                 </h2>
-                <p className="text-emerald-600">
+                <p className="text-gray-600">
                   Here's your learning progress overview
                 </p>
               </div>
@@ -410,7 +412,10 @@ const [collapsed, setCollapsed] = useState(false);
               {/* Stats Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {/* XP Card */}
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-4 shadow-lg">
+                <div className="text-white rounded-xl p-4 shadow-lg 
+                  bg-gradient-to-r from-purple-500 to-purple-600
+                dark:bg-DivuDarkGreen/70 dark:from-transparent dark:to-transparent dark:border-black">
+                 
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium opacity-90">
@@ -426,7 +431,9 @@ const [collapsed, setCollapsed] = useState(false);
                 </div>
 
                 {/* Modules Card */}
-                <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-4 shadow-lg">
+                <div className=" text-white rounded-xl p-4 shadow-lg
+                  bg-gradient-to-r from-green-500 to-emerald-600
+                  dark:bg-DivuDarkGreen/70 dark:from-transparent dark:to-transparent dark:border-black">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium opacity-90">
@@ -451,7 +458,9 @@ const [collapsed, setCollapsed] = useState(false);
                 </div>
 
                 {/* Certificates Card */}
-                <div className="bg-gradient-to-br from-yellow-500 to-orange-500 text-white rounded-xl p-4 shadow-lg">
+                <div className=" text-white rounded-xl p-4 shadow-lg
+                  bg-gradient-to-r from-orange-500 to-orange-600
+                  dark:bg-DivuDarkGreen/70 dark:from-transparent dark:to-transparent dark:border-black">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium opacity-90">
@@ -467,7 +476,9 @@ const [collapsed, setCollapsed] = useState(false);
                 </div>
 
                 {/* Streak Card */}
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4 shadow-lg">
+                <div className=" text-white rounded-xl p-4 shadow-lg
+                  bg-gradient-to-r from-red-500 to-pink-600 
+                  dark:bg-DivuDarkGreen/70 dark:from-transparent dark:to-transparent dark:border-black">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium opacity-90">Streak</h3>
@@ -482,35 +493,36 @@ const [collapsed, setCollapsed] = useState(false);
               </div>
 
               {/* Progress Bar */}
-              <div className="bg-emerald-50 rounded-xl p-4 mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-emerald-900">
-                    Overall Progress
-                  </h3>
-                  <span className="text-sm text-emerald-600">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Overall Progress</h3>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
                     {userStats.totalModules > 0
                       ? Math.round(
-                          (userStats.completedModules /
-                            userStats.totalModules) *
+                          (userStats.completedModules / userStats.totalModules) *
                             100
                         )
                       : 0}
                     %
                   </span>
                 </div>
-                <div className="w-full bg-emerald-200 rounded-full h-3">
+
+                <div className="h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
                   <div
-                    className="bg-emerald-600 h-3 rounded-full transition-all duration-500"
+                    className="h-full bg-emerald-500 rounded-full transition-all"
                     style={{
                       width: `${
                         userStats.totalModules > 0
-                          ? (userStats.completedModules /
-                              userStats.totalModules) *
-                            100
+                          ? Math.min(
+                              (userStats.completedModules /
+                                userStats.totalModules) *
+                                100,
+                              100
+                            )
                           : 0
                       }%`,
                     }}
-                  ></div>
+                  />
                 </div>
               </div>
 
@@ -549,11 +561,11 @@ const [collapsed, setCollapsed] = useState(false);
           {activeTab === "notifications" && (
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-lg">🔔</span>
+                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-xl">🔔</span>
                 </div>
-                <h2 className="text-2xl font-bold text-emerald-900">
-                  Notifications Center
+                <h2 className="text-2xl font-bold">
+                  Notifications
                 </h2>
                 {notifications.filter((n) => !n.read).length > 0 && (
                   <span className="bg-red-100 text-red-800 text-sm font-medium px-2 py-1 rounded-full">
@@ -584,11 +596,10 @@ const [collapsed, setCollapsed] = useState(false);
                     return (
                       <div
                         key={notification.id}
-                        className={`bg-gradient-to-br ${getTypeColor(
-                          notification.type
-                        )} border rounded-xl p-4 hover:shadow-md transition-all duration-200 ${
+                        onClick={() => markNotificationAsRead(notification.id)}
+                        className={`bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer ${
                           !notification.read
-                            ? "ring-2 ring-blue-200 ring-opacity-50"
+                            ? "border-l-4 border-l-emerald-600"
                             : ""
                         }`}
                       >
@@ -598,11 +609,7 @@ const [collapsed, setCollapsed] = useState(false);
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <h3
-                                className={`font-semibold text-gray-900 ${
-                                  !notification.read ? "text-blue-900" : ""
-                                }`}
-                              >
+                              <h3 className="font-semibold text-gray-900">
                                 {notification.title}
                               </h3>
                               <div className="flex items-center gap-2 flex-shrink-0">
@@ -612,7 +619,7 @@ const [collapsed, setCollapsed] = useState(false);
                                   ).toLocaleDateString()}
                                 </span>
                                 {!notification.read && (
-                                  <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                  <span className="w-2 h-2 bg-emerald-600 rounded-full"></span>
                                 )}
                               </div>
                             </div>
@@ -641,22 +648,22 @@ const [collapsed, setCollapsed] = useState(false);
           {activeTab === "language" && (
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-lg">🌐</span>
+                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-xl">🌐</span>
                 </div>
-                <h2 className="text-2xl font-bold text-emerald-900">
+                <h2 className="text-2xl font-bold">
                   Language Settings
                 </h2>
               </div>
 
               <label className="block max-w-sm">
-                <span className="block text-sm font-semibold text-emerald-900 mb-1">
+                <span className="block text-sm font-semibold mb-1">
                   Choose Language
                 </span>
                 <select
                   value={language}
                   onChange={handleLanguageChange}
-                  className="w-full rounded-lg border border-emerald-200 bg-white/90 px-3 py-2 shadow-sm focus:border-emerald-400 focus:ring focus:ring-emerald-300/50"
+                  className="w-full rounded-lg border border-emerald-200 bg-white/90 px-3 py-2 shadow-sm focus:border-emerald-400 focus:ring focus:ring-emerald-300/50 text-black"
                 >
                   <option value="en">English</option>
                   <option value="es">Spanish</option>
@@ -682,14 +689,14 @@ const [collapsed, setCollapsed] = useState(false);
               {/* Profile Image */}
               <div
                 onClick={triggerFileInput}
-                className="w-32 h-32 bg-emerald-50 border border-emerald-200 rounded-md flex items-center justify-center text-emerald-700 font-semibold cursor-pointer hover:bg-emerald-100 transition-all duration-200"
+                className="w-32 h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-600 font-medium cursor-pointer hover:bg-gray-100 hover:border-gray-400 transition"
                 title="Click to upload profile image"
               >
                 {profileImage ? (
                   <img
                     src={profileImage}
                     alt="Profile"
-                    className="w-full h-full object-cover rounded-md"
+                    className="w-full h-full object-cover rounded-lg"
                   />
                 ) : (
                   "Upload"
@@ -705,44 +712,44 @@ const [collapsed, setCollapsed] = useState(false);
 
               <div className="grid grid-cols-1 gap-4 max-w-lg">
                 <label className="block">
-                  <span className="block text-sm font-semibold text-emerald-900 mb-1">
-                    Full Name
+                  <span className="block text-sm font-semibold text-gray-900 mb-1">
+                    Display Name
                   </span>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your full name"
-                    className="w-full rounded-lg border border-emerald-200 bg-white/90 px-3 py-2 text-emerald-900 shadow-sm focus:border-emerald-400 focus:ring focus:ring-emerald-300/50"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 focus:outline-none"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="block text-sm font-semibold text-emerald-900 mb-1">
+                  <span className="block text-sm font-semibold text-gray-900 mb-1">
                     Email
                   </span>
                   <input
                     type="email"
                     value={email}
                     disabled
-                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-600 cursor-not-allowed"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="block text-sm font-semibold text-emerald-900 mb-1">
+                  <span className="block text-sm font-semibold text-gray-900 mb-1">
                     Employee ID
                   </span>
                   <input
                     type="text"
                     value={employeeId}
                     disabled
-                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-600 cursor-not-allowed"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="block text-sm font-semibold text-emerald-900 mb-1">
+                  <span className="block text-sm font-semibold text-gray-900 mb-1">
                     Role
                   </span>
                   <input
@@ -755,7 +762,7 @@ const [collapsed, setCollapsed] = useState(false);
                         : "User"
                     }
                     disabled
-                    className="w-full rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-emerald-800 cursor-not-allowed"
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 text-gray-600 cursor-not-allowed"
                   />
                 </label>
               </div>
@@ -764,7 +771,7 @@ const [collapsed, setCollapsed] = useState(false);
                 <button
                   onClick={save}
                   disabled={busy}
-                  className="px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-emerald-500 to-green-600 shadow-md hover:from-emerald-400 hover:to-green-500 transition disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="px-6 py-3 rounded-lg font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
                 >
                   {busy ? "Saving…" : "Save Changes"}
                 </button>
@@ -776,19 +783,19 @@ const [collapsed, setCollapsed] = useState(false);
           {activeTab === "employment" && (
             <div className="space-y-6">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-green-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white text-lg">💼</span>
+                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-xl">💼</span>
                 </div>
-                <h2 className="text-2xl font-bold text-emerald-900">
+                <h2 className="text-2xl font-bold">
                   Employment Details
                 </h2>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-emerald-600">🆔</span>
-                    <label className="block text-sm font-semibold text-emerald-800">
+                    <label className="block text-sm font-semibold text-gray-900">
                       Employee ID
                     </label>
                   </div>
@@ -797,50 +804,50 @@ const [collapsed, setCollapsed] = useState(false);
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-blue-600">🏢</span>
-                    <label className="block text-sm font-semibold text-blue-800">
+                    <span className="text-emerald-600">🏢</span>
+                    <label className="block text-sm font-semibold text-gray-900">
                       Department
                     </label>
                   </div>
-                  <p className="text-lg font-medium text-blue-900">
+                  <p className="text-lg font-medium text-gray-900">
                     {userProfile.department}
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-purple-600">👨‍💻</span>
-                    <label className="block text-sm font-semibold text-purple-800">
+                    <span className="text-emerald-600">👨‍💻</span>
+                    <label className="block text-sm font-semibold text-gray-900">
                       Position
                     </label>
                   </div>
-                  <p className="text-lg font-medium text-purple-900">
+                  <p className="text-lg font-medium text-gray-900">
                     {userProfile.position}
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 border border-orange-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-orange-600">👔</span>
-                    <label className="block text-sm font-semibold text-orange-800">
+                    <span className="text-emerald-600">👔</span>
+                    <label className="block text-sm font-semibold text-gray-900">
                       Manager
                     </label>
                   </div>
-                  <p className="text-lg font-medium text-orange-900">
+                  <p className="text-lg font-medium text-gray-900">
                     {userProfile.manager}
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-green-600">📅</span>
-                    <label className="block text-sm font-semibold text-green-800">
+                    <span className="text-emerald-600">📅</span>
+                    <label className="block text-sm font-semibold text-gray-900">
                       Hire Date
                     </label>
                   </div>
-                  <p className="text-lg font-medium text-green-900">
+                  <p className="text-lg font-medium text-gray-900">
                     {userProfile.hire_date
                       ? new Date(userProfile.hire_date).toLocaleDateString(
                           "en-US",
@@ -854,52 +861,52 @@ const [collapsed, setCollapsed] = useState(false);
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-teal-600">📈</span>
-                    <label className="block text-sm font-semibold text-teal-800">
+                    <span className="text-emerald-600">📈</span>
+                    <label className="block text-sm font-semibold text-gray-900">
                       Status
                     </label>
                   </div>
-                  <p className="text-lg font-medium text-teal-900 flex items-center gap-2">
-                    <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
+                  <p className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                    <span className="w-3 h-3 bg-emerald-600 rounded-full animate-pulse"></span>
                     Active
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-pink-600">👤</span>
-                    <label className="block text-sm font-semibold text-pink-800">
+                    <span className="text-emerald-600">👤</span>
+                    <label className="block text-sm font-semibold text-gray-900">
                       Employee Name
                     </label>
                   </div>
-                  <p className="text-lg font-medium text-pink-900">
+                  <p className="text-lg font-medium text-gray-900">
                     {name || "Not provided"}
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-yellow-600">🔄</span>
-                    <label className="block text-sm font-semibold text-yellow-800">
+                    <span className="text-emerald-600">🔄</span>
+                    <label className="block text-sm font-semibold text-gray-900">
                       Employment Type
                     </label>
                   </div>
-                  <p className="text-lg font-medium text-yellow-900">
+                  <p className="text-lg font-medium text-gray-900">
                     {userProfile.employment_type}
                   </p>
                 </div>
 
                 {userProfile.salary && (
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-indigo-600">💰</span>
-                      <label className="block text-sm font-semibold text-indigo-800">
+                      <span className="text-emerald-600">💰</span>
+                      <label className="block text-sm font-semibold text-gray-900">
                         Salary
                       </label>
                     </div>
-                    <p className="text-lg font-medium text-indigo-900">
+                    <p className="text-lg font-medium text-gray-900">
                       {typeof userProfile.salary === "number"
                         ? `$${userProfile.salary.toLocaleString()}/year`
                         : userProfile.salary}
@@ -929,7 +936,7 @@ const [collapsed, setCollapsed] = useState(false);
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                   <span className="text-white text-lg">👤</span>
                 </div>
-                <h2 className="text-2xl font-bold text-emerald-900">
+                <h2 className="text-2xl font-bold">
                   Role Information
                 </h2>
               </div>
@@ -1059,7 +1066,7 @@ const [collapsed, setCollapsed] = useState(false);
                 <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
                   <span className="text-white text-lg">🏢</span>
                 </div>
-                <h2 className="text-2xl font-bold text-emerald-900">
+                <h2 className="text-2xl font-bold">
                   Department Information
                 </h2>
               </div>
@@ -1158,6 +1165,6 @@ const [collapsed, setCollapsed] = useState(false);
           )}
         </div>
       </div>
-    </div>
+    </AppLayout>
   );
 }

@@ -26,19 +26,8 @@ import {
   CheckCircle2,
   Activity,
   Gauge,
-  SmilePlus,
   Search,
 } from "lucide-react";
-
-
-const COMPLETION_BUCKETS = [
-  { key: "0-25", label: "0–25%" },
-  { key: "25-50", label: "25–50%" },
-  { key: "50-75", label: "50–75%" },
-  { key: "75-100", label: "75–100%" },
-];
-
-const PIE_COLORS = ["#61e965", "#223b34", "#6060e1",];
 
 /**
  * Helper to get ISO date string N days ago
@@ -48,7 +37,6 @@ function daysAgo(num) {
   d.setDate(d.getDate() - num);
   return d.toISOString();
 }
-
 
 export default function ManageProgress() {
   const navigate = useNavigate();
@@ -69,6 +57,7 @@ export default function ManageProgress() {
   const [checklistItems, setChecklistItems] = useState([]); // assigned_checklist_item
   const [moduleProgress, setModuleProgress] = useState([]); // user_module_progress
   const [feedbackRows, setFeedbackRows] = useState([]);
+  const [moduleList, setModuleList] = useState([]);
 
   // Derived analytics
   const [summary, setSummary] = useState({
@@ -86,14 +75,13 @@ export default function ManageProgress() {
   const [chartData, setChartData] = useState({
     checklistByGroup: [],
     moduleStatus: [],
-    completionBuckets: [],
+    moduleStatusBreakdown: [],
     completionsOverTime: [],
   });
 
-  // ---- AI Consts ----
+  // AI summary
   const [aiSummary, setAiSummary] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-
 
   // ---- Role gate ----
   useEffect(() => {
@@ -108,7 +96,6 @@ export default function ManageProgress() {
       setLoading(true);
 
       try {
-        // time window
         const since =
           timeRange === "all"
             ? null
@@ -125,56 +112,53 @@ export default function ManageProgress() {
             "id, first_name, last_name, email, department, position, is_active"
           )
           .order("first_name", { ascending: true });
-
         if (usersError) throw usersError;
 
-        // 2) Checklist groups (for names)
+        // 2) Checklist groups
         const { data: groupsData, error: groupsError } = await supabase
           .from("checklist_groups")
           .select("id, name");
-
         if (groupsError) throw groupsError;
 
-        // 3) Assigned checklist items (optionally filtered by date)
+        // 3) Checklist items
         let checklistQuery = supabase
           .from("assigned_checklist_item")
           .select(
             "id, user_id, group_id, done, is_overdue, assigned_on, completed_at"
           );
 
-        if (since) {
-          checklistQuery = checklistQuery.gte("assigned_on", since);
-        }
+        if (since) checklistQuery = checklistQuery.gte("assigned_on", since);
 
         const { data: checklistData, error: checklistError } =
           await checklistQuery;
-
         if (checklistError) throw checklistError;
 
-        // 4) User module progress
+        // 4a) User module progress
         let moduleQuery = supabase
           .from("user_module_progress")
           .select(
             "id, user_id, module_id, completion_percentage, is_completed, completed_at, created_at"
           );
 
-        if (since) {
-          moduleQuery = moduleQuery.gte("created_at", since);
-        }
+        if (since) moduleQuery = moduleQuery.gte("created_at", since);
 
         const { data: moduleData, error: moduleError } = await moduleQuery;
         if (moduleError) throw moduleError;
 
-        // 5) Feedback rows
+        // 4b) Module titles
+        const { data: moduleListData, error: moduleListError } = await supabase
+          .from("modules")
+          .select("id, title");
+        if (moduleListError) throw moduleListError;
+
+        // 5) Feedback
         let feedbackQuery = supabase
           .from("feedback")
           .select(
             "feedback_id, user_id, rating, clarity, difficulty, relevance, submitted_at"
           );
 
-        if (since) {
-          feedbackQuery = feedbackQuery.gte("submitted_at", since);
-        }
+        if (since) feedbackQuery = feedbackQuery.gte("submitted_at", since);
 
         const { data: feedbackData, error: feedbackError } =
           await feedbackQuery;
@@ -191,6 +175,7 @@ export default function ManageProgress() {
         );
         setChecklistItems(checklistData || []);
         setModuleProgress(moduleData || []);
+        setModuleList(moduleListData || []);
         setFeedbackRows(feedbackData || []);
       } catch (err) {
         console.error("Error loading progress analytics:", err);
@@ -198,7 +183,7 @@ export default function ManageProgress() {
         if (!cancelled) setLoading(false);
       }
     }
-    
+
     loadAll();
 
     return () => {
@@ -206,7 +191,7 @@ export default function ManageProgress() {
     };
   }, [timeRange]);
 
-  // ---- Convenience: filtered employees list for the left panel ----
+  // ---- Filtered employees for left panel ----
   const filteredEmployees = useMemo(() => {
     let list = employees;
 
@@ -236,7 +221,7 @@ export default function ManageProgress() {
     return Array.from(set).sort();
   }, [employees]);
 
-  // ---- Compute analytics whenever raw data OR selected employee changes ----
+  // ---- Compute analytics whenever data or selection changes ----
   useEffect(() => {
     if (loading) return;
     setLoadingAnalytics(true);
@@ -246,7 +231,6 @@ export default function ManageProgress() {
         ? new Set([selectedEmployeeId])
         : new Set(employees.map((e) => e.id));
 
-    // scoped helpers
     const scopedChecklist = checklistItems.filter((c) =>
       scopeUserIds.has(c.user_id)
     );
@@ -257,7 +241,7 @@ export default function ManageProgress() {
       scopeUserIds.has(f.user_id)
     );
 
-    // ---- Summary numbers ----
+    // Summary
     const totalEmployees = scopeUserIds.size;
     const activeEmployees = employees.filter(
       (e) => scopeUserIds.has(e.id) && e.is_active
@@ -267,9 +251,7 @@ export default function ManageProgress() {
     const completedTasks = scopedChecklist.filter((c) => c.done).length;
     const overdueTasks = scopedChecklist.filter((c) => c.is_overdue).length;
     const completionRate =
-      totalTasks === 0
-        ? 0
-        : Math.round((completedTasks / totalTasks) * 100);
+      totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
     const completedModules = scopedModules.filter((m) => m.is_completed).length;
     const avgModuleCompletion =
@@ -302,7 +284,7 @@ export default function ManageProgress() {
       avgFeedback,
     });
 
-    // ---- Checklist by group (stacked bar) ----
+    // Checklist by group
     const groupStats = {};
     scopedChecklist.forEach((row) => {
       const groupName = groupsById[row.group_id] || "Other";
@@ -315,12 +297,8 @@ export default function ManageProgress() {
         };
       }
       groupStats[groupName].remaining += 1;
-      if (row.done) {
-        groupStats[groupName].completed += 1;
-      }
-      if (row.is_overdue) {
-        groupStats[groupName].overdue += 1;
-      }
+      if (row.done) groupStats[groupName].completed += 1;
+      if (row.is_overdue) groupStats[groupName].overdue += 1;
     });
 
     const checklistByGroup = Object.values(groupStats).map((g) => ({
@@ -328,13 +306,16 @@ export default function ManageProgress() {
       remaining: Math.max(g.remaining - g.completed, 0),
     }));
 
-    // ---- Module status per module ----
+    // Module status per module
     const moduleStatsMap = {};
     scopedModules.forEach((row) => {
-      const key = row.module_id || "Unknown";
+      const key = row.module_id;
+      const moduleName =
+        moduleList.find((m) => m.id === key)?.title || "Unknown Module";
+
       if (!moduleStatsMap[key]) {
         moduleStatsMap[key] = {
-          module: String(key).slice(0, 8), // short label; can be replaced with module title if you join modules table
+          module: moduleName,
           completed: 0,
           inProgress: 0,
           notStarted: 0,
@@ -352,40 +333,22 @@ export default function ManageProgress() {
 
     const moduleStatus = Object.values(moduleStatsMap);
 
-    // ---- Completion buckets (per employee) ----
-    const perUserCompletion = new Map();
-    scopedModules.forEach((row) => {
-      if (!perUserCompletion.has(row.user_id)) {
-        perUserCompletion.set(row.user_id, []);
-      }
-      perUserCompletion.get(row.user_id).push(row.completion_percentage || 0);
+    // Module status breakdown (pie: completed / in progress / not started)
+    const statusCounts = { completed: 0, inProgress: 0, notStarted: 0 };
+    scopedModules.forEach((m) => {
+      const pct = m.completion_percentage || 0;
+      if (pct === 100) statusCounts.completed += 1;
+      else if (pct > 0) statusCounts.inProgress += 1;
+      else statusCounts.notStarted += 1;
     });
 
-    const bucketCounts = {
-      "0-25": 0,
-      "25-50": 0,
-      "50-75": 0,
-      "75-100": 0,
-    };
+    const moduleStatusBreakdown = [
+      { name: "Completed", value: statusCounts.completed, color: "#22c55e" },
+      { name: "In progress", value: statusCounts.inProgress, color: "#3b82f6" },
+      { name: "Not started", value: statusCounts.notStarted, color: "#f59e0b" },
+    ];
 
-    perUserCompletion.forEach((list) => {
-      if (list.length === 0) return;
-      const avg =
-        list.reduce((sum, v) => sum + v, 0) / Math.max(list.length, 1);
-
-      if (avg < 25) bucketCounts["0-25"] += 1;
-      else if (avg < 50) bucketCounts["25-50"] += 1;
-      else if (avg < 75) bucketCounts["50-75"] += 1;
-      else bucketCounts["75-100"] += 1;
-    });
-
-    const completionBuckets = COMPLETION_BUCKETS.map((b, idx) => ({
-      range: b.label,
-      users: bucketCounts[b.key],
-      fill: PIE_COLORS[idx % PIE_COLORS.length],
-    }));
-
-    // ---- Completions over time (line) ----
+    // Completions over time
     const byDate = {};
 
     scopedChecklist.forEach((row) => {
@@ -409,7 +372,7 @@ export default function ManageProgress() {
     setChartData({
       checklistByGroup,
       moduleStatus,
-      completionBuckets,
+      moduleStatusBreakdown,
       completionsOverTime,
     });
 
@@ -421,15 +384,27 @@ export default function ManageProgress() {
     moduleProgress,
     feedbackRows,
     groupsById,
+    moduleList,
     selectedEmployeeId,
   ]);
 
   const selectedEmployee = employees.find((e) => e.id === selectedEmployeeId);
 
+  // Per-employee module list with titles
+  const employeeModules = useMemo(() => {
+    if (!selectedEmployee) return [];
+    return moduleProgress
+      .filter((m) => m.user_id === selectedEmployee.id)
+      .map((m) => ({
+        ...m,
+        module_title:
+          moduleList.find((mod) => mod.id === m.module_id)?.title ||
+          "Untitled Module",
+      }));
+  }, [selectedEmployee, moduleProgress, moduleList]);
 
-  
-    // AI Module
-    async function generateAISummary() {
+  // AI summary
+  async function generateAISummary() {
     try {
       setAiLoading(true);
 
@@ -445,12 +420,12 @@ export default function ManageProgress() {
         timeRange,
       };
 
-      // AI Summary backend placeholder call
-      const res = await fetch("http://localhost:5050/api/ai/summary", {
+      const res = await fetch("http://localhost:5050/api/ai/summary", { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ summary, selectedEmployee, timeRange }),
+        body: JSON.stringify(payload)
       });
+
 
       const data = await res.json();
       setAiSummary(data.summary || "No summary returned.");
@@ -462,376 +437,519 @@ export default function ManageProgress() {
     }
   }
 
+  // ---- CSV EXPORT: all visible analytics (including AI summary) ----
+  function exportAnalyticsCSV() {
+    const rows = [];
+    const now = new Date();
+
+    const pad = (n) => String(n).padStart(2, "0");
+    const yyyy = now.getFullYear();
+    const mm = pad(now.getMonth() + 1);
+    const dd = pad(now.getDate());
+    const hh = pad(now.getHours());
+    const min = pad(now.getMinutes());
+
+    const humanTs = now.toLocaleString();
+
+    // 1) Generated at
+    rows.push(["=== CSV GENERATED AT ==="]);
+    rows.push(["Field", "Value"]);
+    rows.push(["Generated On", humanTs]);
+    rows.push([]);
+    rows.push(["=== OVERVIEW ==="]);
+    rows.push(["Field", "Value"]);
+    rows.push(["Employees in view", summary.totalEmployees]);
+    rows.push(["Active employees", summary.activeEmployees]);
+    rows.push([
+      "Checklist completion rate",
+      `${summary.completionRate}%`,
+    ]);
+    rows.push(["Tasks completed", summary.completedTasks]);
+    rows.push(["Total tasks", summary.totalTasks]);
+    rows.push(["Overdue tasks", summary.overdueTasks]);
+    rows.push([
+      "Average module completion",
+      `${summary.avgModuleCompletion}%`,
+    ]);
+    rows.push(["Completed modules", summary.completedModules]);
+    if (summary.avgFeedback != null) {
+      rows.push(["Average feedback rating", summary.avgFeedback]);
+    }
+    rows.push([]);
+
+    // 2) Selected employee section (if any)
+    if (selectedEmployee) {
+      rows.push(["=== SELECTED EMPLOYEE ==="]);
+      rows.push(["Field", "Value"]);
+      const fullName = `${selectedEmployee.first_name || ""} ${
+        selectedEmployee.last_name || ""
+      }`.trim();
+      rows.push([
+        "Name",
+        fullName || selectedEmployee.email || "Unknown",
+      ]);
+      rows.push(["Email", selectedEmployee.email || ""]);
+      if (selectedEmployee.department) {
+        rows.push(["Department", selectedEmployee.department]);
+      }
+      if (selectedEmployee.position) {
+        rows.push(["Position", selectedEmployee.position]);
+      }
+      rows.push([]);
+    }
+
+    // 3) Checklist groups
+    rows.push(["=== CHECKLIST GROUPS ==="]);
+    rows.push(["Group", "Completed", "Remaining", "Overdue"]);
+    chartData.checklistByGroup.forEach((g) => {
+      rows.push([g.group, g.completed, g.remaining, g.overdue]);
+    });
+    rows.push([]);
+
+    // 4) Module status breakdown
+    rows.push(["=== MODULE STATUS BREAKDOWN ==="]);
+    rows.push(["Status", "Count"]);
+    chartData.moduleStatusBreakdown.forEach((s) => {
+      rows.push([s.name, s.value]);
+    });
+    rows.push([]);
+
+    // 5) Module progress by module
+    rows.push(["=== MODULE PROGRESS BY MODULE ==="]);
+    rows.push(["Module", "Completed", "In progress", "Not started"]);
+    chartData.moduleStatus.forEach((m) => {
+      rows.push([
+        m.module,
+        m.completed,
+        m.inProgress,
+        m.notStarted,
+      ]);
+    });
+    rows.push([]);
+
+    // 6) Completions over time
+    rows.push(["=== COMPLETIONS OVER TIME ==="]);
+    rows.push(["Date", "Completions"]);
+    chartData.completionsOverTime.forEach((d) => {
+      rows.push([d.date, d.count]);
+    });
+    rows.push([]);
+
+    // 7) AI Summary at the bottom
+    rows.push(["=== AI SUMMARY ==="]);
+    if (aiSummary) {
+      // strip basic HTML tags and condense whitespace
+      const plainSummary = aiSummary
+        .replace(/<[^>]+>/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      rows.push(["Summary", plainSummary]);
+    } else {
+      rows.push(["Summary", "(No AI summary generated yet)"]);
+    }
+
+    // Build CSV string with proper escaping
+    const csvLines = rows.map((row) =>
+      row
+        .map((cell) => {
+          const s = cell == null ? "" : String(cell);
+          if (
+            s.includes(",") ||
+            s.includes('"') ||
+            s.includes("\n")
+          ) {
+            return `"${s.replace(/"/g, '""')}"`;
+          }
+          return s;
+        })
+        .join(",")
+    );
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," + csvLines.join("\n");
+    const encodedUri = encodeURI(csvContent);
+
+    const link = document.createElement("a");
+    link.href = encodedUri;
+    const filename = `progress_export_${yyyy}-${mm}-${dd}_${hh}-${min}.csv`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   return (
     <AppLayout>
-      <div className="flex min-h-dvh bg-gradient-to-br from-emerald-50 to-green-100/60 relative">
-        <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10 space-y-6">
-          {/* Header + filters */}
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold text-emerald-950 tracking-wide mb-1">
-                Employee Progress & Analytics
-              </h1>
-              <p className="text-emerald-900/80 text-sm md:text-base">
-                {selectedEmployee
-                  ? `Viewing progress for ${selectedEmployee.first_name} ${selectedEmployee.last_name}`
-                  : "Overview across all employees"}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2 md:gap-3">
-              <TimeRangeButton
-                label="Last 30 days"
-                value="30"
-                current={timeRange}
-                onChange={setTimeRange}
-              />
-              <TimeRangeButton
-                label="Last 90 days"
-                value="90"
-                current={timeRange}
-                onChange={setTimeRange}
-              />
-              <TimeRangeButton
-                label="Last year"
-                value="365"
-                current={timeRange}
-                onChange={setTimeRange}
-              />
-              <TimeRangeButton
-                label="All time"
-                value="all"
-                current={timeRange}
-                onChange={setTimeRange}
-              />
-            </div>
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
+        {/* Header + filters */}
+        <div
+          className="
+            mb-6 px-6 py-4 rounded-lg border shadow-sm
+            flex flex-col gap-4 md:flex-row md:items-center md:justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          <div>
+            <h1 className="text-2xl font-bold">
+              Employee Progress & Analytics
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {selectedEmployee
+                ? `Viewing progress for ${selectedEmployee.first_name} ${selectedEmployee.last_name}`
+                : "Overview across all employees"}
+            </p>
           </div>
 
-          {/* Top summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <SummaryCard
-              icon={Users}
-              label="Employees in view"
-              value={summary.totalEmployees}
-              helper={`${summary.activeEmployees} active`}
-            />
-            <SummaryCard
-              icon={CheckCircle2}
-              label="Checklist completion"
-              value={`${summary.completionRate}%`}
-              helper={`${summary.completedTasks}/${summary.totalTasks} tasks`}
-            />
-            <SummaryCard
-              icon={AlertTriangle}
-              label="Overdue tasks"
-              value={summary.overdueTasks}
-              helper="Needs attention"
-              emphasis="warning"
-            />
-            <SummaryCard
-              icon={Gauge}
-              label="Module progress"
-              value={`${summary.avgModuleCompletion}%`}
-              helper={`${summary.completedModules} modules completed`}
-            />
-            <SummaryCard
-              icon={Activity}
-              label="Scope"
-              value={selectedEmployee ? "Per-employee" : "All employees"}
-              helper={
-                selectedEmployee
-                  ? selectedEmployee.email
-                  : "Click an employee to drill in"
-              }
-            />
+          <div className="flex flex-wrap gap-2 md:gap-3">
+            <TimeRangeButton label="Last 30 days" value="30" current={timeRange} onChange={setTimeRange} />
+            <TimeRangeButton label="Last 90 days" value="90" current={timeRange} onChange={setTimeRange} />
+            <TimeRangeButton label="Last year" value="365" current={timeRange} onChange={setTimeRange} />
+            <TimeRangeButton label="All time" value="all" current={timeRange} onChange={setTimeRange} />
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[320px,minmax(0,1fr)] gap-6">
-            {/* Left: Employee selector */}
-            <div className="bg-white/95 rounded-2xl shadow-lg border border-emerald-200 flex flex-col">
-              <div className="px-4 py-3 border-b border-emerald-100 flex items-center justify-between">
-                <h2 className="font-semibold text-emerald-900 text-sm">
-                  Employees
-                </h2>
-                {selectedEmployee && (
-                  <button
-                    onClick={() => setSelectedEmployeeId(null)}
-                    className="text-xs text-emerald-700 hover:underline"
-                  >
-                    Clear selection
-                  </button>
-                )}
-              </div>
+        {/* Top summary cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <SummaryCard
+            icon={Users}
+            label="Employees in view"
+            value={summary.totalEmployees}
+            helper={`${summary.activeEmployees} active`}
+          />
+          <SummaryCard
+            icon={CheckCircle2}
+            label="Checklist completion"
+            value={`${summary.completionRate}%`}
+            helper={`${summary.completedTasks}/${summary.totalTasks} tasks`}
+          />
+          <SummaryCard
+            icon={AlertTriangle}
+            label="Overdue tasks"
+            value={summary.overdueTasks}
+            helper="Needs attention"
+            emphasis="warning"
+          />
+          <SummaryCard
+            icon={Gauge}
+            label="Module progress"
+            value={`${summary.avgModuleCompletion}%`}
+            helper={`${summary.completedModules} modules completed`}
+          />
+          <SummaryCard
+            icon={Activity}
+            label="Scope"
+            value={selectedEmployee ? "Per-employee" : "All employees"}
+            helper={
+              selectedEmployee
+                ? selectedEmployee.email
+                : "Click an employee to drill in"
+            }
+          />
+        </div>
 
-              <div className="p-3 space-y-3">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="w-4 h-4 text-emerald-500 absolute left-2 top-2.5" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name or email..."
-                    className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-emerald-200 focus:ring-2 focus:ring-emerald-400 focus:outline-none"
-                  />
-                </div>
-
-                {/* Department filter */}
-                <select
-                  value={deptFilter}
-                  onChange={(e) => setDeptFilter(e.target.value)}
-                  className="w-full text-sm rounded-md border border-emerald-200 px-3 py-1.5 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white"
-                >
-                  <option value="all">All departments</option>
-                  {departments.map((dept) => (
-                    <option key={dept} value={dept}>
-                      {dept}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="border-t border-emerald-100 flex-1 overflow-y-auto custom-scrollbar max-h-[calc(100vh-260px)]">
-                {filteredEmployees.length === 0 ? (
-                  <div className="p-4 text-xs text-gray-500 italic">
-                    No employees match your filters.
-                  </div>
-                ) : (
-                  filteredEmployees.map((emp) => {
-                    const isSelected = emp.id === selectedEmployeeId;
-                    const name = `${emp.first_name || ""} ${
-                      emp.last_name || ""
-                    }`.trim();
-
-                    return (
-                      <button
-                        key={emp.id}
-                        onClick={() =>
-                          setSelectedEmployeeId(
-                            isSelected ? null : emp.id
-                          )
-                        }
-                        className={`w-full text-left px-4 py-2.5 text-sm border-b border-emerald-50 hover:bg-emerald-50/70 transition flex flex-col gap-0.5 ${
-                          isSelected
-                            ? "bg-emerald-100/80"
-                            : "bg-transparent"
-                        }`}
-                      >
-                        <span className="font-medium text-emerald-900 line-clamp-1">
-                          {name || emp.email}
-                        </span>
-                        <span className="text-xs text-emerald-900/70 line-clamp-1">
-                          {emp.email}
-                        </span>
-                        {emp.department && (
-                          <span className="text-[11px] text-emerald-700/80">
-                            {emp.department} • {emp.position || "Employee"}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-
-            {/* Right: charts */}
-            <div className="space-y-6">
-              {/* Checklist vs modules */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {/* Checklist by group */}
-                <AnalyticsCard title="Checklist Completion by Group">
-                  {chartData.checklistByGroup.length === 0 ? (
-                    <EmptyChartState loading={loadingAnalytics} />
-                  ) : (
-                    <ResponsiveContainer width="100%" height={260}>
-                      <BarChart data={chartData.checklistByGroup}>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#d1fae5"
-                        />
-                        <XAxis dataKey="group" tick={{ fontSize: 11 }} />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar
-                          dataKey="completed"
-                          stackId="a"
-                          name="Completed"
-                          fill="#61e965"
-                        />
-                        <Bar
-                          dataKey="remaining"
-                          stackId="a"
-                          name="Remaining"  
-                          fill="#6060e1"
-                        />
-                        <Bar
-                          dataKey="overdue"
-                          stackId="a"
-                          name="Overdue"
-                          fill="#f97316"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </AnalyticsCard>
-
-                {/* Module statuses */}
-                <AnalyticsCard title="Module Status by Module">
-                  {chartData.moduleStatus.length === 0 ? (
-                    <EmptyChartState loading={loadingAnalytics} />
-                  ) : (
-                    <ResponsiveContainer width="100%" height={260}>
-                      <BarChart data={chartData.moduleStatus}>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#d1fae5"
-                        />
-                        <XAxis dataKey="module" tick={{ fontSize: 11 }} />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Bar
-                          dataKey="completed"
-                          name="Completed"
-                          fill="#22c55e"
-                        />
-                        <Bar
-                          dataKey="inProgress"
-                          name="In progress"
-                          fill="#3b82f6"
-                        />
-                        <Bar
-                          dataKey="notStarted"
-                          name="Not started"
-                          fill="#e5e7eb"
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
-                </AnalyticsCard>
-              </div>
-
-              {/* Completion buckets + time series */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {/* Completion distribution */}
-                <AnalyticsCard title="Employees by Average Module Completion">
-                  {chartData.completionBuckets.length === 0 ? (
-                    <EmptyChartState loading={loadingAnalytics} />
-                  ) : (
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                      <div className="w-full md:w-1/2 h-56">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={chartData.completionBuckets}
-                              dataKey="users"
-                              nameKey="range"
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={70}
-                              label
-                            >
-                              {chartData.completionBuckets.map(
-                                (e, idx) => (
-                                  <Cell
-                                    key={e.range}
-                                    fill={
-                                      PIE_COLORS[idx % PIE_COLORS.length]
-                                    }
-                                  />
-                                )
-                              )}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        {chartData.completionBuckets.map((b, idx) => (
-                          <div
-                            key={b.range}
-                            className="flex items-center justify-between text-xs text-emerald-950"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="inline-block w-3 h-3 rounded-sm"
-                                style={{
-                                  backgroundColor:
-                                    PIE_COLORS[idx % PIE_COLORS.length],
-                                }}
-                              />
-                              <span>{b.range}</span>
-                            </div>
-                            <span className="font-semibold">
-                              {b.users}{" "}
-                              <span className="font-normal text-gray-500">
-                                employees
-                              </span>
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </AnalyticsCard>
-
-                {/* Completions over time */}
-                <AnalyticsCard title="Checklist & Module Completions Over Time">
-                  {chartData.completionsOverTime.length === 0 ? (
-                    <EmptyChartState loading={loadingAnalytics} />
-                  ) : (
-                    <ResponsiveContainer width="100%" height={260}>
-                      <LineChart data={chartData.completionsOverTime}>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke="#d1fae5"
-                        />
-                        <XAxis
-                          dataKey="date"
-                          tick={{ fontSize: 11 }}
-                          minTickGap={12}
-                        />
-                        <YAxis />
-                        <Tooltip />
-                        <Line
-                          type="monotone"
-                          dataKey="count"
-                          stroke="#10b981"
-                          strokeWidth={2}
-                          dot={false}
-                          activeDot={{ r: 4 }}
-                          name="Completions"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
-                </AnalyticsCard>
-              </div>
-
-              {/* AI summary placeholder */}
-              <AnalyticsCard title="AI Summary">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px,minmax(0,1fr)] gap-6">
+          {/* Left: Employee selector */}
+          <div className="bg-white/95 rounded-2xl shadow-lg border border-emerald-200 flex flex-col">
+            <div className="px-4 py-3 border-b border-emerald-100 flex items-center justify-between">
+              <h2 className="font-semibold text-emerald-900 text-sm">
+                Employees
+              </h2>
+              {selectedEmployee && (
                 <button
-                  onClick={generateAISummary}
-                  disabled={aiLoading}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm mb-4 hover:bg-emerald-700 disabled:bg-gray-300"
+                  onClick={() => setSelectedEmployeeId(null)}
+                  className="text-xs text-emerald-700 hover:underline"
                 >
-                  {aiLoading ? "Analyzing…" : "Generate AI Summary"}
+                  Clear selection
                 </button>
+              )}
+            </div>
 
-                {aiSummary ? (
-                  <div
-                    className="prose prose-emerald max-w-none text-gray-800 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: aiSummary }}
-                  />
+            <div className="p-3 space-y-3">
+              {/* Search */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-emerald-500 absolute left-2 top-2.5" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name or email..."
+                  className="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-emerald-200 focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+                />
+              </div>
+
+              {/* Department filter */}
+              <select
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+                className="w-full text-sm rounded-md border border-emerald-200 px-3 py-1.5 focus:ring-2 focus:ring-emerald-400 focus:outline-none bg-white"
+              >
+                <option value="all">All departments</option>
+                {departments.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="border-t border-emerald-100 flex-1 overflow-y-auto custom-scrollbar max-h-[calc(100vh-260px)] text-black">
+              {filteredEmployees.length === 0 ? (
+                <div className="p-4 text-xs text-gray-500 italic">
+                  No employees match your filters.
+                </div>
+              ) : (
+                filteredEmployees.map((emp) => {
+                  const isSelected = emp.id === selectedEmployeeId;
+                  const name = `${emp.first_name || ""} ${
+                    emp.last_name || ""
+                  }`.trim();
+
+                  return (
+                    <button
+                      key={emp.id}
+                      onClick={() =>
+                        setSelectedEmployeeId(isSelected ? null : emp.id)
+                      }
+                      className={`w-full text-left px-4 py-2.5 text-sm border-b border-emerald-50 hover:bg-emerald-50/70 transition flex flex-col gap-0.5 ${
+                        isSelected ? "bg-emerald-100/80" : "bg-transparent"
+                      }`}
+                    >
+                      <span className="font-medium text-emerald-900 line-clamp-1">
+                        {name || emp.email}
+                      </span>
+                      <span className="text-xs text-emerald-900/70 line-clamp-1">
+                        {emp.email}
+                      </span>
+                      {emp.department && (
+                        <span className="text-[11px] text-emerald-700/80">
+                          {emp.department} • {emp.position || "Employee"}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Right: charts */}
+          <div className="space-y-6">
+            {/* Row 1: Completions over time + checklist by group */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 text-black">
+              <AnalyticsCard title="Checklist & Module Completions Over Time">
+                {chartData.completionsOverTime.length === 0 ? (
+                  <EmptyChartState loading={loadingAnalytics} />
                 ) : (
-                  <p className="text-sm text-gray-500 italic">
-                    No AI summary generated yet.
-                  </p>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <LineChart data={chartData.completionsOverTime}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#d1fae5"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 11 }}
+                        minTickGap={12}
+                      />
+                      <YAxis />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="count"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                        name="Completions"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </AnalyticsCard>
+
+              <AnalyticsCard title="Checklist Completion by Group">
+                {chartData.checklistByGroup.length === 0 ? (
+                  <EmptyChartState loading={loadingAnalytics} />
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={chartData.checklistByGroup}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#d1fae5"
+                      />
+                      <XAxis dataKey="group" tick={{ fontSize: 11 }} />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar
+                        dataKey="completed"
+                        stackId="a"
+                        name="Completed"
+                        fill="#61e965"
+                      />
+                      <Bar
+                        dataKey="remaining"
+                        stackId="a"
+                        name="Remaining"
+                        fill="#6060e1"
+                      />
+                      <Bar
+                        dataKey="overdue"
+                        stackId="a"
+                        name="Overdue"
+                        fill="#f97316"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
                 )}
               </AnalyticsCard>
             </div>
+
+            {/* Row 2: Module status breakdown + module progress */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <AnalyticsCard title="Module Status Breakdown">
+                {chartData.moduleStatusBreakdown.every(
+                  (s) => s.value === 0
+                ) ? (
+                  <EmptyChartState loading={loadingAnalytics} />
+                ) : (
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="w-full md:w-1/2 h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={chartData.moduleStatusBreakdown}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={70}
+                            label
+                          >
+                            {chartData.moduleStatusBreakdown.map((slice) => (
+                              <Cell
+                                key={slice.name}
+                                fill={slice.color}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="flex-1 space-y-1">
+                      {chartData.moduleStatusBreakdown.map((slice) => (
+                        <div
+                          key={slice.name}
+                          className="flex items-center justify-between text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="inline-block w-3 h-3 rounded-sm"
+                              style={{ backgroundColor: slice.color }}
+                            />
+                            <span>{slice.name}</span>
+                          </div>
+                          <span className="font-semibold">
+                            {slice.value}{" "}
+                            <span className="font-normal text-gray-500">
+                              modules
+                            </span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </AnalyticsCard>
+
+              <AnalyticsCard
+                title={
+                  selectedEmployee
+                    ? "Module Progress for Selected Employee"
+                    : "Module Progress by Module"
+                }
+              >
+
+                
+                {selectedEmployee ? (
+                  <EmployeeModuleProgress modules={employeeModules} />
+                ) : chartData.moduleStatus.length === 0 ? (
+                  <EmptyChartState loading={loadingAnalytics} />
+                ) : (
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={chartData.moduleStatus}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="#d1fae5"
+                      />
+                      <XAxis dataKey="module" tick={{ fontSize: 11 }} />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar
+                        dataKey="completed"
+                        name="Completed"
+                        fill="#22c55e"
+                        
+                      />
+                      <Bar
+                        dataKey="inProgress"
+                        name="In progress"
+                        fill="#3b82f6"
+                      />
+                      <Bar
+                        dataKey="notStarted"
+                        name="Not started"
+                        fill="#f59e0b"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </AnalyticsCard>
+            </div>
+
+            {/* AI summary */}
+            <AnalyticsCard title="AI Summary">
+              <button
+                onClick={generateAISummary}
+                disabled={aiLoading}
+                className="px-4 py-2 bg-DivuDarkGreen hover:bg-DivuBlue text-white rounded-lg text-sm mb-4 disabled:bg-gray-300"
+              >
+                {aiLoading ? "Analyzing…" : "Generate AI Summary"}
+              </button>
+
+              {aiSummary ? (
+                <div
+                  className="prose prose-emerald max-w-none text-gray-800 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: aiSummary }}
+                />
+              ) : (
+                <p className="text-sm text-gray-500 italic">
+                  No AI summary generated yet.
+                </p>
+              )}
+            </AnalyticsCard>
+
+            {/* Export button */}
+            <AnalyticsCard title="Export Analytics">
+              <button
+                onClick={exportAnalyticsCSV}
+                className="px-4 py-2 bg-DivuDarkGreen hover:bg-DivuBlue text-white rounded-lg text-sm mb-2"
+              >
+                Export CSV
+              </button>
+                <p className="text-xs text-gray-600 mt-2">
+                    This will export all analytics currently visible on screen, including overview,
+                    checklist groups, module status, completions over time, selected employee data,
+                    and AI summary. Timestamp included in file.
+                </p>
+            </AnalyticsCard>
+
+            
+
           </div>
         </div>
       </div>
@@ -847,10 +965,10 @@ function TimeRangeButton({ label, value, current, onChange }) {
     <button
       type="button"
       onClick={() => onChange(value)}
-      className={`px-3 py-1.5 rounded-full text-xs md:text-sm font-medium border transition-all ${
+      className={`px-3 py-1.5 rounded-md text-xs md:text-sm font-medium border transition-all ${
         active
           ? "bg-DivuLightGreen text-black border-emerald-700 shadow-sm"
-          : "bg-white/90 text-emerald-900 border-emerald-200 hover:bg-DivuBlue hover:text-black"
+          : "bg-transparent border-black hover:bg-DivuBlue hover:text-black"
       }`}
     >
       {label}
@@ -860,11 +978,11 @@ function TimeRangeButton({ label, value, current, onChange }) {
 
 function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
   const base =
-    "rounded-2xl bg-DivuDarkGreen text-emerald-50 px-4 py-3 shadow-md border";
+    "rounded-2xl bg-white dark:bg-DivuDarkGreen/70 px-4 py-3 shadow-md border";
   const border =
     emphasis === "warning"
-      ? "border-amber-400/70"
-      : "border-emerald-400/70";
+      ? "border-red-400"
+      : "border-black";
 
   return (
     <div className={`${base} ${border} flex items-center gap-3`}>
@@ -872,7 +990,7 @@ function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
         <Icon className="w-5 h-5 text-black" />
       </div>
       <div className="flex flex-col">
-        <span className="text-xs font-semibold text-emerald-100/90">
+        <span className="text-xs font-semibold">
           {label}
         </span>
         <span className="text-lg font-bold leading-snug">{value}</span>
@@ -884,12 +1002,15 @@ function SummaryCard({ icon: Icon, label, value, helper, emphasis }) {
   );
 }
 
-function AnalyticsCard({ title, children }) {
+function AnalyticsCard({ title, children, action }) {
   return (
-    <div className="bg-white/60 rounded-2xl shadow-lg border border-emerald-200 p-4 md:p-5">
-      <h2 className="text-sm md:text-base font-semibold text-emerald-950 mb-3">
-        {title}
-      </h2>
+    <div className="bg-white/60 rounded-2xl shadow-lg border border-emerald-400 p-4 md:p-5 dark:bg-black/70">
+      <div className="flex items-center justify-between mb-3 gap-2">
+        <h2 className="text-sm md:text-base font-semibold">
+          {title}
+        </h2>
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
       {children}
     </div>
   );
@@ -899,6 +1020,126 @@ function EmptyChartState({ loading }) {
   return (
     <div className="flex items-center justify-center h-40 text-sm text-gray-500 italic">
       {loading ? "Computing analytics..." : "Not enough data to display."}
+    </div>
+  );
+}
+
+
+function EmployeeModuleProgress({ modules }) {
+  const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const filtered = useMemo(() => {
+    if (!showIncompleteOnly) return modules;
+    return modules.filter((m) => (m.completion_percentage || 0) < 100);
+  }, [modules, showIncompleteOnly]);
+
+  if (!modules || modules.length === 0) {
+    return (
+      <p className="text-sm italic">
+        No module progress available for this employee.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {/* Accordion header */}
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="w-full flex items-center justify-between text-xs md:text-sm font-semibold text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 hover:bg-emerald-100 transition"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-base">{open ? "▾" : "▸"}</span>
+          <span>
+            View module details{" "}
+            <span className="font-normal text-emerald-800">
+              ({filtered.length}
+              {showIncompleteOnly ? " incomplete" : " modules"})
+            </span>
+          </span>
+        </div>
+      </button>
+
+      {open && (
+        <div className="space-y-3 pt-1">
+          {/* Controls row */}
+          <div className="flex items-center justify-between mb-1">
+            <label className="flex items-center gap-1 text-[11px] text-emerald-800 cursor-pointer">
+              <input
+                type="checkbox"
+                className="rounded border-emerald-400"
+                checked={showIncompleteOnly}
+                onChange={(e) => setShowIncompleteOnly(e.target.checked)}
+              />
+              Show only incomplete
+            </label>
+            <span className="text-[11px] text-emerald-900/80">
+              Showing {filtered.length} record
+              {filtered.length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          {/* Module list */}
+          {filtered.map((m) => {
+            const pct = m.completion_percentage || 0;
+
+            let icon = "⬜";
+            let statusLabel = "Not started";
+
+            if (pct === 100) {
+              icon = "✔️";
+              statusLabel = "Completed";
+            } else if (pct > 0) {
+              icon = "⏳";
+              statusLabel = "In progress";
+            }
+
+            let tooltip = statusLabel;
+            if (m.completed_at && pct === 100) {
+              tooltip = `Completed on ${new Date(
+                m.completed_at
+              ).toLocaleString()}`;
+            } else if (m.created_at && pct > 0) {
+              tooltip = `In progress since ${new Date(
+                m.created_at
+              ).toLocaleString()}`;
+            }
+
+            return (
+              <div
+                key={m.id}
+                className="p-3 bg-white rounded-lg shadow border border-emerald-200 text-black"
+                title={tooltip}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{icon}</span>
+                    <span className="font-semibold text-black text-sm">
+                      {m.module_title}
+                    </span>
+                  </div>
+                  <span className="text-xs font-semibold text-black">
+                    {pct}% •{" "}
+                    <span className="font-normal text-black">
+                      {statusLabel}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Animated progress bar */}
+                <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 transition-all duration-500 text-black"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

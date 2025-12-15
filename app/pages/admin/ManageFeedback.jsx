@@ -3,6 +3,7 @@ import AppLayout from "../../../src/AppLayout.jsx";
 import { Trash2, Star, Eye, Filter, Download, BarChart3, TrendingUp, Users, Calendar, CheckCircle2, Bell, X } from "lucide-react";
 import { useRole } from "../../../src/lib/hooks/useRole.js";
 import { supabase } from "../../../src/lib/supabaseClient.js";
+import { useToast } from "../../context/ToastContext.jsx";
 
 export default function ManageFeedback() {
   const { roleId } = useRole();
@@ -26,6 +27,9 @@ export default function ManageFeedback() {
   });
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ show: false, message: "", onConfirm: null });
+  
+  const { showToast } = useToast();
 
   // Load all feedback with user and module details
   useEffect(() => {
@@ -170,24 +174,29 @@ export default function ManageFeedback() {
   };
 
   const deleteFeedback = async (feedbackId) => {
-    if (!confirm('Are you sure you want to delete this feedback?')) return;
+    setConfirmModal({
+      show: true,
+      message: 'Are you sure you want to delete this feedback?',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('module_feedback')
+            .delete()
+            .eq('id', feedbackId);
 
-    try {
-      const { error } = await supabase
-        .from('module_feedback')
-        .delete()
-        .eq('id', feedbackId);
+          if (error) {
+            showToast('Error deleting feedback: ' + error.message, 'error');
+            return;
+          }
 
-      if (error) {
-        alert('Error deleting feedback: ' + error.message);
-        return;
+          setFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
+          showToast('Feedback deleted successfully!', 'success');
+        } catch (err) {
+          showToast('Error deleting feedback: ' + err.message, 'error');
+        }
+        setConfirmModal({ show: false, message: "", onConfirm: null });
       }
-
-      setFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
-      alert('Feedback deleted successfully!');
-    } catch (err) {
-      alert('Error deleting feedback: ' + err.message);
-    }
+    });
   };
 
   const viewFeedbackDetails = (feedback) => {
@@ -227,7 +236,7 @@ export default function ManageFeedback() {
     link.click();
     document.body.removeChild(link);
     
-    alert(`Exported ${dataToExport.length} feedback entries to CSV!`);
+    showToast(`Exported ${dataToExport.length} feedback entries to CSV!`, 'success');
   };
 
   const toggleSelectAll = () => {
@@ -248,31 +257,34 @@ export default function ManageFeedback() {
 
   const bulkDelete = async () => {
     if (selectedItems.length === 0) {
-      alert('Please select items to delete');
+      showToast('Please select items to delete', 'warning');
       return;
     }
 
-    if (!confirm(`Are you sure you want to delete ${selectedItems.length} feedback entries?`)) {
-      return;
-    }
+    setConfirmModal({
+      show: true,
+      message: `Are you sure you want to delete ${selectedItems.length} feedback entries?`,
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from('module_feedback')
+            .delete()
+            .in('id', selectedItems);
 
-    try {
-      const { error } = await supabase
-        .from('module_feedback')
-        .delete()
-        .in('id', selectedItems);
+          if (error) {
+            showToast('Error deleting feedback: ' + error.message, 'error');
+            return;
+          }
 
-      if (error) {
-        alert('Error deleting feedback: ' + error.message);
-        return;
+          setFeedbacks(prev => prev.filter(f => !selectedItems.includes(f.id)));
+          setSelectedItems([]);
+          showToast('Selected feedback deleted successfully!', 'success');
+        } catch (err) {
+          showToast('Error deleting feedback: ' + err.message, 'error');
+        }
+        setConfirmModal({ show: false, message: "", onConfirm: null });
       }
-
-      setFeedbacks(prev => prev.filter(f => !selectedItems.includes(f.id)));
-      setSelectedItems([]);
-      alert('Selected feedback deleted successfully!');
-    } catch (err) {
-      alert('Error deleting feedback: ' + err.message);
-    }
+    });
   };
 
   // Filter and search logic
@@ -425,22 +437,29 @@ export default function ManageFeedback() {
   };
 
   return (
-    <AppLayout>
-    {/* // <div className="flex min-h-dvh bg-cover bg-center relative" style={{ backgroundImage: "url('/bg.png')" }}> */}
-      {/* <Sidebar active="manage-feedback" role={roleId} /> */}
-    
-      <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 shadow-md mb-4">
-          <span className="font-semibold text-emerald-950">
-            Admin Panel – Employee Feedback Management
-          </span>
-        </div>
+    <AppLayout>    
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
+        {/* Header */}
+        <div
+          className="
+            mb-6 px-6 py-4 rounded-lg border shadow-sm
+            flex items-center justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          <div>
+            <h1 className="text-2xl font-bold">
+              Employee Feedback
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {feedbacks.length} total feedback submissions
+            </p>
+          </div>
 
-        {/* Title */}
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide drop-shadow-lg flex justify-between items-center">
-          <span>EMPLOYEE FEEDBACK ({feedbacks.length} total)</span>
           <div className="flex items-center gap-3">
+
+
             {/* Notification Bell */}
             <div className="relative">
               <button
@@ -448,9 +467,10 @@ export default function ManageFeedback() {
                   setShowNotifications(!showNotifications);
                   requestNotificationPermission();
                 }}
-                className="relative p-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
+                className="relative p-2 bg-transparent hover:bg-DivuBlue
+                  rounded-lg transition-colors"
               >
-                <Bell size={20} />
+                <Bell size={20}/>
                 {notifications.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                     {notifications.length}
@@ -460,8 +480,15 @@ export default function ManageFeedback() {
               
               {/* Notifications Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 top-12 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
-                  <div className="p-3 border-b border-gray-200 bg-gray-50">
+              <div
+                className="
+                  absolute right-0 top-12 w-80 rounded-lg shadow-xl z-50 border
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-black/70 dark:border-black dark:text-gray-100
+                "
+              >
+
+              <div className="p-3 border-b border-gray-200 bg-gray-50">
                     <h4 className="font-semibold text-gray-800 flex items-center gap-2">
                       <Bell size={16} />
                       Recent Notifications
@@ -528,7 +555,8 @@ export default function ManageFeedback() {
             
             <button
               onClick={() => setShowAnalytics(!showAnalytics)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-DivuDarkGreen
+               hover:bg-DivuBlue rounded-lg text-white text-sm font-medium transition-colors flex items-center gap-2"
             >
               <BarChart3 size={16} />
               {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
@@ -538,49 +566,91 @@ export default function ManageFeedback() {
 
         {/* Analytics Dashboard */}
         {showAnalytics && (
-          <div className="bg-white/95 rounded-xl shadow-lg p-6 mb-6 border border-emerald-200">
-            <h3 className="text-xl font-bold text-emerald-800 mb-4 flex items-center gap-2">
+        <div
+          className="
+            rounded-xl shadow-sm p-6 mb-6 border transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/40 dark:border-black dark:text-gray-100
+          "
+        >
+
+        <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
               <TrendingUp size={20} />
               Analytics Dashboard
             </h3>
             
             {/* Key Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-lg">
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/70
+                   dark:border-black dark:text-gray-100
+                "
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-blue-100 text-sm">Total Feedback</p>
+                    <p className=" text-sm font-medium">Total Feedback</p>
                     <p className="text-2xl font-bold">{analytics.totalFeedback}</p>
                   </div>
-                  <Users size={24} className="text-blue-200" />
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100 text-sm">Average Rating</p>
-                    <p className="text-2xl font-bold">{analytics.avgRating}/5</p>
+                  <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
+                    <Users size={24} className="text-blue-600" />
                   </div>
-                  <Star size={24} className="text-green-200" />
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-lg">
+
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/70
+                   dark:border-black dark:text-gray-100
+                "
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-purple-100 text-sm">This Month</p>
-                    <p className="text-2xl font-bold">{analytics.monthlyTrends[analytics.monthlyTrends.length - 1]?.count || 0}</p>
+                    <p className=" text-sm font-medium">Average Rating</p>
+                    <p className="text-2xl font-bold ">{analytics.avgRating}/5</p>
                   </div>
-                  <Calendar size={24} className="text-purple-200" />
+                  <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center">
+                    <Star size={24} className="text-yellow-600" />
+                  </div>
                 </div>
               </div>
               
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 rounded-lg">
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/70
+                   dark:border-black dark:text-gray-100
+                "
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-orange-100 text-sm">Positive Rate</p>
-                    <p className="text-2xl font-bold">
+                    <p className=" text-sm font-medium">This Month</p>
+                    <p className="text-2xl font-bold ">{analytics.monthlyTrends[analytics.monthlyTrends.length - 1]?.count || 0}</p>
+                  </div>
+                  <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center">
+                    <Calendar size={24} className="text-purple-600" />
+                  </div>
+                </div>
+              </div>
+              
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/70
+                   dark:border-black dark:text-gray-100
+                "
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className=" text-sm font-medium">Positive Rate</p>
+                    <p className="text-2xl font-bold ">
                       {analytics.totalFeedback > 0 ? 
                         Math.round((Object.entries(analytics.ratingDistribution)
                           .filter(([rating]) => parseInt(rating) >= 4)
@@ -588,7 +658,9 @@ export default function ManageFeedback() {
                         : 0}%
                     </p>
                   </div>
-                  <CheckCircle2 size={24} className="text-orange-200" />
+                  <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+                    <CheckCircle2 size={24} className="text-green-600" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -596,8 +668,15 @@ export default function ManageFeedback() {
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Rating Distribution */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-3">Rating Distribution</h4>
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/30
+                   dark:border-black dark:text-gray-100
+                "
+              >
+                <h4 className="font-semibold mb-3">Rating Distribution</h4>
                 <div className="space-y-2">
                   {[5, 4, 3, 2, 1].map(rating => {
                     const count = analytics.ratingDistribution[rating] || 0;
@@ -608,13 +687,14 @@ export default function ManageFeedback() {
                           <span className="text-sm">{rating}</span>
                           <Star size={12} className="text-yellow-400 fill-yellow-400" />
                         </div>
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-black
+                        rounded-full h-2">
                           <div 
-                            className="bg-emerald-500 h-2 rounded-full transition-all duration-500" 
+                            className="bg-DivuLightGreen rounded-full transition-all duration-500 h-2" 
                             style={{ width: `${percentage}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm text-gray-600 w-12">{count}</span>
+                        <span className="text-sm w-12">{count}</span>
                       </div>
                     );
                   })}
@@ -622,13 +702,21 @@ export default function ManageFeedback() {
               </div>
               
               {/* Top Modules */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-3">Top Modules by Feedback</h4>
+              <div
+                className="
+                  p-4 rounded-lg shadow-sm border transition
+                  bg-white border-gray-300 text-gray-900
+                  dark:bg-DivuDarkGreen/30
+                   dark:border-black dark:text-gray-100
+                "
+              >
+                <h4 className="font-semibold mb-3">Top Modules by Feedback</h4>
                 <div className="space-y-2">
                   {analytics.topModules.map((module, idx) => (
-                    <div key={module.name} className="flex items-center justify-between p-2 bg-white rounded border">
+                    <div key={module.name} className="flex items-center justify-between p-2 bg-white dark:bg-black
+                    rounded border">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 bg-emerald-500 text-white text-xs rounded-full flex items-center justify-center">
+                        <span className="w-6 h-6 bg-emerald-500  text-xs rounded-full flex items-center justify-center">
                           {idx + 1}
                         </span>
                         <span className="text-sm font-medium truncate">{module.name}</span>
@@ -646,13 +734,20 @@ export default function ManageFeedback() {
         )}
 
         {/* Filters */}
-        <div className="bg-white/95 rounded-xl shadow-lg p-4 mb-6 border border-emerald-200">
-          <div className="space-y-4">
+        <div
+          className="
+            p-4 rounded-lg shadow-sm border transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-DivuDarkGreen/80
+              dark:border-black dark:text-gray-100
+          "
+        >
+         <div className="space-y-4">
             {/* First row - Filters */}
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex items-center gap-2">
-                <Filter size={18} className="text-emerald-600" />
-                <span className="font-medium text-emerald-800">Filters:</span>
+                <Filter size={18} className="text-gray-600" />
+                <span className="font-medium">Filters:</span>
               </div>
               
               {/* Search */}
@@ -661,14 +756,14 @@ export default function ManageFeedback() {
                 placeholder="Search by employee or module..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               />
               
               {/* Rating filter */}
               <select
                 value={filterRating}
                 onChange={(e) => setFilterRating(e.target.value)}
-                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               >
                 <option value="all">All Ratings</option>
                 <option value="5">5 Stars</option>
@@ -683,7 +778,7 @@ export default function ManageFeedback() {
                 type="date"
                 value={dateRange.start}
                 onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
                 placeholder="Start date"
               />
               
@@ -691,7 +786,7 @@ export default function ManageFeedback() {
                 type="date"
                 value={dateRange.end}
                 onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
                 placeholder="End date"
               />
               
@@ -699,7 +794,7 @@ export default function ManageFeedback() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               >
                 <option value="created_at">Sort by Date</option>
                 <option value="rating">Sort by Rating</option>
@@ -710,7 +805,7 @@ export default function ManageFeedback() {
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                className="px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-black"
               >
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
@@ -731,7 +826,9 @@ export default function ManageFeedback() {
               <div className="flex gap-2">
                 <button
                   onClick={exportToCSV}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-4 py-2 bg-transparent border border-DivuDarkGreen
+                   rounded-lg hover:bg-DivuBlue dark:border-black
+                    transition-colors text-sm font-medium"
                 >
                   <Download size={16} />
                   Export CSV
@@ -752,9 +849,9 @@ export default function ManageFeedback() {
         </div>
 
         {/* Feedback Table */}
-        <div className="overflow-x-auto rounded-lg border border-DivuDarkGreen shadow-lg bg-white">
+        <div className="overflow-x-auto rounded-lg border border-DivuDarkGreen shadow-lg bg-black/10">
           {loading ? (
-            <div className="p-8 text-center text-emerald-600">
+            <div className="p-8 text-center text-gray-600">
               Loading feedback...
             </div>
           ) : filteredFeedbacks.length === 0 ? (
@@ -764,13 +861,14 @@ export default function ManageFeedback() {
           ) : (
             <table className="min-w-[980px] w-full border-collapse">
               <thead>
-                <tr className="bg-DivuLightGreen text-left text-black">
-                  <th className="px-4 py-3 font-bold text-black border-r border-emerald-800/50 w-12">
+                
+                <tr className="bg-gray-100 text-left text-gray-900 border-b border-gray-200 dark:bg-DivuBlue/20 dark:text-white">
+                  <th className="px-4 py-3 font-bold border-r border-gray-200 w-12">
                     <input
                       type="checkbox"
                       checked={selectedItems.length === filteredFeedbacks.length && filteredFeedbacks.length > 0}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 text-black bg-white border-DivuBlue rounded focus:ring-DivuBlue"
+                      className="w-4 h-4 text-emerald-600 bg-white border-gray-300 rounded focus:ring-emerald-500"
                     />
                   </th>
                   <Th>Employee</Th>
@@ -785,10 +883,10 @@ export default function ManageFeedback() {
                 {filteredFeedbacks.map((feedback, idx) => (
                   <tr
                     key={feedback.id}
-                    className={`text-emerald-950 text-sm ${
-                      idx % 2 === 0 ? "bg-emerald-50/90" : "bg-emerald-100/80"
-                    } hover:bg-emerald-200/60 transition-colors ${
-                      selectedItems.includes(feedback.id) ? 'ring-2 ring-emerald-400' : ''
+                    className={`text-gray-900 text-sm border-b border-gray-100 ${
+                      idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    } hover:bg-emerald-50 transition-colors ${
+                      selectedItems.includes(feedback.id) ? 'ring-2 ring-emerald-300' : ''
                     }`}
                   >
                     <td className="px-4 py-3">
@@ -832,15 +930,17 @@ export default function ManageFeedback() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => viewFeedbackDetails(feedback)}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded bg-DivuBlue/80 text-white text-xs font-semibold hover:bg-DivuBlue transition-colors"
+                          className="p-1.5 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                          title="View Details"
                         >
-                          <Eye size={14} /> View
+                          <Eye size={16} />
                         </button>
                         <button
                           onClick={() => deleteFeedback(feedback.id)}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded bg-red-500 text-white text-xs font-semibold hover:bg-red-600 transition-colors"
+                          className="p-1.5 rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+                          title="Delete"
                         >
-                          <Trash2 size={14} /> Delete
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -930,6 +1030,32 @@ export default function ManageFeedback() {
           </div>
         )}
       </div>
+
+      {/* Confirm Modal */}
+      {confirmModal.show && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Action</h3>
+              <p className="text-gray-700 mb-6">{confirmModal.message}</p>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setConfirmModal({ show: false, message: "", onConfirm: null })}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmModal.onConfirm}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
@@ -937,7 +1063,7 @@ export default function ManageFeedback() {
 /* ---------- Subcomponent ---------- */
 function Th({ children }) {
   return (
-    <th className="px-4 py-3 font-bold text-emerald-50 border-r border-emerald-800/50">
+    <th className="px-4 py-3 font-semibold border-r dark:border-DivuBlue/50">
       {children}
     </th>
   );

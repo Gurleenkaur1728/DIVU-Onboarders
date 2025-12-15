@@ -1,15 +1,20 @@
 import fs from "fs";
 import path from "path";
 import dotenv from "dotenv";
-import { Groq } from "groq-sdk";
+import OpenAI from "openai";
+import { fileURLToPath } from "url";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// Load .env from parent directory
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function embedText(text) {
-  const response = await groq.embeddings.create({
-    model: "nomic-embed",
+  const response = await openai.embeddings.create({
+    model: "text-embedding-3-small",
     input: text
   });
 

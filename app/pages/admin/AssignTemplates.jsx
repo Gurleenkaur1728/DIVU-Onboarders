@@ -4,11 +4,12 @@ import AppLayout from "../../../src/AppLayout.jsx";
 
 export default function AssignTemplates() {
   // ----- tabs for the whole page -----
-  const [tab, setTab] = useState("assign"); // "assign" | "view" | "update"
+  const [tab, setTab] = useState("assign"); // "assign" | "viewupdate"
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
   // ----- auth/role -----
+  const ROLES = { ADMIN: 2, SUPER_ADMIN: 3 };
   const [roleId] = useState(() => {
     const r = localStorage.getItem("role_id");
     return r ? parseInt(r, 10) : ROLES.ADMIN;
@@ -85,7 +86,8 @@ export default function AssignTemplates() {
 
     const q = search.toLowerCase();
     return sorted.filter((u) => {
-      if (filterBy === "email") return (u.email || "").toLowerCase().includes(q);
+      if (filterBy === "email")
+        return (u.email || "").toLowerCase().includes(q);
       if (filterBy === "first") return firstNameOf(u).toLowerCase().includes(q);
       if (filterBy === "last") return lastNameOf(u).toLowerCase().includes(q);
       // default "name"
@@ -154,6 +156,12 @@ export default function AssignTemplates() {
       }
 
       setNotice(`✅ Assigned ${total} checklist item(s).`);
+
+      // Clear form after successful assignment
+      setSelectedUsers([]);
+      setSelectedGroups([]);
+      setDueDate("");
+      setDueDays("");
     } finally {
       setLoading(false);
     }
@@ -281,25 +289,57 @@ export default function AssignTemplates() {
   // ======== RENDER ========
   return (
     <AppLayout>
+      <div className="flex-1 min-h-screen p-6 space-y-6 text-gray-900 dark:text-gray-100">
+        {/* HEADER CARD – matches Admin Dashboard vibe */}
+        <div
+          className="
+            rounded-lg shadow-sm border px-6 py-4 mb-2
+            flex items-center justify-between transition
+            bg-white/90 border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          {/* LEFT – TITLE */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Assign Checklist Templates
+            </h1>
 
-      <div className="flex-1 p-6">
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl shadow mb-6 text-emerald-100 font-extrabold text-2xl flex items-center justify-between">
-          ASSIGN CHECKLIST TEMPLATES
-          <div className="flex gap-2">
-            {["assign", "viewupdate"].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`px-3 py-1 rounded ${
-                  tab === t
-                    ? "bg-DivuLightGreen text-black hover:bg-DivuBlue"
-                    : "bg-white text-black hover:bg-DivuBlue hover:text-black"
-                }`}
-              >
-                {t === "viewupdate" ? "View / Update" : t[0].toUpperCase() + t.slice(1)}
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Assign template groups, update items, and manage employee
+              onboarding tasks.
+            </p>
+          </div>
 
-              </button>
-            ))}
+          {/* RIGHT – TABS */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTab("assign")}
+              className={`
+                px-4 py-2 rounded-md text-sm font-medium border transition
+                ${
+                  tab === "assign"
+                    ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                    : "bg-transparent border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue hover:text-white"
+                }
+              `}
+            >
+              Assign
+            </button>
+
+            <button
+              onClick={() => setTab("viewupdate")}
+              className={`
+                px-4 py-2 rounded-md text-sm font-medium border transition
+                ${
+                  tab === "viewupdate"
+                    ? "bg-DivuDarkGreen text-white border-DivuDarkGreen"
+                    : "bg-transparent border-gray-500 text-gray-700 dark:text-gray-200 hover:bg-DivuBlue hover:text-white"
+                }
+              `}
+            >
+              View / Update
+            </button>
           </div>
         </div>
 
@@ -309,12 +349,22 @@ export default function AssignTemplates() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search employees (name/email)…"
-            className="border border-DivuDarkGreen rounded px-3 py-2 w-full sm:w-80"
+            className="
+              border rounded-lg px-4 py-2 w-full sm:w-80
+              focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+              bg-white text-gray-900
+              dark:bg-black/40 dark:border-gray-700 dark:text-gray-100
+            "
           />
           <select
             value={filterBy}
             onChange={(e) => setFilterBy(e.target.value)}
-            className="border border-DivuDarkGreen rounded px-3 py-2"
+            className="
+              border rounded-lg px-4 py-2
+              focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+              bg-white text-gray-900
+              dark:bg-black/40 dark:border-gray-700 dark:text-gray-100
+            "
           >
             <option value="name">Filter by: Name</option>
             <option value="first">Filter by: First Name</option>
@@ -327,27 +377,34 @@ export default function AssignTemplates() {
         {tab === "assign" && (
           <>
             {notice && (
-              <div className="mb-4 px-4 py-2 bg-emerald-50 text-emerald-900 border border-emerald-300 rounded">
+              <div className="mb-4 px-4 py-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-lg dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700">
                 {notice}
               </div>
             )}
 
             <div className="grid lg:grid-cols-3 gap-6">
               {/* Employees (with modal trigger) */}
-              <section className="bg-white/95 rounded-lg p-4 shadow border">
-                <h3 className="font-bold mb-2 text-emerald-900">
+              <section
+                className="
+                  rounded-lg p-5 shadow-sm border transition
+                  bg-white/90 border-gray-200 text-gray-900
+                  dark:bg-black/40 dark:border-black dark:text-gray-100
+                  custom-scrollbar
+                "
+              >
+                <h3 className="font-bold mb-3 text-gray-900 dark:text-white">
                   Employees (A–Z)
                 </h3>
-                <div className="max-h-72 overflow-auto divide-y">
+                <div className="max-h-72 overflow-auto divide-y divide-gray-200 dark:divide-gray-800">
                   {usersAZ.map((u) => (
                     <div
                       key={u.id}
-                      className="py-2 flex items-center justify-between gap-2"
+                      className="py-3 flex items-center justify-between gap-2"
                     >
-                      <label className="flex items-start gap-3">
+                      <label className="flex items-start gap-3 cursor-pointer">
                         <input
                           type="checkbox"
-                          className="mt-1"
+                          className="mt-1 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 dark:border-gray-600"
                           checked={selectedUsers.includes(u.id)}
                           onChange={(e) =>
                             setSelectedUsers((s) =>
@@ -358,15 +415,17 @@ export default function AssignTemplates() {
                           }
                         />
                         <div className="text-sm">
-                          <div className="font-semibold text-emerald-900">
+                          <div className="font-semibold text-gray-900 dark:text-white">
                             {u.name || u.email}
                           </div>
-                          <div className="text-gray-500">{u.email}</div>
+                          <div className="text-gray-500 dark:text-gray-400">
+                            {u.email}
+                          </div>
                         </div>
                       </label>
                       <button
                         onClick={() => openEmployeeModal(u)}
-                        className="px-2 py-1 text-xs rounded bg-DivuBlue/70 text-white hover:bg-DivuBlue"
+                        className="px-3 py-1 text-xs rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
                       >
                         Edit
                       </button>
@@ -376,13 +435,25 @@ export default function AssignTemplates() {
               </section>
 
               {/* Template Groups */}
-              <section className="bg-white/95 rounded-lg p-4 shadow border">
-                <h3 className="font-bold mb-2 text-emerald-900">Template Groups</h3>
-                <div className="max-h-72 overflow-auto space-y-1">
+              <section
+                className="
+                  rounded-lg p-5 shadow-sm border transition
+                  bg-white/90 border-gray-200 text-gray-900
+                  dark:bg-black/40 dark:border-black dark:text-gray-100
+                "
+              >
+                <h3 className="font-bold mb-3 text-gray-900 dark:text-white">
+                  Template Groups
+                </h3>
+                <div className="max-h-72 overflow-auto space-y-2">
                   {groups.map((g) => (
-                    <label key={g.id} className="flex items-center gap-2">
+                    <label
+                      key={g.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
                         type="checkbox"
+                        className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 dark:border-gray-600"
                         checked={selectedGroups.includes(g.id)}
                         onChange={(e) =>
                           setSelectedGroups((s) =>
@@ -392,36 +463,62 @@ export default function AssignTemplates() {
                           )
                         }
                       />
-                      <span>{g.name}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-200">
+                        {g.name}
+                      </span>
                     </label>
                   ))}
                 </div>
               </section>
 
               {/* Due Date */}
-              <section className="bg-white/95 rounded-lg p-4 shadow border">
-                <h3 className="font-bold mb-2 text-emerald-900">Due Date</h3>
-                <label className="block text-sm mb-1">Absolute date</label>
+              <section
+                className="
+                  rounded-lg p-5 shadow-sm border transition
+                  bg-white/90 border-gray-200 text-gray-900
+                  dark:bg-black/40 dark:border-black dark:text-gray-100
+                "
+              >
+                <h3 className="font-bold mb-3 text-gray-900 dark:text-white">
+                  Due Date
+                </h3>
+                <label className="block text-sm text-gray-700 dark:text-gray-200 font-medium mb-1">
+                  Absolute date
+                </label>
                 <input
                   type="date"
-                  className="border rounded px-2 py-1 w-full mb-3"
+                  className="
+                    border border-gray-300 rounded-lg px-3 py-2 w-full mb-4
+                    focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+                    bg-white text-gray-900
+                    dark:bg-black/60 dark:border-gray-700 dark:text-gray-100
+                  "
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
                 />
 
-                <div className="text-center text-gray-500 mb-2">— or —</div>
+                <div className="text-center text-gray-500 dark:text-gray-400 mb-4 text-sm">
+                  — or —
+                </div>
 
-                <label className="block text-sm mb-1">
+                <label className="block text-sm text-gray-700 dark:text-gray-200 font-medium mb-1">
                   Relative (days from today)
                 </label>
                 <input
                   type="number"
                   min={0}
                   placeholder="e.g. 7"
-                  className="border rounded px-2 py-1 w-full"
+                  className="
+                    border border-gray-300 rounded-lg px-3 py-2 w-full
+                    focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+                    bg-white text-gray-900
+                    dark:bg-black/60 dark:border-gray-700 dark:text-gray-100
+                  "
                   value={dueDays}
                   onChange={(e) =>
-                    setDueDays(e.target.value === "" ? "" : Number(e.target.value))
+                    setDueDays(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
                   }
                 />
               </section>
@@ -431,7 +528,11 @@ export default function AssignTemplates() {
               <button
                 onClick={assign}
                 disabled={loading}
-                className="px-4 py-2 rounded bg-DivuDarkGreen text-white font-semibold hover:bg-DivuBlue disabled:opacity-60"
+                className="
+                  px-6 py-3 rounded-lg bg-DivuDarkGreen
+                  text-white font-semibold hover:bg-DivuLightGreen hover:text-black
+                  disabled:opacity-60 transition
+                "
               >
                 {loading ? "Assigning..." : "Assign Selected"}
               </button>
@@ -441,8 +542,14 @@ export default function AssignTemplates() {
 
         {/* View/Update tab */}
         {tab === "viewupdate" && (
-          <section className="bg-white rounded-lg p-4 shadow border">
-            <h3 className="text-emerald-900 font-bold mb-4">
+          <section
+            className="
+              rounded-lg p-6 shadow-sm border transition
+              bg-white/90 border-gray-200 text-gray-900
+              dark:bg-black/40 dark:border-black dark:text-gray-100
+            "
+          >
+            <h3 className="font-bold mb-4 text-gray-900 dark:text-white">
               Select an employee to view, edit, or update their templates/items
             </h3>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -450,12 +557,18 @@ export default function AssignTemplates() {
                 <button
                   key={u.id}
                   onClick={() => openEmployeeModal(u)}
-                  className="text-left p-3 border rounded hover:border-emerald-400"
+                  className="
+                    text-left p-4 border rounded-lg transition
+                    border-gray-200 bg-white/80 hover:border-emerald-500 hover:bg-emerald-50
+                    dark:border-gray-700 dark:bg-black/40 dark:hover:bg-emerald-900/30
+                  "
                 >
-                  <div className="font-semibold text-emerald-900">
+                  <div className="font-semibold text-gray-900 dark:text-white">
                     {u.name || u.email}
                   </div>
-                  <div className="text-xs text-gray-500">{u.email}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {u.email}
+                  </div>
                 </button>
               ))}
             </div>
@@ -465,17 +578,19 @@ export default function AssignTemplates() {
 
       {/* ===== Modal ===== */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-3xl rounded-xl bg-white shadow-lg overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-3xl rounded-lg bg-white dark:bg-[#111827] shadow-lg overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#020617]">
               <div>
-                <h4 className="font-semibold text-emerald-900">
+                <h4 className="font-semibold text-gray-900 dark:text-white">
                   {modalUser?.name || modalUser?.email}
                 </h4>
-                <p className="text-xs text-gray-500">{modalUser?.email}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {modalUser?.email}
+                </p>
               </div>
               <button
-                className="rounded px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200"
+                className="rounded-lg px-4 py-2 text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 transition"
                 onClick={() => setShowModal(false)}
               >
                 Close
@@ -483,15 +598,15 @@ export default function AssignTemplates() {
             </div>
 
             {/* Modal tabs */}
-            <div className="px-5 pt-3 border-b flex gap-2">
+            <div className="px-6 pt-4 border-b border-gray-200 dark:border-gray-700 flex gap-2">
               {["templates", "items", "add"].map((t) => (
                 <button
                   key={t}
                   onClick={() => setModalTab(t)}
-                  className={`px-3 py-1.5 rounded-t ${
+                  className={`px-4 py-2 rounded-t-lg font-medium transition ${
                     modalTab === t
-                      ? "bg-DivuLightGreen text-black hover:bg-DivuBlue"
-                      : "bg-DivuLightGreen/20 text-black hover:bg-DivuBlue hover:text-black"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700"
                   }`}
                 >
                   {t === "templates" && "Templates"}
@@ -501,9 +616,12 @@ export default function AssignTemplates() {
               ))}
             </div>
 
-            <div className="p-5 max-h-[70vh] overflow-auto">
+            <div className="p-6 max-h-[70vh] overflow-auto">
               {modalLoading ? (
-                <div className="text-gray-600">Loading…</div>
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mx-auto mb-3"></div>
+                  <p className="text-gray-600 dark:text-gray-300">Loading…</p>
+                </div>
               ) : modalTab === "templates" ? (
                 <TemplatesTab
                   employeeGroups={employeeGroups}
@@ -539,24 +657,34 @@ export default function AssignTemplates() {
 
 function TemplatesTab({ employeeGroups, onDeleteGroup }) {
   if (!employeeGroups.length)
-    return <div className="text-gray-600">No templates assigned.</div>;
+    return (
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        No templates assigned.
+      </div>
+    );
 
   return (
     <div className="space-y-3">
       {employeeGroups.map((g) => (
         <div
           key={g.id}
-          className="flex items-center justify-between border rounded px-4 py-3"
+          className="
+            flex items-center justify-between border rounded-lg px-4 py-3 transition
+            border-gray-200 bg-white hover:bg-gray-50
+            dark:border-gray-700 dark:bg-black/40 dark:hover:bg-gray-800
+          "
         >
           <div>
-            <div className="font-semibold text-emerald-900">{g.name}</div>
-            <div className="text-xs text-gray-500">
+            <div className="font-semibold text-gray-900 dark:text-white">
+              {g.name}
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               {g.count} item{g.count === 1 ? "" : "s"}
             </div>
           </div>
           <button
             onClick={() => onDeleteGroup(g.id)}
-            className="text-red-600 hover:text-red-800 text-sm"
+            className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 transition"
           >
             Delete Template
           </button>
@@ -568,33 +696,51 @@ function TemplatesTab({ employeeGroups, onDeleteGroup }) {
 
 function ItemsTab({ items, onDeleteItem, onUpdateDue }) {
   if (!items.length)
-    return <div className="text-gray-600">No items yet.</div>;
+    return (
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        No items yet.
+      </div>
+    );
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {items.map((it) => {
-        const title = it.custom_title || it.checklist_item?.title || "(untitled)";
+        const title =
+          it.custom_title || it.checklist_item?.title || "(untitled)";
         const groupName = it.checklist_groups?.name || "Template";
         const dateStr = it.due_date ? String(it.due_date).slice(0, 10) : "";
         return (
           <div
             key={it.id}
-            className="flex flex-wrap items-center justify-between gap-3 border-b pb-2"
+            className="
+              flex flex-wrap items-center justify-between gap-3 border rounded-lg p-3 transition
+              border-gray-200 bg-white hover:bg-gray-50
+              dark:border-gray-700 dark:bg-black/40 dark:hover:bg-gray-800
+            "
           >
             <div className="min-w-[240px]">
-              <div className="font-medium text-emerald-900">{title}</div>
-              <div className="text-xs text-gray-500">Group: {groupName}</div>
+              <div className="font-medium text-gray-900 dark:text-white">
+                {title}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Group: {groupName}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <input
                 type="date"
                 defaultValue={dateStr}
                 onChange={(e) => onUpdateDue(it.id, e.target.value)}
-                className="border rounded px-2 py-1 text-xs"
+                className="
+                  border border-gray-300 rounded-lg px-3 py-1.5 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+                  bg-white text-gray-900
+                  dark:bg-black/60 dark:border-gray-700 dark:text-gray-100
+                "
               />
               <button
                 onClick={() => onDeleteItem(it.id)}
-                className="text-red-600 hover:text-red-800 text-xs"
+                className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 transition"
               >
                 Delete
               </button>
@@ -619,25 +765,33 @@ function AddCustomItemTab({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-sm font-medium text-emerald-900 mb-1">
+        <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-200 mb-1">
           Item title
         </label>
         <input
           value={newCustomTitle}
           onChange={(e) => setNewCustomTitle(e.target.value)}
           placeholder="E.g., ‘Upload security training certificate’"
-          className="border rounded px-3 py-2 w-full"
+          className="
+            border rounded px-3 py-2 w-full
+            bg-white text-gray-900
+            dark:bg-black/60 dark:border-gray-700 dark:text-gray-100
+          "
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-emerald-900 mb-1">
+        <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-200 mb-1">
           Template group
         </label>
         <select
           value={newCustomGroupId}
           onChange={(e) => setNewCustomGroupId(e.target.value)}
-          className="border rounded px-3 py-2 w-full"
+          className="
+            border rounded px-3 py-2 w-full
+            bg-white text-gray-900
+            dark:bg-black/60 dark:border-gray-700 dark:text-gray-100
+          "
         >
           <option value="">Select…</option>
           {groups.map((g) => (
@@ -649,21 +803,29 @@ function AddCustomItemTab({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-emerald-900 mb-1">
+        <label className="block text-sm font-medium text-emerald-900 dark:text-emerald-200 mb-1">
           Due date (optional)
         </label>
         <input
           type="date"
           value={newCustomDue}
           onChange={(e) => setNewCustomDue(e.target.value)}
-          className="border rounded px-3 py-2 w-full"
+          className="
+            border rounded px-3 py-2 w-full
+            bg-white text-gray-900
+            dark:bg-black/60 dark:border-gray-700 dark:text-gray-100
+          "
         />
       </div>
 
       <div className="pt-2">
         <button
           onClick={onAdd}
-          className="px-4 py-2 rounded bg-DivuDarkGreen text-white font-semibold hover:bg-DivuLightGreen hover:text-black disabled:opacity-60"
+          className="
+            px-5 py-2.5 rounded-lg bg-DivuDarkGreen
+            text-white font-semibold hover:bg-DivuLightGreen hover:text-black
+            disabled:opacity-60 transition
+          "
           disabled={!newCustomTitle.trim() || !newCustomGroupId}
         >
           Add Item

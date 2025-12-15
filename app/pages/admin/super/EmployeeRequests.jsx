@@ -100,16 +100,36 @@ export default function AccessRequests() {
     try {
       const fullName = `${req.first_name} ${req.last_name}`.trim();
 
-      // 1. Insert into users
-      const { error: insertError } = await supabase.from("users").insert([
-        {
-          name: fullName,
-          email: req.email,
-          password: req.password_hash,
-          employee_id: req.id,
-        },
-      ]);
-      if (insertError) throw insertError;
+      // 1. Check if user already exists
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", req.email)
+        .single();
+
+      if (existingUser) {
+        // User exists, update their info
+        const { error: updateError } = await supabase
+          .from("users")
+          .update({
+            name: fullName,
+            password: req.password_hash,
+            employee_id: req.id,
+          })
+          .eq("email", req.email);
+        if (updateError) throw updateError;
+      } else {
+        // New user, insert
+        const { error: insertError } = await supabase.from("users").insert([
+          {
+            name: fullName,
+            email: req.email,
+            password: req.password_hash,
+            employee_id: req.id,
+          },
+        ]);
+        if (insertError) throw insertError;
+      }
 
       // 2. Update invitation
       await supabase
@@ -135,11 +155,11 @@ export default function AccessRequests() {
                 Your account is now active.
               </p>
               <p style="font-size:0.95rem;color:#666;margin-top:24px;">
-                Let’s get started on your onboarding journey.
+                Let's get started on your onboarding journey.
               </p>
             `,
             buttonText: "Open App",
-            buttonLink: "http://localhost:5173/",
+            buttonLink: "https://divu-onboarders.vercel.app/",
           }),
         }),
       });
@@ -212,20 +232,31 @@ export default function AccessRequests() {
 
   return (
     <AppLayout>
+      <div className=" lex-1 min-h-dvh p-6 space-y-6">
+        <div
+          className="
+            rounded-lg shadow-sm border px-6 py-4 mb-6 transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Employee Requests
+          </h1>
 
-      <div className="flex-1 flex flex-col p-6 z-10">
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl mb-4 shadow-lg text-emerald-100 font-extrabold border border-emerald-400/70 text-2xl tracking-wide">
-          REQUESTS
+          <p className="text-gray-600 dark:text-gray-300">
+            Review and approve access requests from new employees
+          </p>
         </div>
 
         {message && (
           <div
-            className={`mb-4 px-4 py-2 rounded ${
+            className={`mb-6 px-4 py-3 rounded-lg ${
               message.type === "success"
-                ? "bg-green-100 text-green-800"
+                ? "bg-green-50 text-green-800 border border-green-200"
                 : message.type === "error"
-                ? "bg-red-100 text-red-800"
-                : "bg-yellow-100 text-yellow-800"
+                ? "bg-red-50 text-red-800 border border-red-200"
+                : "bg-yellow-50 text-yellow-800 border border-yellow-200"
             }`}
           >
             {message.text}
@@ -233,21 +264,30 @@ export default function AccessRequests() {
         )}
 
         {loading ? (
-          <p>Loading...</p>
+          <div className="flex items-center justify-center py-10">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading requests...</p>
+            </div>
+          </div>
         ) : requests.length === 0 ? (
-          <p>No pending requests.</p>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
+            <p className="text-gray-600">No pending requests.</p>
+          </div>
         ) : (
           <ul className="space-y-3">
             {requests.map((req) => (
               <li
                 key={req.id}
-                className="p-4 bg-white rounded-lg shadow cursor-pointer hover:bg-DivuLightGreen/30 transition"
+                className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm cursor-pointer hover:border-emerald-600 hover:shadow-md transition"
                 onClick={() => setSelected(req)}
               >
-                <span className="font-semibold text-emerald-900">
+                <span className="font-semibold text-gray-900">
                   {req.first_name} {req.last_name}
                 </span>{" "}
-                is requesting access to DIVU's Smart Onboarding App
+                <span className="text-gray-600">
+                  is requesting access to DIVU's Smart Onboarding App
+                </span>
               </li>
             ))}
           </ul>
@@ -260,7 +300,7 @@ export default function AccessRequests() {
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg w-full relative">
             {/* Close Button */}
             <button
-              className="absolute top-3 right-3 text-gray-600 hover:text-black"
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 transition"
               onClick={() => {
                 setSelected(null);
                 setRejectMode(false);
@@ -270,18 +310,18 @@ export default function AccessRequests() {
               <X size={20} />
             </button>
 
-            <h2 className="text-xl font-bold mb-4">Employee Details</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Employee Details</h2>
 
-            <div className="grid gap-2 text-sm text-gray-800">
+            <div className="grid gap-2 text-sm text-gray-700">
               <p>
-                <strong>Name:</strong> {selected.first_name}{" "}
+                <strong className="text-gray-900">Name:</strong> {selected.first_name}{" "}
                 {selected.last_name}
               </p>
               <p>
-                <strong>Email:</strong> {selected.email}
+                <strong className="text-gray-900">Email:</strong> {selected.email}
               </p>
               <p>
-                <strong>Preferred Name:</strong>{" "}
+                <strong className="text-gray-900">Preferred Name:</strong>{" "}
                 {selected.extra_data?.preferred_name || "—"}
               </p>
             </div>
@@ -289,7 +329,7 @@ export default function AccessRequests() {
             {/* Actions */}
             <div className="flex flex-col gap-3 mt-6">
               <button
-                className="w-full px-4 py-2 rounded bg-DivuDarkGreen text-white font-semibold hover:bg-DivuLightGreen hover:text-black"
+                className="w-full px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition"
                 onClick={() => handleApprove(selected)}
               >
                 Confirm & Grant Access
@@ -297,7 +337,7 @@ export default function AccessRequests() {
 
               {!rejectMode ? (
                 <button
-                  className="w-full px-4 py-2 rounded bg-gray-200 hover:bg-red-500 hover:text-white font-semibold"
+                  className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-red-600 hover:text-white font-semibold transition"
                   onClick={() => setRejectMode(true)}
                 >
                   Reject Access
@@ -308,10 +348,11 @@ export default function AccessRequests() {
                     placeholder="Enter rejection reason..."
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    className="w-full border rounded px-3 py-2 text-sm"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    rows="3"
                   />
                   <button
-                    className="w-full px-4 py-2 rounded bg-red-600 text-white font-semibold hover:bg-red-500"
+                    className="w-full px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition"
                     onClick={() => handleReject(selected)}
                   >
                     Send Rejection

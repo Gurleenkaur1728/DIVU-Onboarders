@@ -201,74 +201,100 @@ export default function ManageEvents() {
     <AppLayout>
     {/* <Sidebar active="manage-events" role={roleId} /> */}
  
-      <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Ribbon (like Manage Modules) */}
-        <div className="flex items-center justify-between h-12 rounded-md bg-emerald-100/90 px-4 mb-4 shadow">
-          <span className="font-semibold text-emerald-950">Admin Panel – Manage Events</span>
+      <div className="flex-1 min-h-dvh p-6 space-y-6">
+        {/* Header */}
+        <div
+          className="
+            mb-6 px-6 py-4 rounded-lg border shadow-sm
+            flex items-center justify-between transition
+            bg-white border-gray-300 text-gray-900
+            dark:bg-black/30 dark:border-black dark:text-white
+          "
+        >
+          <div>
+            <h1 className="text-2xl font-bold">
+              Manage Events
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Create and manage company events and meetings
+            </p>
+          </div>
+
+          <button
+            onClick={openBlankCreate}
+            className="
+              flex items-center gap-2 px-4 py-2 rounded-lg
+              bg-DivuDarkGreen text-white font-medium
+              hover:bg-DivuBlue transition
+            "
+          >
+            <CalendarPlus className="w-5 h-5" />
+            Add Event
+          </button>
         </div>
- 
-        {/* Title banner */}
-        <div className="bg-DivuDarkGreen px-6 py-4 rounded-xl shadow-lg text-emerald-100 font-extrabold border text-2xl">
-          MANAGE EVENTS
-        </div>
- 
-        {/* Controls row (FULL WIDTH so the right-side controls sit at the far right) */}
-        <div className="sticky top-0 z-30 mt-3 mb-4 w-full">
-          <div className="flex items-center">
-            {/* Left: month nav (reserve height in list view so right block never shifts) */}
+
+        {/* Controls row */}
+        <div className="
+            sticky top-0 z-30 mb-4 py-3 rounded-md p-4
+            bg-white dark:bg-black/30
+            border-b border-gray-200 dark:border-black
+          ">
+          <div className="flex items-center justify-between">
+            {/* Left: month nav */}
             <div className="flex items-center gap-2">
               {view === "month" ? (
                 <>
-                  <button onClick={goToday} className="px-3 py-1.5 text-sm border rounded bg-white hover:bg-emerald-50">Today</button>
-                  <button onClick={goPrev} className="p-2 border rounded hover:bg-emerald-50"><ChevronLeft className="w-4 h-4"/></button>
-                  <span className="font-semibold text-emerald-900">{monthLabel}</span>
-                  <button onClick={goNext} className="p-2 border rounded hover:bg-emerald-50"><ChevronRight className="w-4 h-4"/></button>
+                  <button onClick={goToday} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-transparent hover:bg-DivuBlue 
+                  ">Today</button>
+                  <button onClick={goPrev} className="p-2 border border-gray-300 rounded-lg hover:bg-DivuBlue 
+                  transition"><ChevronLeft className="w-4 h-4"/></button>
+                  <span className="font-semibold text-gray-900 min-w-[160px] text-center dark:text-gray-100
+                  ">{monthLabel}</span>
+                  <button onClick={goNext} className="p-2 border border-gray-300 rounded-lg hover:bg-DivuBlue transition"><ChevronRight className="w-4 h-4"/></button>
                 </>
               ) : (
                 <div className="h-9" />
               )}
             </div>
  
-            {/* Right: view switch + add (fixed at far right) */}
-            <div className="ml-auto flex items-center gap-2">
-              <div className="flex rounded-lg border bg-DivuWhite overflow-hidden">
-                <button
-                  onClick={() => setView("month")}
-                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="month"?"bg-DivuLightGreen text-black":"hover:bg-DivuBlue"}`}
-                >
-                  <Grid className="w-4 h-4"/> Month
-                </button>
-                <button
-                  onClick={() => setView("list")}
-                  className={`px-3 py-2 text-sm flex items-center gap-1 ${view==="list"?"bg-DivuLightGreen text-black":"hover:bg-DivuBlue"}`}
-                >
-                  <List className="w-4 h-4"/> List
-                </button>
-              </div>
+            {/* Right: view switch */}
+            <div className="flex rounded-lg border border-gray-300  overflow-hidden dark:border-black bg-transparent">
               <button
-                onClick={openBlankCreate}
-                className="flex items-center gap-2 px-3 py-1.5 rounded bg-DivuDarkGreen text-white font-semibold text-sm hover:bg-DivuLightGreen hover:text-black"
+                onClick={() => setView("month")}
+                className={`px-3 py-2 text-sm flex items-center gap-1 transition ${
+                  view==="month" ? "bg-DivuLightGreen text-black" : "hover:bg-DivuBlue"
+                }`}
               >
-                <CalendarPlus className="w-4 h-4" /> Add Event
+                <Grid className="w-4 h-4"/> Month
+              </button>
+              <button
+                onClick={() => setView("list")}
+                className={`px-3 py-2 text-sm flex items-center gap-1 transition ${
+                  view==="list" ? "bg-DivuLightGreen text-black" : "hover:bg-DivuBlue"
+                }`}
+              >
+                <List className="w-4 h-4"/> List
               </button>
             </div>
           </div>
         </div>
  
-        {/* Calendar (kept at 60% width feel via md:w-3/5) */}
+        {/* Calendar */}
         {view === "month" && (
           loading ? (
-            <div className="bg-white border rounded-xl shadow w-full md:w-3/5 p-6 text-center text-emerald-800">
+            <div className="bg-white border border-gray-200 rounded-xl shadow w-full md:w-3/5 p-6 text-center text-gray-600">
               Loading events...
             </div>
           ) : (
-          <div className="bg-white border-DivuDarkGreen border-2 rounded-xl shadow w-full  max-auto overflow-hidden">
-            <div className="grid grid-cols-7 bg-DivuLightGreen text-black text-[11px] font-bold uppercase">
+          <div className="bg-white dark:bg-black/30
+           border border-gray-200 rounded-xl shadow w-full overflow-x-auto">
+            <div className="grid grid-cols-7 bg-gray-100 text-gray-700 text-[11px] font-bold uppercase min-w-[600px] dark:bg-DivuBlue/20 dark:text-white
+            ">
               {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map((d) => (
-                <div key={d} className="px-2 py-2 text-center">{d}</div>
+                <div key={d} className="px-2 py-2 text-center border-r border-gray-200 last:border-r-0">{d}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7">
+            <div className="grid grid-cols-7 min-w-[600px]">
               {grid.map((d, i) => {
                 const inMonth = d.getMonth() === cursor.getMonth();
                 const dayKey = ymd(d);
@@ -278,13 +304,17 @@ export default function ManageEvents() {
                   <button
                     key={i}
                     onClick={() => onDayClick(d)}
-                    className={`h-24 border p-1 text-left ${inMonth ? "bg-white":"bg-DivuWhite"} hover:bg-DivuBlue`}
+                    className={`h-24 border border-gray-200 p-1 text-left transition ${
+                      inMonth ? "bg-white hover:bg-emerald-50" : "bg-gray-50 hover:bg-gray-100"
+                    }`}
                     title="Add event"
                   >
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs font-semibold ${inMonth ? "text-emerald-900":"text-gray-400"}`}>{d.getDate()}</span>
+                      <span className={`text-xs font-semibold ${
+                        inMonth ? "text-gray-900" : "text-gray-400"
+                      }`}>{d.getDate()}</span>
                       {isTodayFlag && (
-                        <span className="text-[9px] px-1 border border-emerald-300 bg-emerald-50 text-emerald-800">Today</span>
+                        <span className="text-[9px] px-1 border border-emerald-500 bg-emerald-100 text-emerald-700 rounded">Today</span>
                       )}
                     </div>
                     <div className="mt-1 space-y-1 overflow-hidden">
@@ -292,22 +322,22 @@ export default function ManageEvents() {
                         <div
                           key={ev.id}
                           onClick={(e) => { e.stopPropagation(); openEdit(ev); }}
-                          className="border border-emerald-200 bg-emerald-50 px-1 py-0.5 text-[10px] hover:bg-emerald-100"
+                          className="border border-emerald-300 bg-emerald-50 px-1 py-0.5 text-[10px] hover:bg-emerald-100 rounded transition"
                           title={`${ev.name} • ${formatTimeRange(ev.start_time, ev.end_time)}${ev.venue ? ` • ${ev.venue}`: ""}`}
                         >
-                          <div className="font-semibold truncate">{ev.name}</div>
-                          <div className="flex items-center gap-1 text-emerald-800">
+                          <div className="font-semibold truncate text-emerald-900">{ev.name}</div>
+                          <div className="flex items-center gap-1 text-emerald-700">
                             <Clock className="w-3 h-3"/>{formatTimeRange(ev.start_time, ev.end_time)}
                           </div>
                           {ev.venue && (
-                            <div className="flex items-center gap-1 text-emerald-800">
+                            <div className="flex items-center gap-1 text-emerald-700">
                               <MapPin className="w-3 h-3"/><span className="truncate">{ev.venue}</span>
                             </div>
                           )}
                         </div>
                       ))}
                       {items.length > 2 && (
-                        <div className="text-[10px] text-emerald-700/80">+{items.length - 2} more</div>
+                        <div className="text-[10px] text-gray-600">+{items.length - 2} more</div>
                       )}
                     </div>
                   </button>
@@ -321,26 +351,26 @@ export default function ManageEvents() {
         {/* List view: separate month cards with fixed styling */}
         {view === "list" && (
           loading ? (
-            <div className="bg-white border rounded-xl shadow w-full md:w-3/5 p-6 text-center text-emerald-800">
+            <div className="bg-white border border-gray-200 rounded-xl shadow w-full md:w-3/5 p-6 text-center text-gray-600">
               Loading events...
             </div>
           ) : (
-            <div className="w-full  space-y-4">
+            <div className="w-full space-y-4">
               {monthGroups.length === 0 ? (
-                <div className="bg-white rounded-xl border shadow p-4 text-sm text-emerald-800">No upcoming events.</div>
+                <div className="bg-white rounded-xl border border-gray-200 shadow p-4 text-sm text-gray-600">No upcoming events.</div>
               ) : (
                 monthGroups.map((g, idx) => (
-                  <div key={idx} className="bg-white rounded-xl border shadow overflow-hidden">
-                    <div className="px-4 py-2 bg-DivuLightGreen text-black text-sm font-bold">
+                  <div key={idx} className="bg-white rounded-xl border border-gray-200 shadow overflow-hidden">
+                    <div className="px-4 py-2 bg-gray-100 text-gray-900 text-sm font-bold">
                       {g.label}
                     </div>
                     {g.items.length === 0 ? (
-                      <div className="px-4 py-3 text-sm text-emerald-800">No events.</div>
+                      <div className="px-4 py-3 text-sm text-gray-600">No events.</div>
                     ) : (
-                      <ul className="divide-y">
+                      <ul className="divide-y divide-gray-200">
                         {g.items.map((ev) => (
-                          <li key={ev.id} className="p-3 hover:bg-emerald-50/70 cursor-pointer transition-colors" onClick={() => openEdit(ev)}>
-                            <div className="font-semibold text-emerald-900 truncate">{ev.name}</div>
+                          <li key={ev.id} className="p-3 hover:bg-emerald-50 cursor-pointer transition-colors" onClick={() => openEdit(ev)}>
+                            <div className="font-semibold text-gray-900 truncate">{ev.name}</div>
                             <div className="text-xs text-emerald-800">
                               {formatFriendlyDate(ev.event_date)}{" • "}{formatTimeRange(ev.start_time, ev.end_time)}
                               {ev.venue ? ` • ${ev.venue}` : ""}
@@ -377,7 +407,7 @@ export default function ManageEvents() {
                 <label className="text-sm font-semibold text-emerald-900">Name of the event</label>
                 <input className="w-full border rounded px-3 py-2" value={name} onChange={(e)=>setName(e.target.value)} placeholder="e.g., Town Hall"/>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-semibold text-emerald-900">Start time</label>
                   <input type="time" className="w-full border rounded px-3 py-2" value={startTime} onChange={(e)=>setStartTime(e.target.value)}/>

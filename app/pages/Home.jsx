@@ -1,256 +1,170 @@
-//ChatGPT helped me understand my Home.jsx code by explaining each line clearly — including React Hooks (useState, useEffect, useMemo), Supabase data fetching, and page rendering flow. It also simplified complex concepts like async/await and [] dependencies
 import { useEffect, useState, useMemo } from "react";
 import AppLayout from "../../src/AppLayout.jsx";
 import { Link } from "react-router-dom";
-import { Menu, AppWindow } from "lucide-react";
 import { supabase } from "../../src/lib/supabaseClient";
 import { useRole } from "../../src/lib/hooks/useRole.js";
 
 export default function Home() {
-  const { roleId, role } = useRole();
+  const { role } = useRole();
   const [name, setName] = useState(() => localStorage.getItem("user_name") || "");
- 
-  // All sections for the Welcome page (maps to 'hero' in DB)
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
- 
-  // Convenience: first section is the hero, rest are additional blocks
+
   const hero = useMemo(() => sections[0], [sections]);
   const rest = useMemo(() => sections.slice(1), [sections]);
- 
-  // Load name from localStorage (managed by login)
+
   useEffect(() => {
     const storedName = localStorage.getItem("user_name");
-    if (storedName) {
-      setName(storedName);
-    }
+    if (storedName) setName(storedName);
   }, []);
- 
-  // Load all active sections for the Welcome page
+
   useEffect(() => {
     let active = true;
-    const fallback = [
-      {
-        id: "fallback",
-        title: "Welcome to DIVU",
-        subtitle: "Your onboarding journey starts here.",
-        description: "",
-        media_url: "/divu-logo.png",
-        cta_label: "",
-        cta_href: "",
-        sort_order: 0,
-        is_active: true,
-      },
-    ];
 
     async function loadSections() {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from("home_content")
           .select("*")
           .eq("section", "hero")
           .eq("is_active", true)
-          .order("sort_order", { ascending: true })
-          .order("created_at", { ascending: true });
+          .order("sort_order", { ascending: true });
 
-        if (error) throw error;
-
-        if (!active) return;
-
-        if (Array.isArray(data) && data.length > 0) {
-          setSections(data);
-        } else {
-          setSections(fallback);
-        }
-      } catch (error) {
-        console.error("Error loading home sections:", error);
-        if (active) setSections(fallback);
+        if (active) setSections(data || []);
+      } catch (err) {
+        console.error(err);
       } finally {
         if (active) setLoading(false);
       }
     }
 
     loadSections();
-
-    return () => {
-      active = false;
-    };
+    return () => (active = false);
   }, []);
- 
-  return (
-  
-  <AppLayout>
-    <div className="flex min-h-dvh bg-cover bg-center relative bg-emerald-50">
-      <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Ribbon */}
-        <div className="flex items-center justify-between bg-emerald-100/90 rounded-md px-4 py-2 mb-4 shadow">
-          <div className="flex items-center gap-2">
-            <Menu className="w-5 h-5 text-emerald-900 cursor-pointer md:hidden" />
-            <span className="text-emerald-950 font-semibold">
-              Welcome {name ? name : "to DIVU"}!
-            </span>
-            <span className="text-emerald-800 italic">{role}</span>
-          </div>
-          <AppWindow className="w-5 h-5 text-emerald-900" />
-        </div>
- 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <Tab label="Welcome" to="/home" active />
-          <Tab label="Culture" to="/culture" />
-          <Tab label="About" to="/about" />
-          
 
-        </div>
- 
-        {/* HERO (first section) */}
-        <div className="bg-white/95 rounded-2xl shadow-2xl p-10 max-w-6xl mx-auto mb-8">
+  return (
+    <AppLayout>
+      <div className="flex-1 min-h-dvh p-6 space-y-6 mt-8">
+        {/* HEADER */}
+        <Header name={name} role={role} active="home" />
+
+        {/* HERO */}
+        <Card className="mb-8">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>
-              <h1 className="text-4xl font-extrabold text-emerald-900 mb-4">
-                {loading ? "…" : (hero?.title || "Welcome to DIVU")}
-              </h1>
-              <p className="text-lg text-gray-700 leading-relaxed mb-6">
-                {loading ? "Loading…" : (hero?.subtitle || "Your onboarding journey starts here.")}
+              <h2 className="text-4xl font-bold mb-4">
+                {loading ? "…" : hero?.title}
+              </h2>
+              <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
+                {hero?.subtitle}
               </p>
-              {hero?.description ? (
-                <p className="text-base text-gray-700 leading-relaxed mb-6">
+              {hero?.description && (
+                <p className="text-gray-700 dark:text-gray-300 mb-6">
                   {hero.description}
                 </p>
-              ) : null}
-              {hero?.cta_label && hero?.cta_href ? (
+              )}
+              {hero?.cta_label && hero?.cta_href && (
                 <CTAButton href={hero.cta_href} label={hero.cta_label} />
-              ) : null}
+              )}
             </div>
- 
-            {/* Media */}
-            {hero?.media_url ? (
-              <div className="flex justify-center">
-                {isVideo(hero.media_url) ? (
-                  <video
-                    src={hero.media_url}
-                    className="rounded-lg shadow-lg object-cover w-full max-w-md"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                  />
-                ) : (
-                  <img
-                    src={hero.media_url}
-                    alt="Home visual"
-                    className="rounded-lg shadow-lg object-cover w-full max-w-md"
-                  />
-                )}
-              </div>
-            ) : null}
+
+            {hero?.media_url && <Media url={hero.media_url} />}
           </div>
-        </div>
- 
-        {/* Additional sections */}
-        {rest.length > 0 && (
-          <div className="max-w-6xl mx-auto space-y-6">
-            {rest.map((s) => (
-              <SectionBlock key={s.id}>
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                  <div>
-                    {s.title ? (
-                      <h2 className="text-2xl font-bold text-emerald-900 mb-2">
-                        {s.title}
-                      </h2>
-                    ) : null}
-                    {s.subtitle ? (
-                      <p className="text-emerald-800 font-medium mb-3">
-                        {s.subtitle}
-                      </p>
-                    ) : null}
-                    {s.description ? (
-                      <p className="text-gray-700 leading-relaxed mb-4">
-                        {s.description}
-                      </p>
-                    ) : null}
-                    {s.cta_label && s.cta_href ? (
-                      <CTAButton href={s.cta_href} label={s.cta_label} />
-                    ) : null}
-                  </div>
-                  {s.media_url ? (
-                    <div className="flex justify-center">
-                      {isVideo(s.media_url) ? (
-                        <video
-                          src={s.media_url}
-                          className="rounded-lg shadow-lg object-cover w-full max-w-md"
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                        />
-                      ) : (
-                        <img
-                          src={s.media_url}
-                          alt={s.title || "Section media"}
-                          className="rounded-lg shadow-lg object-cover w-full max-w-md"
-                        />
-                      )}
-                    </div>
-                  ) : null}
+        </Card>
+
+        {/* ADDITIONAL SECTIONS */}
+        <div className="space-y-6">
+          {rest.map((s) => (
+            <Card key={s.id}>
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">{s.title}</h3>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">
+                    {s.subtitle}
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300 mb-4">
+                    {s.description}
+                  </p>
                 </div>
-              </SectionBlock>
-            ))}
-          </div>
-        )}
+                {s.media_url && <Media url={s.media_url} />}
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
-    </div>
     </AppLayout>
   );
 }
- 
-function Tab({ label, to, active }) {
+
+/* ---------- UI Helpers  ---------- */
+
+function Header({ name, role, active }) {
+  return (
+    <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1 className="text-3xl font-bold text-emerald-950 dark:text-emerald-100">
+          Welcome {name || "to DIVU"}!
+        </h1>
+      </div>
+
+      <div className="flex gap-2">
+        <HeaderTab label="Welcome" to="/home" active={active === "home"} />
+        <HeaderTab label="Culture" to="/culture" active={active === "culture"} />
+        <HeaderTab label="About" to="/about" active={active === "about"} />
+      </div>
+    </div>
+  );
+}
+
+function HeaderTab({ label, to, active }) {
   return (
     <Link
       to={to}
-      className={`px-5 py-2 rounded-lg text-sm font-semibold transition shadow
+      className={`
+        px-4 py-2 rounded-lg text-sm font-medium transition
         ${
           active
-            ? "bg-gradient-to-r from-emerald-400 to-green-500 text-emerald-950"
-            : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-        }`}
+            ? "bg-DivuLightGreen text-black border-black border"
+            : "bg-white/80 text-gray-700  dark:bg-black/30 dark:text-gray-300 hover:bg-DivuBlue border border-black dark:hover:bg-DivuBlue"
+        }
+      `}
     >
       {label}
     </Link>
   );
 }
- 
-function CTAButton({ href, label }) {
-  const isInternal = href?.startsWith("/") || href?.startsWith("#");
-  if (isInternal) {
-    return (
-      <Link
-        to={href}
-        className="inline-block px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition"
-      >
-        {label}
-      </Link>
-    );
-  }
+
+function Card({ children, className = "" }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
+      className={`
+        rounded-xl border shadow-sm p-8 transition
+        bg-white/90 text-gray-900 border-gray-200
+        dark:bg-black/40 dark:text-gray-100 dark:border-black
+        ${className}
+      `}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CTAButton({ href, label }) {
+  return (
+    <Link
+      to={href}
       className="inline-block px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition"
     >
       {label}
-    </a>
+    </Link>
   );
 }
- 
-function SectionBlock({ children }) {
-  return (
-    <div className="bg-white/95 rounded-2xl shadow-lg p-8">{children}</div>
+
+function Media({ url }) {
+  return /\.(mp4|webm|mov|m4v)/i.test(url) ? (
+    <video src={url} autoPlay loop muted className="rounded-lg shadow-lg w-full max-w-md" />
+  ) : (
+    <img src={url} alt="" className="rounded-lg shadow-lg w-full max-w-md" />
   );
-}
- 
-function isVideo(url = "") {
-  return /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url);
 }

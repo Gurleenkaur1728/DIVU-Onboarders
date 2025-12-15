@@ -3,8 +3,10 @@ module.exports = {
     content: [
         "./index.html",
         "./src/**/*.{js,jsx,ts,tsx}",
-        "./app/**/*.{js,ts,jsx,tsx}",  // include app folder if using it
+        "./app/**/*.{js,ts,jsx,tsx}", 
     ],
+
+    darkMode: "class",
     theme: {
         extend: {
             animation: {

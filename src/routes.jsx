@@ -18,7 +18,7 @@ import ModuleComplete from "../app/pages/ModuleComplete.jsx";
 import Feedback from "../app/pages/Feedback.jsx";
 import FeedbackForm from "../app/pages/FeedbackForm.jsx";
 import Progress from "../app/pages/progress.jsx";
-import Certificate from "../app/pages/certificate.jsx";
+import Certificate from "../app/pages/Certificate.jsx";
 import Questions from "../app/pages/Questions.jsx";
 import Events from "../app/pages/Events.jsx";
 import Chatbot from "../app/pages/Chatbot.jsx";

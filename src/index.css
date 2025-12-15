@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+ 
 html,
 body,
 #root {
@@ -11,56 +11,25 @@ body,
   transition: opacity 0.3s ease-in-out;
   opacity: 0.95;
 }
-/* Hide Google top bar */
-.goog-te-banner-frame {
-  display: none !important;
-}
-
-/* Hide extra top space added by Google */
-body {
-  top: 0 !important;
-}
-
-/* Hide popup frame */
-.goog-te-spinner-pos,
-.goog-te-balloon-frame {
-  display: none !important;
-}
-
-/* Hide Google Translate toolbar */
-.goog-te-banner {
-  display: none !important;
-}
-
-/* Hide the goog logo iframe */
-iframe.goog-te-menu-frame {
-  box-shadow: none !important;
-  border: none !important;
-}
-
-/* Prevent layout shifting */
-.goog-te-gadget-icon {
-  display: none !important;
-}
-
+ 
 /* Custom Sidebar Scrollbar Styling */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
-
+ 
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent; /* see-through track */
 }
-
+ 
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: rgba(81, 135, 120, 0.8); /* dark emerald thumb */
   border-radius: 10px;
 }
-
+ 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(2, 90, 65, 0.9);
+  background: rgba(2, 90, 65, 0.341);
 }
-
+ 
 /* Firefox support */
 .custom-scrollbar {
   scrollbar-color: rgba(4, 120, 87, 0.8) transparent;

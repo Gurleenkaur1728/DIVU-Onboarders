@@ -19,10 +19,13 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
 
-      <div className="fixed bottom-6 right-6 z-50 space-y-3">
-        {toasts.map((t) => (
-          <Toast key={t.id} message={t.message} type={t.type} />
-        ))}
+      {/* Toast Container - Fixed position at top-right */}
+      <div className="fixed top-4 right-4 z-[9999] space-y-3 pointer-events-none">
+        <div className="pointer-events-auto">
+          {toasts.map((t) => (
+            <Toast key={t.id} message={t.message} type={t.type} />
+          ))}
+        </div>
       </div>
     </ToastContext.Provider>
   );
