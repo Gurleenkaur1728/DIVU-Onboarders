@@ -34,7 +34,8 @@ function useModuleProgress(userId, moduleId) {
         .select('*')
         .eq('user_id', userId)
         .eq('module_id', moduleId)
-        .single();
+        .single()
+        .order('order_index', { ascending: true });
 
       if (error) {
         console.log('Progress query error:', error);
@@ -100,13 +101,6 @@ function useModuleProgress(userId, moduleId) {
       } else {
         console.log('✅ Progress saved successfully!', data);
         
-        // If module completed, refresh the page data to update UI
-        if (newProgress.isCompleted) {
-          console.log('🎉 Module completed! Refreshing data...');
-          setTimeout(() => {
-            window.location.reload(); // Force reload to ensure fresh data
-          }, 2000);
-        }
       }
     } catch (error) {
       console.error('❌ Failed to save progress:', error);
@@ -299,7 +293,8 @@ export default function EnhancedModuleDetail() {
         .select('*')
         .eq('user_id', userId)
         .eq('module_id', id)
-        .single();
+        .single()
+        .order('order_index', { ascending: true });
 
       if (feedbackData) {
         setExistingFeedback(feedbackData);
@@ -1777,8 +1772,9 @@ export default function EnhancedModuleDetail() {
 
         {/* Section Feedback Modal */}
         {showSectionFeedback && (
-          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-4 sm:p-6 max-w-md w-full">
+          !sectionFeedbacks[showSectionFeedback] && (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-base sm:text-lg font-bold text-gray-800">💬 Quick Section Feedback</h3>
                 <button 
@@ -1860,11 +1856,17 @@ export default function EnhancedModuleDetail() {
               {/* Action buttons */}
               <div className="flex space-x-2">
                 <button
-                  onClick={() => setShowSectionFeedback(null)}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-200"
-                >
-                  Skip
-                </button>
+  onClick={() => {
+    setSectionFeedbacks(prev => ({
+      ...prev,
+      [showSectionFeedback]: { skipped: true }
+    }));
+    setShowSectionFeedback(null);
+  }}
+>
+  Skip
+</button>
+
                 <button
                   onClick={() => submitSectionFeedback(showSectionFeedback)}
                   className="flex-1 bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-emerald-700"
@@ -1874,7 +1876,7 @@ export default function EnhancedModuleDetail() {
               </div>
             </div>
           </div>
-        )}
+        ))}
       </div>
     </AppLayout>
   );
