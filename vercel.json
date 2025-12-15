@@ -5,18 +5,4 @@
       "destination": "/index.html"
     }
   ]
-  ,
-  
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
-        }
-      ]
-    }
-  ]
 }
-
