@@ -94,58 +94,70 @@ export default function Feedback() {
 
   return (
     <AppLayout>
-      <div className="p-6 min-h-screen">
-        <div className="max-w-7xl mx-auto">
+      <div className="flex-1 min-h-dvh p-6 space-y-6 mt-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Feedback Center</h1>
-          <p className="text-gray-600 mt-2">
-            Share your thoughts and view your submitted feedback
-          </p>
-        </div>
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          {/* LEFT */}
+          <div>
+            <h1 className="text-3xl font-bold text-emerald-950 dark:text-emerald-100">
+              Feedback Center
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Share your thoughts and view your submitted feedback
+            </p>
+          </div>
 
-        {/* Tabs */}
-        <div className="mb-6" style={{borderBottom: '2px solid #e5e7eb'}}>
-          <div className="flex gap-1">
+          {/* RIGHT — TABS (Welcome-style) */}
+          <div className="flex gap-2">
             <button
               onClick={() => setActiveTab("submitted")}
-              className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
-                activeTab === "submitted"
-                  ? "border-emerald-600 text-emerald-600"
-                  : "border-transparent text-gray-600 hover:text-emerald-600"
-              }`}
+              className={`
+                px-4 py-2 rounded-lg text-sm font-medium transition
+                ${
+                  activeTab === "submitted"
+                    ? "bg-DivuLightGreen text-black border border-black"
+                    : "bg-white/80 text-gray-700 dark:bg-black/30 dark:text-gray-300 hover:bg-DivuBlue border border-black dark:hover:bg-DivuBlue"
+                }
+              `}
             >
-              Feedback Submitted
+              Submitted
             </button>
+
             <button
               onClick={() => setActiveTab("create")}
-              className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
-                activeTab === "create"
-                  ? "border-emerald-600 text-emerald-600"
-                  : "border-transparent text-gray-600 hover:text-emerald-600"
-              }`}
+              className={`
+                px-4 py-2 rounded-lg text-sm font-medium transition
+                ${
+                  activeTab === "create"
+                    ? "bg-DivuLightGreen text-black border border-black"
+                    : "bg-white/80 text-gray-700 dark:bg-black/30 dark:text-gray-300 hover:bg-DivuBlue border border-black dark:hover:bg-DivuBlue"
+                }
+              `}
             >
               Create Feedback
             </button>
           </div>
         </div>
 
+
+
+
         {/* ✅ Submitted Feedback Table */}
         {activeTab === "submitted" && (
-          <div className="overflow-x-auto rounded-xl shadow-lg bg-white border border-gray-200">
+          <div className="overflow-x-auto rounded-xl shadow-lg bg-white  dark:bg-black/50">
             {loading ? (
               <div className="p-8 text-center text-gray-600">
                 Loading feedback...
               </div>
             ) : (
               <table className="w-full text-left border-collapse text-sm table-fixed">
-                <thead className="bg-gray-100 border-b border-gray-200">
+                <thead className="bg-gray-100 border-b border-gray-200 dark:bg-DivuBlue/20">
                   <tr>
-                    <th className="p-4 font-semibold text-gray-700">Module Name</th>
-                    <th className="p-4 font-semibold text-gray-700" style={{width: '180px'}}>Rating</th>
-                    <th className="p-4 font-semibold text-gray-700" style={{width: '120px'}}>Difficulty</th>
-                    <th className="p-4 font-semibold text-gray-700" style={{width: '150px'}}>Feedback Date</th>
-                    <th className="p-4 font-semibold text-gray-700 text-center" style={{width: '100px'}}>Action</th>
+                    <th className="p-4 font-semibold">Module Name</th>
+                    <th className="p-4 font-semibold" style={{width: '180px'}}>Rating</th>
+                    <th className="p-4 font-semibold" style={{width: '120px'}}>Difficulty</th>
+                    <th className="p-4 font-semibold" style={{width: '150px'}}>Feedback Date</th>
+                    <th className="p-4 font-semibold text-center" style={{width: '100px'}}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -155,19 +167,20 @@ export default function Feedback() {
                       return (
                         <tr
                           key={module.id}
-                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200"
+                          className="border-b border-gray-100 hover:bg-DivuBlue/50
+                          transition-colors duration-200"
                         >
-                          <td className="p-4 text-gray-900">{module.title}</td>
-                          <td className="p-4 text-gray-700">
+                          <td className="p-4 ">{module.title}</td>
+                          <td className="p-4">
                             <div className="flex items-center">
                               {'⭐'.repeat(feedback?.rating || 0)}
                               <span className="ml-2 text-sm">({feedback?.rating || 0}/5)</span>
                             </div>
                           </td>
-                          <td className="p-4 text-gray-700 text-center">
+                          <td className="p-4 text-center">
                             {feedback?.difficulty_level ? `${feedback.difficulty_level}/5` : '-'}
                           </td>
-                          <td className="p-4 text-gray-700">
+                          <td className="p-4">
                             {feedback?.created_at ? new Date(feedback.created_at).toLocaleDateString() : "-"}
                           </td>
                           <td className="p-4 text-center">
@@ -194,14 +207,14 @@ export default function Feedback() {
           </div>
         )}
 
-        {/* ✅ Create Feedback Table */}
+        {/* Create Feedback Table */}
         {activeTab === "create" && (
-          <div className="bg-white/95 rounded-2xl shadow-lg overflow-hidden border border-emerald-200">
+          <div className="bg-white/95 rounded-2xl shadow-lg overflow-hidden dark:bg-black/50">
             {loading ? (
               <div className="p-8 text-center text-gray-600">Loading modules...</div>
             ) : (
               <table className="w-full text-left border-collapse text-sm md:text-base">
-                <thead className="bg-emerald-800 text-white">
+                <thead className="bg-gray-100  border-b border-gray-200 dark:bg-DivuBlue/20">
                   <tr>
                     <th className="p-4 font-semibold">Module Name</th>
                     <th className="p-4 font-semibold">Status</th>
@@ -249,7 +262,6 @@ export default function Feedback() {
           />
         )}
         </div>
-      </div>
     </AppLayout>
   );
 }

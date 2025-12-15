@@ -325,21 +325,21 @@ export default function Progress() {
 
   return (      
     <AppLayout>
-      <div className="p-6 min-h-screen">
-        <div className="maxb-w-7xl mx-auto">
+      <div className="flex-1 min-h-dvh p-6 space-y-6 mt-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Your Learning Progress
-          </h1>
-          <p className="text-gray-600">
-            Track your journey, celebrate achievements, and stay motivated!
-          </p>
-        </div>
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+          {/* LEFT */}
+          <div>
+            <h1 className="text-3xl font-bold text-emerald-950 dark:text-emerald-100">
+              Your Learning Progress
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              Track your journey, celebrate achievements, and stay motivated!
+            </p>
+          </div>
 
-        {/* Enhanced Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-8">
-          <div className="flex border-b border-gray-200">
+          {/* RIGHT — TABS */}
+          <div className="flex gap-2">
             {[
               { id: "progress", label: "Progress" },
               { id: "achievements", label: "Achievements" },
@@ -348,11 +348,14 @@ export default function Progress() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 ${
-                  activeTab === tab.id
-                    ? "border-emerald-600 text-emerald-600"
-                    : "border-transparent text-gray-600 hover:text-emerald-600"
-                }`}
+                className={`
+                  px-4 py-2 rounded-lg text-sm font-medium transition
+                  ${
+                    activeTab === tab.id
+                      ? "bg-DivuLightGreen text-black border border-black"
+                      : "bg-white/80 text-gray-700 dark:bg-black/30 dark:text-gray-300 hover:bg-DivuBlue border border-black dark:hover:bg-DivuBlue"
+                  }
+                `}
               >
                 {tab.label}
               </button>
@@ -364,34 +367,36 @@ export default function Progress() {
         {activeTab === "progress" && (
           <>
             {/* Enhanced Charts Section - Moved to Top */}
-            <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            <div className="bg-white dark:bg-black/40 rounded-lg shadow-lg border border-gray-200 p-6 mb-8">
+              <h2 className="text-xl font-semibold mb-6">
                 Progress Analytics Dashboard
               </h2>
 
               {/* Stats Cards Row */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 {/* Total XP */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="bg-white dark:bg-DivuDarkGreen/70 border border-gray-200 dark:border-black rounded-lg p-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-600">Total XP</h3>
-                      <p className="text-2xl font-bold text-gray-900">{userStats.xp}</p>
-                      <p className="text-xs text-gray-500">Level {userStats.level}</p>
+                      <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        Total XP</h3>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {userStats.xp}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-300">Level {userStats.level}</p>
                     </div>
                     <div className="text-2xl">💫</div>
                   </div>
                 </div>
                 
                 {/* Completion Rate */}
-                <div className="bg-white border border-emerald-200 rounded-lg p-4 shadow-sm">
+                <div className="bg-white border border-emerald-200 rounded-lg p-4 shadow-sm dark:bg-DivuDarkGreen/70 dark:border-black">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-600">Completion</h3>
+                      <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Completion</h3>
                       <p className="text-2xl font-bold text-emerald-600">
                         {modules.length > 0 ? Math.round((userProgress.filter(p => p.is_completed).length / modules.length) * 100) : 0}%
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-300">
                         {userProgress.filter(p => p.is_completed).length}/{modules.length} modules
                       </p>
                     </div>
@@ -400,14 +405,14 @@ export default function Progress() {
                 </div>
                 
                 {/* Average Rating */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm dark:bg-DivuDarkGreen/70 dark:border-black">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-600">Avg Rating</h3>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Rating</h3>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {userStats.averageRating > 0 ? userStats.averageRating : '--'}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-300">
                         {feedback.length} feedback given
                       </p>
                     </div>
@@ -416,14 +421,14 @@ export default function Progress() {
                 </div>
                 
                 {/* Time Spent */}
-                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm dark:bg-DivuDarkGreen/70 dark:border-black">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-600">Time Invested</h3>
-                      <p className="text-2xl font-bold text-gray-900">
+                      <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Time Invested</h3>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
                         {Math.floor(userStats.totalTimeSpent / 60)}h
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-300">
                         {userStats.totalTimeSpent % 60}m estimated
                       </p>
                     </div>
@@ -435,8 +440,8 @@ export default function Progress() {
               {/* Charts Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Module Status Pie Chart */}
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                <div className="bg-gray-50 rounded-xl p-6 dark:bg-DivuDarkGreen/20">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center dark:text-gray-400">
                     Module Completion Status
                   </h3>
                   <div className="flex flex-col md:flex-row items-center justify-center gap-6">
@@ -476,8 +481,8 @@ export default function Progress() {
                 </div>
 
                 {/* XP Progress Chart */}
-                <div className="bg-gray-50 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
+                <div className="bg-gray-50 rounded-xl p-6 dark:bg-black/80">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center dark:text-gray-400">
                     XP Progress Over Time
                   </h3>
                   <ResponsiveContainer width="100%" height={250}>
@@ -512,27 +517,28 @@ export default function Progress() {
             </div>
 
         {/* Simplified Module Progress */}
-        <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden mb-8">
-          <div className="p-4 bg-gray-50 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">
+        <div className="bg-white dark:bg-black/80
+        rounded-lg shadow-lg border border-gray-200 overflow-hidden mb-8">
+          <div className="p-4 bg-gray-50 border-b border-gray-200 dark:bg-DivuBlue/20">
+            <h2 className="text-lg font-semibold ">
               Module Progress
             </h2>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm">
-              <thead className="bg-gray-100 border-b border-gray-200">
+              <thead className="bg-gray-100 border-b border-gray-200 dark:bg-DivuDarkGreen/20">
                 <tr>
-                  <th className="p-4 font-semibold text-gray-700">Module</th>
-                  <th className="p-4 font-semibold text-gray-700" style={{width: '150px'}}>Status</th>
-                  <th className="p-4 font-semibold text-gray-700" style={{width: '120px'}}>Progress</th>
+                  <th className="p-4 font-semibold ">Module</th>
+                  <th className="p-4 font-semibold " style={{width: '150px'}}>Status</th>
+                  <th className="p-4 font-semibold " style={{width: '120px'}}>Progress</th>
                 </tr>
               </thead>
               <tbody>
                 {moduleDetails.map((module) => (
-                  <tr key={module.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr key={module.id} className="border-b border-gray-100  hover:bg-DivuBlue/30">
                     <td className="p-4">
-                      <div className="font-medium text-gray-900">{module.title}</div>
+                      <div className="font-medium ">{module.title}</div>
                       {module.description && (
                         <div className="text-xs text-gray-500 mt-1">
                           {module.description.length > 60 
@@ -578,8 +584,8 @@ export default function Progress() {
             {/* Gamification Summary */}
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* XP + Level */}
-              <div className="bg-white rounded-lg shadow-sm p-6 text-center border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
+              <div className="bg-white dark:bg-black/40 rounded-lg shadow-sm p-6 text-center border border-gray-200">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-400 mb-3b-3">
                   Your XP Level
                 </h3>
                 <p className="text-2xl font-extrabold text-emerald-600">
@@ -599,18 +605,18 @@ export default function Progress() {
               </div>
 
               {/* Achievements */}
-              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
+              <div className="bg-white dark:bg-black/40 rounded-lg shadow-sm p-6 border border-gray-200 custom-scrollbar">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-gray-400 mb-3 text-center">
                   🏆 Achievements
                 </h3>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {achievements.length > 0 ? (
                     achievements.map((achievement) => (
-                      <div key={achievement.id} className="flex items-center p-2 bg-gray-50 rounded-lg">
+                      <div key={achievement.id} className="flex items-center p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
                         <span className="text-lg mr-2">{achievement.icon}</span>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">{achievement.title}</p>
-                          <p className="text-xs text-gray-600">{achievement.description}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-400">{achievement.title}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-500">{achievement.description}</p>
                         </div>
                       </div>
                     ))
@@ -623,26 +629,26 @@ export default function Progress() {
               </div>
 
               {/* Quick Stats */}
-              <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 text-center">
+              <div className="bg-white dark:bg-black/40 rounded-lg shadow-sm p-6 border border-gray-200">
+                <h3 className="text-lg font-bold  mb-3 text-center">
                   📈 Quick Stats
                 </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Completed Modules:</span>
-                    <span className="font-semibold text-gray-900">{userProgress.filter(p => p.is_completed).length}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-500">Completed Modules:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-400">{userProgress.filter(p => p.is_completed).length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Feedback Given:</span>
-                    <span className="font-semibold text-gray-900">{feedback.length}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-500">Feedback Given:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-400">{feedback.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Certificates:</span>
-                    <span className="font-semibold text-gray-900">{certificates.length}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-500">Certificates:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-400">{certificates.length}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Learning Streak:</span>
-                    <span className="font-semibold text-gray-900">{userStats.streakDays} days</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-500">Learning Streak:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-400">{userStats.streakDays} days</span>
                   </div>
                 </div>
               </div>
@@ -652,8 +658,8 @@ export default function Progress() {
 
         {/* Achievements Tab */}
         {activeTab === "achievements" && (
-          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <div className="bg-white dark:bg-black/40 rounded-lg shadow-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-400 mb-6">
               Your Achievements
             </h2>
             
@@ -681,8 +687,8 @@ export default function Progress() {
 
         {/* Certificates Tab */}
         {activeTab === "certificates" && (
-          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <div className="bg-white dark:bg-black/40 rounded-lg shadow-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-400 mb-6">
               Your Certificates
             </h2>
             
@@ -717,7 +723,6 @@ export default function Progress() {
           </div>
         )}
         </div>
-      </div>
     </AppLayout>
   );
 }

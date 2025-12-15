@@ -36,15 +36,15 @@ export default function Chatbot() {
 
   return (
     <AppLayout>
-      <div className=" min-h-screen p-8">
-        <h1 className="text-3xl font-bold text-emerald-950 mb-6">
+      <div className="flex-1 min-h-dvh p-6 space-y-6 mt-8">
+        <h1 className="text-3xl font-bold  mb-6">
           AI Assistant
         </h1>
 
-        <div className="max-w-4xl">
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+          <div className="bg-white dark:bg-DivuDarkGreen/90
+           border border-gray-500 rounded-lg shadow-sm p-6">
             {/* Chat Messages Area */}
-            <div className="h-[500px] overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+            <div className="h-[500px] overflow-y-auto border border-gray-400 rounded-lg p-4 mb-4 bg-gray-100 dark:bg-black/50">
               {messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full text-gray-500">
                   <p className="text-center">
@@ -80,19 +80,20 @@ export default function Chatbot() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && sendMessage()}
                 placeholder="Ask anything about onboarding..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 focus:outline-none"
+                className="flex-1 px-4 py-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600 focus:outline-none text-black placeholder-slate-500"
               />
               <button
                 onClick={sendMessage}
                 disabled={!input.trim()}
-                className="px-6 py-3 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+                className="px-6 py-3 bg-DivuLightGreen border-black
+                 text-black font-medium rounded-lg hover:bg-DivuBlue hover:text-white
+                  transition disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
               >
                 Send
               </button>
             </div>
           </div>
         </div>
-      </div>
     </AppLayout>
   );
 }
