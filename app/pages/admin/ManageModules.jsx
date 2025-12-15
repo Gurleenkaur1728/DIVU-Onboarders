@@ -288,30 +288,40 @@ export default function ManageModules() {
     return "Just now";
   };
 
-      {/* Edit + Delete Buttons */}
-      <div className="flex gap-2 mt-auto">
-        <button
-          onClick={() => openBuilder(m.status === "draft" ? m.id : null)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded bg-DivuBlue/80 text-white text-sm font-semibold hover:bg-DivuBlue"
-        >
-          <Edit size={14} /> Edit / Build
-        </button>
+  // Toggle selection
+  const toggleSelection = (id) => {
+    setSelectedDrafts((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
-        <button
-          onClick={async () => {
-            try {
-              if (m.status === "draft") {
-                await supabase.from("module_drafts").delete().eq("id", m.id).order('order_index', { ascending: true });
-                setDraftModules((p) => p.filter((x) => x.id !== m.id));
-              } else {
-                await supabase.from("modules").delete().eq("id", m.id).order('order_index', { ascending: true });
-                setPublishedModules((p) => p.filter((x) => x.id !== m.id));
-              }
-              setModules((p) => p.filter((x) => x.id !== m.id));
-              showToast("Module deleted.", "success");
-            } catch (e) {
-              console.error(e);
-              showToast("Delete failed.", "error");
+  // Select all drafts
+  const selectAllDrafts = () => {
+    if (selectedDrafts.length === filteredDrafts.length) {
+      setSelectedDrafts([]);
+    } else {
+      setSelectedDrafts(filteredDrafts.map((d) => d.id));
+    }
+  };
+
+  // ✅ Render each module card
+  const renderModuleCard = (m) => {
+    const handleDelete = async () => {
+      const confirmMsg = m.status === "draft" 
+        ? `Delete draft "${m.title}"? This cannot be undone.`
+        : `Delete published module "${m.title}"? This will remove it for all employees.`;
+      
+      setConfirmModal({
+        show: true,
+        message: confirmMsg,
+        onConfirm: async () => {
+          try {
+            if (m.status === "draft") {
+              await supabase.from("module_drafts").delete().eq("id", m.id);
+              setDraftModules((p) => p.filter((x) => x.id !== m.id));
+            } else {
+              await supabase.from("modules").delete().eq("id", m.id);
+              setPublishedModules((p) => p.filter((x) => x.id !== m.id));
             }
             setModules((p) => p.filter((x) => x.id !== m.id));
             showToast("Module deleted.", "success");
