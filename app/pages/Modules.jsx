@@ -137,17 +137,17 @@ export default function Modules() {
 
   return (
     <AppLayout>
-      <div className="flex-1 flex flex-col p-4 sm:p-6 md:p-8 z-10">
+      <div className="flex-1 min-h-dvh p-6 space-y-6 mt-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Culture Modules</h1>
+          <h1 className="text-3xl font-bold">Culture Modules</h1>
           <p className="text-gray-600 mt-2">
             Welcome {localStorage.getItem("profile_name") || "there"}! Explore and complete your learning modules
           </p>
         </div>
 
         {/* Search and Filter Section */}
-        <div className="bg-white/95 rounded-xl shadow-md p-4 mb-6 border border-gray-200">
+        <div className="bg-white/95 dark:bg-DivuDarkGreen/60 rounded-xl shadow-md p-4 mb-6 border border-gray-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search Bar */}
             <div className="relative">
@@ -157,7 +157,7 @@ export default function Modules() {
                 placeholder="Search modules..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-10 pr-4 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-black"
               />
             </div>
 
@@ -165,7 +165,7 @@ export default function Modules() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="px-4 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-black"
             >
               <option value="all">All Statuses</option>
               <option value="completed">Completed</option>
@@ -177,7 +177,7 @@ export default function Modules() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="px-4 py-2 border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-black"
             >
               <option value="dateAssigned">Sort by Date Assigned</option>
               <option value="alphabetical">Sort Alphabetically</option>
@@ -186,7 +186,7 @@ export default function Modules() {
           </div>
 
           {/* Results count */}
-          <div className="mt-3 text-sm text-gray-600">
+          <div className="mt-3 text-sm text-gray-900 dark:text-gray-300">
             Showing {filteredModules.length} of {modules.length} modules
           </div>
         </div>
@@ -197,15 +197,15 @@ export default function Modules() {
           </div>
         ) : (
           /* Table */
-          <div className="overflow-x-auto rounded-xl shadow-lg bg-white border border-gray-200">
+          <div className="overflow-x-auto rounded-xl shadow-lg bg-white border border-gray-200 dark:bg-black/40 dark:border-DivuBlue/20">
             <table className="w-full text-left border-collapse text-sm table-fixed">
-              <thead className="bg-gray-100 border-b border-gray-200">
+              <thead className="bg-gray-100 border-b border-gray-200 dark:bg-DivuBlue/20">
                 <tr>
-                  <th className="p-4 font-semibold text-gray-700 text-center" style={{width: '80px'}}>Status</th>
-                  <th className="p-4 font-semibold text-gray-700">Module</th>
-                  <th className="p-4 font-semibold text-gray-700" style={{width: '150px'}}>Date Assigned</th>
-                  <th className="p-4 font-semibold text-gray-700" style={{width: '150px'}}>Date Completed</th>
-                  <th className="p-4 font-semibold text-gray-700 text-center" style={{width: '150px'}}>Feedback</th>
+                  <th className="p-4 font-semibold" style={{width: '80px'}}>Status</th>
+                  <th className="p-4 font-semibold">Module</th>
+                  <th className="p-4 font-semibold" style={{width: '150px'}}>Date Assigned</th>
+                  <th className="p-4 font-semibold" style={{width: '150px'}}>Date Completed</th>
+                  <th className="p-4 font-semibold text-center" style={{width: '150px'}}>Feedback</th>
                 </tr>
               </thead>
               <tbody>
