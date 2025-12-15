@@ -164,6 +164,7 @@ localStorage.setItem("lang", val);
           completedModules: completedCount,
           totalModules: totalCount,
         }));
+
       }
 
       // Load certificates count
