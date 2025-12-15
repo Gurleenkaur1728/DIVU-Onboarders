@@ -186,7 +186,13 @@ export default function AssignTemplates() {
         .from("assigned_checklist_item")
         .select(
           `
-          id, user_id, group_id, template_item_id, due_date, done,
+          id, 
+          user_id, 
+          group_id, 
+          template_item_id,
+          due_date, 
+          done,
+          custom_title,
           checklist_groups(name),
           checklist_item:template_item_id(title)
         `
@@ -254,8 +260,11 @@ export default function AssignTemplates() {
     await hydrateEmployeeData(modalUser.id);
   }
 
+
   async function addCustomItem() {
+    
     if (!modalUser?.id) return;
+
     const title = newCustomTitle.trim();
     if (!title || !newCustomGroupId) return;
 
@@ -263,28 +272,46 @@ export default function AssignTemplates() {
     const assignedBy =
       localStorage.getItem("profile_id") || authInfo?.user?.id || null;
 
-    const payload = {
-      user_id: modalUser.id,
-      group_id: newCustomGroupId,
-      template_item_id: null,
-      custom_title: title,
-      done: false,
-      assigned_by: assignedBy,
-      assigned_on: new Date().toISOString(),
-      due_date: newCustomDue || null,
-    };
+    // Get next position within this group for this user
+    const { data: existingItems } = await supabase
+      .from("assigned_checklist_item")
+      .select("position")
+      .eq("user_id", modalUser.id)
+      .eq("group_id", newCustomGroupId)
+      .order("position", { ascending: false })
+      .limit(1);
+
+    const nextPosition = (existingItems?.[0]?.position ?? 0) + 1;
 
     const { error } = await supabase
       .from("assigned_checklist_item")
-      .insert(payload);
-    if (error) console.error(error);
+      .insert({
+        user_id: modalUser.id,
+        group_id: newCustomGroupId,
+        template_item_id: null,
+        custom_title: title,
+        position: nextPosition,
+        due_date: newCustomDue || null,
+        assigned_by: assignedBy,
+        assigned_on: new Date().toISOString(),
+        done: false,
+        is_overdue: false,
+      });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     setNewCustomTitle("");
     setNewCustomGroupId("");
     setNewCustomDue("");
+
     await hydrateEmployeeData(modalUser.id);
     setModalTab("items");
-  }
+}
+
+
 
   // ======== RENDER ========
   return (
@@ -703,7 +730,7 @@ function ItemsTab({ items, onDeleteItem, onUpdateDue }) {
     );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 custom-scrollbar max-h-[60vh] overflow-auto">
       {items.map((it) => {
         const title =
           it.custom_title || it.checklist_item?.title || "(untitled)";

@@ -24,7 +24,8 @@ export default function Checklist() {
   const [notice, setNotice] = useState("");
   const [groups, setGroups] = useState([]);
   const [expanded, setExpanded] = useState({});
- 
+
+
   useEffect(() => {
     if (user) {
       load();
@@ -61,8 +62,7 @@ export default function Checklist() {
       // Pull all assignments for this user + join template item & group
       const { data, error } = await supabase
         .from("assigned_checklist_item")
-        .select(
-          `
+        .select(`
           id,
           user_id,
           template_item_id,
@@ -71,25 +71,25 @@ export default function Checklist() {
           due_date,
           done,
           completed_at,
-          checklist_item:checklist_item!inner (
+          custom_title,
+
+          checklist_item:template_item_id (
             item_id,
             title,
             is_required
           ),
-          group:checklist_groups!inner (
+
+          group:checklist_groups (
             id,
             name,
             sort_order
           )
-        `
-        )
+        `)
         .eq("user_id", userId)
-        .order("sort_order", {
-          foreignTable: "checklist_groups",
-          ascending: true,
-        })
-        .order("title", { foreignTable: "checklist_item", ascending: true });
- 
+        .order("sort_order", { foreignTable: "checklist_groups", ascending: true })
+        .order("position", { ascending: true });
+
+
       if (error) throw error;
  
       // Bucket by group
@@ -99,7 +99,7 @@ export default function Checklist() {
         if (!bucket.has(g.id)) bucket.set(g.id, { id: g.id, name: g.name, items: [] });
         bucket.get(g.id).items.push({
           assignedId: row.id,
-          title: row.checklist_item?.title ?? "(untitled)",
+          title: row.checklist_item?.title,
           is_required: !!row.checklist_item?.is_required,
           assigned_on: row.assigned_on,
           due_date: row.due_date,
@@ -107,6 +107,7 @@ export default function Checklist() {
           completed_at: row.completed_at,
           template_item_id: row.template_item_id,
           group_id: row.group_id,
+          custom_title: row.custom_title,
         });
       });
  
@@ -131,7 +132,7 @@ export default function Checklist() {
         .from("certificates")
         .select("id")
         .eq("user_id", userId)
-        .eq("title", title)
+        .eq("title || \"custom_title\"", title)
         .maybeSingle();
  
       if (existing) {
@@ -251,33 +252,55 @@ export default function Checklist() {
                           </tr>
                         </thead>
                         <tbody>
-                          {g.items.map((it, idx) => (
-                            <tr
-                              key={it.assignedId}
-                              className="border-b border-gray-100 hover:bg-DivuLightGreen/50 
-                               transition-colors duration-200
-                              dark:hover:bg-DivuBlue/20"
-                            >
-                              <td className="px-4 py-3 text-center" style={{width: '100px'}}>
-                                <button
-                                  onClick={() => toggleDone(it)}
-                                  className="focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-full"
-                                  title="Mark complete"
-                                >
-                                  {it.done ? (
-                                    <CheckCircle className="w-5 h-5 text-emerald-600" />
-                                  ) : (
-                                    <Circle className="w-5 h-5 text-gray-400 hover:text-emerald-500" />
-                                  )}
-                                </button>
-                              </td>
+                          {g.items.map((it, idx) => {
+                            const title =
+                              it.custom_title?.trim() ||
+                              it.checklist_item?.title ||
+                              "(Untitled)";
 
-                              <td className="px-4 py-3">{it.title}</td>
-                              <td className="px-4 py-3 " style={{width: '150px'}}>{fmt(it.assigned_on)}</td>
-                              <td className="px-4 py-3 " style={{width: '150px'}}>{fmt(it.completed_at)}</td>
-                            </tr>
-                          ))}
+                            return (
+                              <tr
+                                key={it.assignedId}
+                                className="border-b border-gray-100 hover:bg-DivuLightGreen/50 
+                                  transition-colors duration-200
+                                  dark:hover:bg-DivuBlue/20"
+                              >
+                                <td className="px-4 py-3 text-center" style={{ width: "100px" }}>
+                                  <button
+                                    onClick={() => toggleDone(it)}
+                                    className="focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-full"
+                                    title="Mark complete"
+                                  >
+                                    {it.done ? (
+                                      <CheckCircle className="w-5 h-5 text-emerald-600" />
+                                    ) : (
+                                      <Circle className="w-5 h-5 text-gray-400 hover:text-emerald-500" />
+                                    )}
+                                  </button>
+                                </td>
+
+                                <td className="px-4 py-3">
+                                  {it.title || title}
+                                  {it.custom_title && (
+                                    <span className="ml-2 text-xs bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded">
+                                      Custom
+                                    </span>
+                                  )}
+                                </td>
+
+                                <td className="px-4 py-3" style={{ width: "150px" }}>
+                                  {fmt(it.assigned_on)}
+                                </td>
+
+                                <td className="px-4 py-3" style={{ width: "150px" }}>
+                                  {fmt(it.completed_at)}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
+
+
                       </table>
                     </div>
                   )}
