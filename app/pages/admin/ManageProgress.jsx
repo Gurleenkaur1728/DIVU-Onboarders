@@ -235,9 +235,11 @@ export default function ManageProgress() {
     const scopedChecklist = checklistItems.filter((c) =>
       scopeUserIds.has(c.user_id)
     );
-    const scopedModules = moduleProgress.filter((m) =>
-      scopeUserIds.has(m.user_id)
-    );
+    // Only include module progress rows for existing modules
+    const existingModuleIds = new Set((moduleList || []).map((mod) => mod.id));
+    const scopedModules = moduleProgress
+      .filter((m) => scopeUserIds.has(m.user_id))
+      .filter((m) => existingModuleIds.has(m.module_id));
     const scopedFeedback = feedbackRows.filter((f) =>
       scopeUserIds.has(f.user_id)
     );
@@ -255,14 +257,15 @@ export default function ManageProgress() {
       totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
     const completedModules = scopedModules.filter((m) => m.is_completed).length;
+    // Clamp completion percentages between 0 and 100 and average
     const avgModuleCompletion =
       scopedModules.length === 0
         ? 0
         : Math.round(
-            scopedModules.reduce(
-              (sum, m) => sum + (m.completion_percentage || 0),
-              0
-            ) / scopedModules.length
+            scopedModules.reduce((sum, m) => {
+              const pct = Math.max(0, Math.min(100, m.completion_percentage || 0));
+              return sum + pct;
+            }, 0) / scopedModules.length
           );
 
     const avgFeedback =

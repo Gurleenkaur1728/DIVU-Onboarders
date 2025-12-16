@@ -475,34 +475,34 @@ export default function ManageEmployment() {
           )}
 
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-auto">
               <thead className="bg-black/80 border-b border-DivuDarkGreen">
                 <tr>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
-                    Employee
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[200px]">
+                    Employee Name
                   </th>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[180px]">
                     Employee ID
                   </th>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[120px]">
                     Hire Date
                   </th>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[140px]">
                     Department
                   </th>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[140px]">
                     Position
                   </th>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[140px]">
                     Manager
                   </th>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
-                    Type
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[100px]">
+                    Employment Type
                   </th>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[120px]">
                     Salary
                   </th>
-                  <th className="text-left p-4 font-semibold text-DivuLightGreen">
+                  <th className="text-left p-4 font-semibold text-DivuLightGreen min-w-[120px]">
                     Actions
                   </th>
                 </tr>

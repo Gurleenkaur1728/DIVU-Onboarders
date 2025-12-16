@@ -169,15 +169,15 @@ export default function Progress() {
       
       setModuleDetails(enrichedModules);
 
-      // Prepare chart data
-      const completed = progressData?.filter(p => p.is_completed)?.length || 0;
-      const inProgress = progressData?.filter(p => !p.is_completed && p.completion_percentage > 0)?.length || 0;
-      const notStarted = (modulesData?.length || 0) - completed - inProgress;
+      // Prepare chart data - Only count actual modules that exist
+      const completedCount = moduleDetails.filter(m => m.status === 'completed').length;
+      const inProgressCount = moduleDetails.filter(m => m.status === 'in-progress').length;
+      const notStartedCount = moduleDetails.filter(m => m.status === 'not-started').length;
       
       setChartData([
-        { name: "✅ Completed", value: completed, color: "#10b981" },
-        { name: "🔄 In Progress", value: inProgress, color: "#3b82f6" },
-        { name: "⏳ Not Started", value: notStarted, color: "#6b7280" },
+        { name: "✅ Completed", value: completedCount, color: "#10b981" },
+        { name: "🔄 In Progress", value: inProgressCount, color: "#3b82f6" },
+        { name: "⏳ Not Started", value: notStartedCount, color: "#6b7280" },
       ]);
 
       console.log("✅ Progress data loaded successfully!");
@@ -394,10 +394,10 @@ export default function Progress() {
                     <div>
                       <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">Completion</h3>
                       <p className="text-2xl font-bold text-emerald-600">
-                        {modules.length > 0 ? Math.round((userProgress.filter(p => p.is_completed).length / modules.length) * 100) : 0}%
+                        {modules.length > 0 ? Math.round((moduleDetails.filter(m => m.status === 'completed').length / modules.length) * 100) : 0}%
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-300">
-                        {userProgress.filter(p => p.is_completed).length}/{modules.length} modules
+                        {moduleDetails.filter(m => m.status === 'completed').length}/{modules.length} modules
                       </p>
                     </div>
                     <div className="text-2xl">🎯</div>
@@ -636,7 +636,7 @@ export default function Progress() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-500">Completed Modules:</span>
-                    <span className="font-semibold text-gray-900 dark:text-gray-400">{userProgress.filter(p => p.is_completed).length}</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-400">{moduleDetails.filter(m => m.status === 'completed').length}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600 dark:text-gray-500">Feedback Given:</span>
