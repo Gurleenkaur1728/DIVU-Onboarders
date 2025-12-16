@@ -6,6 +6,8 @@ export default function Chatbot() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
 
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -16,7 +18,7 @@ export default function Chatbot() {
     setInput("");
 
     try {
-      const res = await axios.post("/api/chat", {
+      const res = await axios.post(`${API_BASE}/api/chat`, {
         message: userMessage,
       });
 
@@ -27,6 +29,7 @@ export default function Chatbot() {
         { from: "bot", text: botReply },
       ]);
     } catch (err) {
+      console.error("Chatbot error:", err);
       setMessages((prev) => [
         ...prev,
         { from: "bot", text: "⚠️ Error: Could not connect to AI server." },
