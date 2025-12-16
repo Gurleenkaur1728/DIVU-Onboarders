@@ -143,28 +143,28 @@ localStorage.setItem("lang", val);
 
 
       // Load module progress stats
+      // Fetch user progress and actual modules; ensure counts only include existing modules
       const { data: progressData, error: progressError } = await supabase
         .from("user_module_progress")
-        .select("is_completed")
+        .select("module_id, is_completed")
         .eq("user_id", userId);
 
-      if (!progressError && progressData) {
-        const completedCount =
-          progressData.filter((p) => p.is_completed)?.length || 0;
+      const { data: modulesData } = await supabase
+        .from("modules")
+        .select("id");
 
-        // Get total modules count
-        const { data: modulesData } = await supabase
-          .from("modules")
-          .select("id");
-
-        const totalCount = modulesData?.length || 0;
+      if (!progressError) {
+        const moduleIds = new Set((modulesData || []).map((m) => m.id));
+        const completedCount = (progressData || [])
+          .filter((p) => p.is_completed && moduleIds.has(p.module_id))
+          .length;
+        const totalCount = moduleIds.size;
 
         setUserStats((prev) => ({
           ...prev,
           completedModules: completedCount,
           totalModules: totalCount,
         }));
-
       }
 
       // Load certificates count

@@ -482,7 +482,7 @@ export default function ManageEmployment() {
                     border-gray-200 dark:border-gray-700
                   "
                 >
-
+                  <th className="text-left p-4 font-semibold">Employee</th>
                   <th className="text-left p-4 font-semibold">Employee ID</th>
                   <th className="text-left p-4 font-semibold">Hire Date</th>
                   <th className="text-left p-4 font-semibold">Department</th>

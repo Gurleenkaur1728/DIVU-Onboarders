@@ -100,9 +100,17 @@ export default function AdminDashboard() {
         return;
       }
 
-      const { data: moduleData, error: moduleError } = await supabase
+      // Fetch actual modules so we can filter out orphaned progress rows
+      const { data: modulesTable, error: modulesTableError } = await supabase
+        .from("modules")
+        .select("id");
+
+      if (modulesTableError) throw modulesTableError;
+      const moduleIds = new Set((modulesTable || []).map((m) => m.id));
+
+      const { data: moduleProgressRaw, error: moduleError } = await supabase
         .from("user_module_progress")
-        .select("user_id, is_completed, completion_percentage, completed_at")
+        .select("user_id, module_id, is_completed, completion_percentage, completed_at")
         .in("user_id", userIds);
 
       if (moduleError) throw moduleError;
@@ -122,7 +130,9 @@ export default function AdminDashboard() {
       if (feedbackError) throw feedbackError;
 
       setEmployees(activeUsers);
-      setModules(moduleData || []);
+      // Filter progress to only include rows for existing modules
+      const moduleData = (moduleProgressRaw || []).filter((row) => moduleIds.has(row.module_id));
+      setModules(moduleData);
       setChecklist(checklistData || []);
       setFeedback(feedbackData || []);
 
@@ -186,9 +196,7 @@ export default function AdminDashboard() {
     const inProgress = modules.filter(
       (m) => !m.is_completed && (m.completion_percentage || 0) > 0
     ).length;
-    const pending = modules.filter(
-      (m) => (m.completion_percentage || 0) === 0
-    ).length;
+    const pending = modules.length - completed - inProgress;
 
     const modulePie = [
       { name: "Completed", value: completed },
