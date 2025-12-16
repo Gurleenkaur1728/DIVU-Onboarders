@@ -11,11 +11,12 @@ import { Groq } from "groq-sdk";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env from root directory (one level up)
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
-
-// Load .env from root directory (one level up)
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+// Load environment variables
+// In production (Railway), env vars are injected directly
+// In development, load from parent directory's .env file
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: path.join(__dirname, '..', '.env') });
+}
 
 const app = express();
 
