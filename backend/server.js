@@ -20,7 +20,17 @@ if (process.env.NODE_ENV !== 'production') {
 
 const app = express();
 
-app.use(cors());
+// Configure CORS to allow Vercel frontend
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174', 
+    'http://localhost:5175',
+    'https://divu-onboarders-gurleenkaur1728s-projects.vercel.app',
+    'https://divu-onboarders.vercel.app'
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Initialize OpenAI client
