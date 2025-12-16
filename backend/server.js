@@ -339,9 +339,9 @@ app.get("/", (req, res) => {
   res.send("Backend is running.");
 });
 
-const PORT = 4000;
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
   console.log(`✅ AI Summary API available at /api/ai/summary`);
   console.log(`✅ AI Quiz Generator available at /api/ai/generate-quiz`);
   console.log(`✅ Chatbot API available at /api/chat`);
